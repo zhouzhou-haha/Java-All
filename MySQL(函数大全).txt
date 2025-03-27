@@ -1,0 +1,193 @@
+MySQL函数：
+函数使用：
+	select 函数名(参数1，残数2)
+	
+函数分类：
+	字符串函数：
+		ASCLL(s)	
+		Length(s)				查看字符串的长度			
+		CHAR_LENGTH(s)				返回字符串s的字符个数	
+		CHARACTER_LENGTH(s)			返回字符串s的字符个数
+		GROUP_CONCAT(连接字段 排序字段 分隔符)	将相同的行连接起来				
+		CONCAT(s1,s2...sn)			合并多个字符串为一个字符串
+		CONCAT_WS(x,s1,s2...sn)			x是分隔符，合并多个字符串，并添加分隔符
+		INSERT(s1,x,len,s2)			将s1的x位置开始长度为len的字符串替换为s2
+		UPPER(s)				将字符串s的所有字母变成大写		Google -> GOOGLE
+		LOWER(s)				将字符串的所有字母变成小写
+		UCAASE(s)				将字符串s的所有字母变成大写
+		LCASE(s)				将字符串的所有字母变成小写
+		LEFT(s,n)				返回字符串s的前n个字符
+		RIGHT(s,n)				返回字符串s的后n个字符
+		LTRIM(s)				去掉字符串s开始处的空格
+		RTRIM(s)				去掉字符串s结尾处的空格
+		TRIM(s)					去掉字符串s开始和结尾处的空格
+		TRIM(s1,s)				去掉字符串s中开始和结尾处的字符串s1	
+		LOCATE(s1,s)				从字符串s中获取s1的开始位置，返回位置数字
+		POSITION(s1 IN s)			从字符串s中获取s1的开始位置，返回位置数字
+		MID					获取从字符串s中从n位开始长度为len的字符串
+		SUBSTR(s,n,len)				获取从字符串s中从n位开始长度为len的字符串
+		SUBSTRING(s,n,len)			获取从字符串s中从n位开始长度为len的字符串
+		LPAD(s1,len,s2)				在字符串s1开始处填充字符串s2，使字符串长度达到len
+		RPAD(s1,len,s2)				在字符串s1结尾处添加字符串s2，使字符串的长度达到len				
+		REVERSE(s)				将字符串s的顺序反过来
+		SPACE(n)				返回n个空格
+		REPEAT(s,n)				将字符串s重复n次
+		REPLACE(s,s1,s2)			将字符串s2替代字符串s中的字符串s1
+		ELT(n,s1,s2...)				返回第n个字符串
+		FORMAT(x,n)				将数字x进行格式化"#.###.##"，x保留到小数点后n位，最后一位四舍五入
+		FIELD(s,s1,s2...)			返回第一个字符串s在字符串列表中的位置
+		FIND_IN_SET(s1,s2)			返回字符串s1在字符串s2中的位置
+		STRCMP(s1,s2)				比较字符串s1和s2，s1 = s2返回0，s1 > s2返回1,s1 < s2返回-1		
+		SUBSTRING_INDEX(s,分隔符,n)		返回字符串s第n个出现分隔符之后/之前的字串，n是正数，返回左边的子串，n是正数，返回右边的子串			
+		LOAD_FILE(file_name)			读入文件并作为字符串返回文件内容,文件不存在返回null
+		
+	数字函数：
+		ABS(x)					返回x的绝对值
+		LOG2(x)					返回以2为底的对数
+		LOG10(x)				返回以10为底的对数	
+		LOG(x)					返回以e(自然对数)为底的对数
+		LOG(base,x)				返回以base为底的对数
+		SIN(x)					求x的正弦值，x是弧度
+		COS(x)					求x的余弦值，x是弧度
+		TAN(x)					求x的正切值，x是弧度
+		ASIN(x)					求x的反正弦值，x是弧度
+		ACOS(x)					求x的反余弦值，x是弧度
+		ATAN(x)					求x的反正切值，x是弧度
+		COT(x)					求x的余切值，x是弧度
+		n DIV m					整除，n为被除数，m为除数
+		MOD(x,y)				返回x除以y以后的余数
+		LN(x)					返回x的自然对数，x是数值
+		AVG(expression)				返回一个表达式的平均值，expression是一个字段
+		MIN(expression)				返回字段expression的最小值
+		MAX(expression)				返回字符expression的最大值
+		ROUND(x,保留位数)				对数值x四舍五入
+		CEIL(x)					返回>=x的最小整数
+		CEILING(x)				返回>=x的最小整数
+		FLOOR(x)				返回<=x的最大整数
+		DEGREES(x)				将弧度转换为角度
+		RADIANS(x)				将角度转换为弧度
+		COUNT(expression)			返回查询的记录总数，expression是一个字段	
+		EXP(x)					返回e的x次方
+		POW(x)					返回x的y次方
+		POWER(x,y)				返回x的y次方		
+		GREATEST(expr1,expr2,expr3...)		返回列表中的最大值			
+		LEAST(expr1,expr2,expr3...)		返回列表中的最小值	
+		TRUNCATE(x,y)				返回数值x保留到小数后y位的值(不会四舍五入)
+		SQRT(x)					返回x的平方根
+		RAND()					返回0-1的随机数
+		PI()					返回圆周率(3.141593)	
+
+	日期函数：		d-->年-月-日 时:分:秒		f-->%Y-%m-%d %r
+		STR_TO_DATE(string,f)			将日期字符串根据f转变为日期格式		年-月-日		
+		DATE(d)					从日期或日期表达式中提取日期值		年-月-日
+		TIME(d)					从时间或时间表达式中提取时间值		时:分:秒
+		ADDDATE(d,n)				计算起始日期d加上n天的日期			年-月-日 时:分:秒
+		SUBDATE(d,n)				计算起始日期d减去n天的日期			年-月-日 时:分:秒
+		ADDTIME(t,n)				计算起始时间t加上时间表达式n的时间		年-月-日 时:分:秒
+		SUBTIME(t,n)				计算起始时间t减去时间表达式n的时间		年-月-日 时:分:秒
+		DATEDIFF(d1,d2)				计算日期天数差
+		TIMEDIFF(t1,t2)				计算时间差
+		TIMESTAMP(expression,interval)		返回日期					
+		CURDATE()				返回当前日期				年-月-日
+		CURRENT_DATE()				返回当前日期				年-月-日
+		CURTIME()				返回当前时间				时:分:秒
+		CURRENT_TIME				返回当前时间				时:分:秒
+		NOW()					返回当前日期和时间				年-月-日 时:分:秒
+		SYSDATE()				返回当前日期和时间				年-月-日 时:分:秒
+		LOCALTIME()				返回当前日期和时间				年-月-日 时:分:秒
+		CURRENT_TIMESTAMP()			返回当前日期和时间				年-月-日 时:分:秒
+		LOCALTIMESTAMP()			返回当前日期和时间				年-月-日 时:分:秒	
+		QUARTER(d)				返回日期d是第几个季节	    	1-4
+		DATE_FORMAT(d,f)			按表达式f的要求显示日期d	
+		TIME_FORMAT(t,f)			按表达式f的要求显示时间t		
+		UNIX_TIMESTAMP()			以UNIX时间戳的形式返回当前时间
+		UNIX_TIMESTAMP(d)			将时间d以UNIX时间戳的形式返回
+		FROM_UNIXTIME(d)			将UNIX时间戳的时间转换为普通格式的时间	年-月-日 时:分:秒	
+		UTC_DATE()				返回UTC日期				年-月-日
+		UTC_TIME()				返回UTC时间				时:分:秒	
+		MONTH(d)				返回日期当中的月份值		月：11
+		MONTHNAME(d)				返回日期当中的月份名称		November
+		DAY(d)					返回日期当中的天数值		日：15	
+		DAYNAME(d)				返回日期当中的星期几		Friday
+		WEEKDAY(d)				计算日期d是星期几
+		WEEK(d)					计算日期d是本年的第几个星期
+		WEEKOFYEAR(d)				计算日期d是本年的第几个星期
+		YEAR(d)					返回年份及第几周，mode是	
+		YEARWEEK(d,mode)			返回年份及第几周，mode是星期几
+		DAYOFMONTH(d)				计算日期d是本月的第几天		日：11
+		DAYOFWEEK(d)				计算日期d是一周的第几天		星期：6
+		DAYOFYEAR(d)				计算日期d是本年的第几天		
+		HOUR(t/'时:分:秒	')			返回t中的小时值
+		MINUTE(t/'时:分:秒')			返回t中的分钟值
+		SECOND(t/'时:分:秒')			返回t中的秒钟值	
+		TIME_TO_SEC(t)				将时间t转换为秒
+		SEC_TO_TIME				将秒转换为时间t
+		FROM_DAYS(n)				计算从0000年1月1日开始n天后的日期
+		TO_DAYS(d)				计算日期d距离0000年1月1日的天数			
+		LAST_DAY(d)				返回给定日期月份的最后一天			
+		MAKEDATE(year，day-of-year)		基于给定年份和一年第几天计算日期		年-月-日
+		MAKETIME(hour,minute,second)		根据给的时分秒参数组合时间			时:分:秒
+		MICROSECOND(d)				返回日期参数的微秒数
+		PERIOD_ADD(period,n)			为年-月组合日期添加一个时段n			年-月
+		PERIOD_DIFF(period1,period2)		返回两个时段之间的月份差			
+		TIMESTAMPDIFF(unit，datetime_expr1,datetime_expr2)	返回时间戳的时间差	
+		
+		DATE_ADD(d,INTERVAL expr type)		计算从起始日期d加上时间段后的日期	
+		DATE_SUB(d,INTERVAL expr type)		计算从指定日期d减去时间段后的日期	
+			type：
+				MICROSECOND
+				SECOND
+				MINUTE
+				HOUR
+				DAY
+				WEEK
+				MONTH
+				QUARTER
+				YEAR
+				SECOND_MICROSECOND
+				MINUTE_MICROSECOND
+				MINUTE_SECOND
+				HOUR_MICROSECOND
+				HOUR_SECOND
+				HOUR_MINUTE
+				DAY_MICOROSECOND
+				DAY_SECOND
+				DAY_MINUTE
+				DAY_HOUR
+				YEAR_MONTH
+		EXTRACT(type FROM d)			从日期d中获取指定的值，type指定返回的值
+			type：
+				MICROSECOND
+				SECOND
+				MINUTE
+				HOUR
+				DAY
+				WEEK
+				MONTH
+				QUARTER
+				YEAR
+				SECOND_MICROSECOND
+				MINUTE_MICROSECOND
+				MINUTE_SECOND
+				HOUR_MICROSECOND
+				HOUR_SECOND
+				HOUR_MINUTE
+				DAY_MICOROSECOND
+				DAY_SECOND
+				DAY_MINUTE
+				DAY_HOUR
+				YEAR_MONTH	
+	
+	系统信息函数：
+		VERSION()			返回数据库的版本号
+		DATABASE()			返回当前数据库库名
+		SCHEMA				返回当前数据库库名
+		USER()				返回当前用户
+		SYSTEM_USER()			返回当前用户
+		SESSION_USER()			返回当前用户
+		CURRENT_USER()			返回当前用户
+		CURRENT_USER			返回当前用户
+		CHARSET(str)			返回字符串str的字符集
+		COLLATION(str)			返回字符串str的字符排列方式
+		CONNECTION_ID()			返回唯一的连接ID
+		LAST_INSERT_ID()		返回最近生成的AUTO_INCREMENT值
