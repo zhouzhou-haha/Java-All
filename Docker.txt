@@ -52,7 +52,7 @@ Docker常用命令：
 		ctrl + insert			复制
 		shift + insert			粘贴	
 		ll				查看当前目录所有文件及权限					例：ll
-		ls				查看当前目录所有文件					例：ls
+		ls				查看当前目录所有文件						例：ls
 		rm 文件名			删除文件							例：rm allcore-sip.tar
 		touch 文件			创建文件							例：touch allcore-sip.log
 		pwd				显示当前用户所在目录绝对路径					例：pwd		
@@ -102,8 +102,8 @@ Docker常用命令：
 				-d		加上就是后台运行，不加前台运行(可关掉就是前台，后台默认不关)
 				-it		给当前容器创建标准输入输出端	
 				nginx		镜像名称
-			docker stop [容器名称/ID]			停止容器						例：docker stop 8961a517de38
-			docker kill [容器名称/ID]			强制停止容器					例：docker kill 8961a517de38
+			docker stop [容器名称/ID]			停止容器				例：docker stop 8961a517de38
+			docker kill [容器名称/ID]			强制停止容器				例：docker kill 8961a517de38
 			docker start [容器名称/ID]		启动已停止运行的容器				例：docker start 8961a517de38		
 			docker ps				查看所有正在运行的容器				例：docker ps
 			docker ps -a				查看所有状态的容器				
