@@ -1,0 +1,207 @@
+Filter：
+	基本介绍：过滤器，顾名思义就是对事务进行过滤，在Web中的过滤器，对请求进行过滤
+		使用过滤器对请求进行拦截，检查ServletRequest对象，修改请求头和请求正文的内容，做相应处理，实现特殊功能
+		
+	应用：
+		请求拦截/登陆控制
+		权限管理
+		过滤敏感词
+		防止xss攻击
+		包装二进制流可以多次读
+
+	Filter原理(doFilter()方法)：
+		放行前代码		对浏览器请求进行第一次过滤，继续执行
+		放行doFilter()		将浏览器请求放行，如果还有过滤器，继续交给下一个过滤器
+		放行后的代码		对返回的Web资源再次进行过滤处理
+		
+		浏览器请求响应全流程(多个过滤器)：
+					      Tomcat				
+							过滤器Filter1	过滤器Filter2						Interceptor
+				http请求	  →		1.执行代码       →	1.执行代码				   携带Request	preHandle	→	Controller
+			 →					    ↑	    	   	→				→			←	Controller
+		浏览器			      Servlet →	2.放行          →	2.放行	   		DispatcherServelt		postHandle	→	Controller
+			 ←					    			←				←			←	Controller
+			 	tttp响应	  ←		3.执行代码    ←	3.执行代码		                   返回请求资源	afterCompletion	→	Controller
+												Web资源
+				
+			补充：DispatcherServelt分发器
+					拦截针对服务器的所有请求，分发到不同Controller中处理
+
+	Filter创建：
+		1.创建Filter类(类实现Filter接口，该类就是Filter类)
+			public class MyFilter implements Filter{}
+				
+		2.重写接口中的三个方法												
+			void init(FilterConifg filterConifg)										 					
+				Filter的初始化方法，读取配置信息,只在创建filter实例的时候调用一次。	
+
+			void doFilter(ServeltRequest servletRequest,ServeltResponse servletReponse，FilterChain filterChain)	
+				功能实现，客户端请求目标资源时，服务器调用该方法筛选出符合映射条件的Filter
+				通过FilterChain对象的doFilter()方法将请求传给下一个过滤器或资源
+					ServletRequest是请求信息
+					ServletReponse是响应信息
+					FilterChain将请求交给下一个Filter或者目标资源，只会对配置的拦截路径进行拦截
+					
+			void destory()												  
+				Filter销毁方法，在Filter生命周期结束前由服务器调用，释放资源
+
+	Filter生命周期：
+		初始化		服务器启动时，Tomcat读取配置文件，扫描注解，根据web.xml声明的顺序依次生成Filter对象
+		拦截和过滤	请求资源路径和拦截资源路径相同，Filter会对请求进行过滤，一致循环
+		销毁		服务器Tomcat关闭时，服务器创建的Filter也销毁
+			补充：@WebFilter("/*")		将一个类声明为过滤器
+
+	初始化FilterConfig接口：		封装Filter配置信息
+		接口方法：
+			String getFilterName()			返回配置信息指定的Filter名称
+			String getInitParameter(String name)	返回配置信息中指定名称的初始化的值
+			Enumeration getInitParameterNames()	返回配置信息中所有初始化参数的名称的集合
+			ServletContext getServletContext()	返回FilterConfig对象中封装的ServletContext对象
+		
+	过滤FilterChain接口：		调用过滤器链中的下一个过滤器
+		接口方法：
+			void doFilter(ServletRequest request,ServletReponse reponse)
+
+	配置过滤器Filter拦截路径：
+		1.注解@WebConfig
+		注解参数：
+			filterName		该filter的名字
+			initParams		初始化参数
+			displayName		filter显示参数
+			servletNames		指定对哪些servlet进行过滤
+			asyncSupported		是否支持异步模式
+			urlPatterns		指定拦截路径
+			value			指定拦截路径
+			
+		2.xml方式(web.xml配置文件中配拦截路径)
+			<filter>
+        			<filter-name>myFilter</filter-name>				设置Filter名称
+        			<filter-class>com.clucky.filter.MyFilter</filter-class>		设置Filter类的完整类路径
+    			</filter>
+    			<filter-mapping>						设置过滤器拦截的资源
+        			<filter-name>myFilter</filter-name>				Filter名称必须一致
+        			<url-pattern>/*</url-pattern>					用于匹配用户请求的URL
+					精确匹配	/foo.htm		匹配foo.htm这个url
+					路径匹配	/foo/*			匹配所有以foo为前缀的url
+					后缀匹配	*.htm			匹配所有以.htm为后缀的url
+				<dispatcher>REQUEST</dispatcher>				指定被拦截资源的访问方式
+					REQUEST				直接访问目标资源时执行过滤器	
+					FORWARD				转发访问执行过滤器
+					INCLUDE				包含访问执行过滤器
+					ERROR				当目标资源在web.xml中配置
+    			</filter-mapping>
+	
+	多个Filter执行顺序：
+		web.xml中配置的过滤器，<filter-mapping>的配置顺序就是过滤器执行先后顺序
+		@WebFilter注解配置过滤器，字符比较顺序就是过滤器执行先后顺序
+		注解和xml混用，web.xml中配置的先执行
+
+	SpringBoot + Filter：
+		1.@WebFilter + @Order				缺点：拦截所有的url，不能通过配置拦截指定的url
+		
+			@WebFilter将类声明为过滤器
+			@Order()
+				1...			数字越小越优先执行
+				Integer.MAX_VALUE	默认值
+
+		2.@WebFilter + 启动类@ServletComponentScan	缺点：支持Filter匹配指定url，但不支持指定Filter执行顺序
+			
+			@WebFilter将类声明为过滤器
+			启动类@ServletComponentScan("com.zhengxl.filterdemo.filter")
+				参数Filter类路径，去哪里扫描Filter
+
+		3.FilterConfig配置类/@Configuration + @Bean		设置优先级顺序
+		示例：	@Configuration
+			public class WebConfig {
+				@Bean
+    				public FilterRegistrationBean filterRegistrationBean(){
+        				FilterRegistrationBean registrationBean = new FilterRegistrationBean(new FirstFilter());
+        				//过滤所有路径
+        				registrationBean.addUrlPatterns("/*");
+        				//添加不过滤路径
+        				registrationBean.addInitParameter("noFilter","/one,/two");
+        				registrationBean.setName("firstFilter");
+        				registrationBean.setOrder(1);
+        				return registrationBean;
+    				}
+
+	 			@Bean
+	    			public FilterRegistrationBean twoFilterRegistrationBean(){
+	        			FilterRegistrationBean registrationBean = new FilterRegistrationBean(new TwoFilter());
+	        			registrationBean.setOrder(2);
+	        			registrationBean.addUrlPatterns("/*");
+	        			registrationBean.setName("TwoFilter");
+	       	 			return registrationBean;
+	    			}
+			}
+
+			配置过滤器FirstFilter
+			public class FirstFilter implements Filter {
+
+    				private String[] noFilters;
+     				//过滤器初始化
+    				@Override
+    				public void init(FilterConfig filterConfig) throws ServletException {
+        				String noFilter = filterConfig.getInitParameter("noFilter");
+        				if (noFilter!=null&&noFilter.length()>0){
+            					noFilters = noFilter.split(",");
+        				}
+    				}
+				//过滤器方法
+    				@Override
+    				public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        				System.out.println("这里是FirstFilter");
+        				HttpServletRequest request = (HttpServletRequest) servletRequest;
+        				boolean flag = isFilter(request);
+        				if (flag){
+            					System.out.println("可以访问");
+            					filterChain.doFilter(servletRequest,servletResponse);
+        				}else {
+            					System.out.println("不可以访问");
+            					//没有权限不可以访问，需要转发到友好界面
+            					request.getRequestDispatcher("/noRoot").forward(servletRequest,servletResponse);
+        				}
+    				}
+
+				//过滤器销毁
+    				@Override
+    				public void destroy() {}
+
+				//判断URL是否包含不过滤的路径
+    				public boolean isFilter(HttpServletRequest request){
+        				String requestURI = request.getRequestURI();
+        				for (String noFilter : noFilters) {
+            					System.out.println(noFilter);
+            					if (requestURI.contains(noFilter)){
+                				return true;
+            					}
+        				}
+        				return false;
+    				}
+			}
+
+			配置过滤器TwoFilter
+			public class TwoFilter implements Filter {
+    				@Override
+    				public void init(FilterConfig filterConfig) throws ServletException {}
+
+    				@Override
+    				public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        				System.out.println("这里是TwoFiter");
+        				filterChain.doFilter(servletRequest,servletResponse);
+    				}
+
+   				 @Override
+    				public void destroy() {}
+			}
+
+	Filter与Interceptor区别：
+		Filter是依赖于Servlet容器，属于Servlet规范的一部分，而拦截器则是独立存在的，可以在任何情况下使用。
+		Filter的执行由Servlet容器回调完成，而拦截器通常通过动态代理的方式来执行。
+		Filter的生命周期由Servlet容器管理，而拦截器则可以通过IoC容器来管理，因此可以通过注入等方式来获取其他Bean的实例，因此使用会更方便。
+
+			
+
+
+
+

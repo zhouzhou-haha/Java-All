@@ -1,0 +1,74 @@
+Servelt：
+	作用：处理客户端请求的动态资源，当在浏览器输入一个地址跳转后，请求发送到对应的Servelt上处理
+	
+	Tomcat工作机制：
+		
+		  磁盘				Web服务器 --- Tomcat
+		Servlet1		Servelt容器
+		Servelt2		  Servelt1(磁盘加载)
+		Servelt3
+		Servelt4
+			
+
+		 客户端
+
+		Tomcat工作机制流程：
+			1.客户端发送请求至Web服务器Tomcat，请求被封装为HttpServeltRequest对象，包含请求头，参数等信息
+			2.请求Tomcat中Servelt未被初始化，Tomcat从磁盘加载Servelt	
+			3.Servelt容器加载成功之后，解析HTTP请求为request对象
+			4.Tomcat转发request到对应的Servelt进行处理
+			5.Servelt处理之后返回Response
+			6.Tocmat将Response转换为HTTP格式，并返回给客户端
+				注意：请求和响应都是基于HTTP协议
+
+		Servelt任务：
+			接收请求数据：客户端请求封装成HttpServeltRequest对象，request对象包含请求头，参数等信息
+			处理请求：在service/doPost/doGet方法进行接收参数，并调用业务层service方法处理请求
+			完成响应：处理完请求后，转发或重定向到某个页面，转发是HttpServeltRequest方法，重定向是HttpServeltResponse方法
+			销毁对象：当 Servlet容器将响应信息返回给客户端后，HttpServletRequest 对象和 HttpServletReponse 对象被销毁
+
+			Servlet处理HTTP请求流程：
+								(创建)			HTTPServletRequest封装请求信息
+					HTTP请求			↗
+				浏览器	   ⇄	Servlet容器	→(调用service())	Servlet通过service()方法处理请求	
+					HTTP响应			↘
+								(创建)			HTTPServletReponse封装响应信息
+
+		Servelt创建/生命周期：
+			1.创建Servelt类(类继承HttpServlet类，该类就是Servlet类)
+				public class TestServlet extends HttpServlet{}
+			
+			2.重写接口的三个方法
+				void init(ServeltConfig servletConfig){
+					super.init(servletCondig)
+				}			
+					servelt的初始化方法，读取配置信息,只在创建servelt实例时候调用一次。
+					Servelt是单例的，整个服务器就创建一个同类型的Servelt
+
+				void doFilter(ServeltRequest,ServeltResponse)
+					servelt处理请求方法，在servelt被请求时，立即调用。处理一次请求，调用一次
+					ServeltRequest是请求类，ServeltResponse是响应类
+					
+				void destory()
+					servelt销毁之前执行的方法，执行额外的操作(释放资源，写日志文件),只执行一次
+					
+		Servelt的web.xml配置：
+			<servlet>
+    				<servlet-name>LoginServlet</servlet-name>					给类起名字
+    				<servlet-class>com.briup.estore.web.servlet.LoginServlet</servlet-class>	完整类路径
+				<init-param>
+					<param-name>myParam</param-name>					配置项的名字
+					<param-value>test</param-value>						配置项的值
+				</init-param>
+				
+  			</servlet>					
+  			<servlet-mapping>									
+    				<servlet-name>LoginServlet</servlet-name>					要映射的Servelt名字
+    				<url-pattern>/login</url-pattern>						绑定的地址
+  			</servlet-mapping>
+
+		
+
+			
+
+

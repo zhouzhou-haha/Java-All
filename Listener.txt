@@ -1,0 +1,76 @@
+Listener	---Web容器/JavaWeb的事件监听机制
+	作用：对Web应用对象的行为进行监控，Web应用对象进行修改时，会被监听器捕获，执行响应功能代码
+		补充：
+			Web应用对象：
+				ServletContext	对ServletContext及其属性进行监听
+				HttpSession	对Session及其属性操作进行监听
+				ServletRequest	对Request及其属性操作进行监听
+
+			ServletContext代表整个Web应用程序，保存Web应用程序的全局配置信息，资源引用
+			ServletContext在Web应用程序启动时被创建，在应用程序关闭时被销毁
+
+	Listener应用：
+		统计在线人数和在线用户
+		系统加载时进行信息初始化
+		统计网站的访问量
+
+	ServletContext接口方法：
+		接口	ServletContextListener --- 生命周期监听	
+		方法	void contextInitialized(ServletContextEvent sce)		创建Servletcontext时
+			void contextDestroyed(ServletContextEvent sce)			销毁Servletcontext时
+
+		接口	ServletContextAttributeListener --- 属性监听
+		方法	void attributeAdded(ServletContextAtrribute event)		添加属性时
+			void attributeReplaced(ServletContextAttributeEvent event)	替换属性时
+			void attributeRemoved(ServletContextAttributeEvent event)	移除属性时
+
+	HttpSession接口方法：
+		接口	HttpSessionListener --- 生命周期监听
+		方法	void sessionCreated(HttpSessionEvent se)			创建session时
+			void sessionDestoryed(HttpSessionEvent se)			销毁session时
+		
+		接口	HttpSessionAttributeListener --- 属性监听
+		方法	void attributeAdded(HttpSessionBindingEvent event)		添加属性时
+			void attributeReplaced(HttpSessionBindingEvent event)		替换属性时
+			void attributeRemoved(HttpSessionBindingEvent event)		移除属性时
+
+		接口	HttpSessionBindingListener --- 监听实现该接口类对象在HttpSession对象中的绑定和解绑
+		方法	void valueBound(HttpSessionBindingEvent arg0)			监听HttpSession对象内特定对象的绑定
+			void valueUnboud(HttpSessionBindingEvent arg0)			监听HttpSession对象内特定对象的解绑
+		
+		接口	HttpSessionActivationListener --- 监听特定类对象的钝化和活化
+		方法	void sessionWillPassivate(HttpSessionEvent arg0)		监听HttpSession对象内特定对象的钝化
+			void sessionDidActivate(HttpSessionEvent arg0)			监听HttpSession对象内特定对象的活化
+		
+			补充：	钝化 -> 服务器将HttpSession对象持久化到硬盘
+				活化  -> 服务器从硬盘中重新加载会话信息
+
+	ServletRequest接口方法：
+		接口	ServletRequestListener --- 生命周期监听
+		方法	void requestInitialized(ServletRequestEvent sre)		创建request时
+			void requestDestroyed(ServletRequestEvent sre)			销毁request时
+				
+		接口	ServletRequestAttributeListener --- 属性监听
+		方法	void attributeAdded(ServletRequestAttributeEvent srae)		添加属性时
+			void attributeReplaced(ServletRequestAttributeEvent srae)	替换属性时
+			void attributeRemoved(ServletRequestAttributeEvent srae)	移除属性时
+	
+	创建监听器Listener类：
+		1.创建Listener类(类实现×××Listener接口，不同接口对应不同监听对象)
+			@WebListener
+			public class FirstListener implements ServletContextListener{}
+				
+		2.重写接口中的方法，实现监听的后续操作(不同对象对应不同接口，不同接口实现不同方法)											
+			void contextInitialized(ServletContextEvent sce){}										 					
+				重写监听器初始化方法				ServletContext全局对象在应用启动时自动初始化
+					
+			void contextDestroyed(ServletContextEvent sce){}											  
+				重写监听器销毁方法
+
+	配置监听器Listener：
+		1.注解@WebListener		适用于Servlet3.0及以上版本的Web服务器
+		2.web.xml配置文件中进行Listener配置
+			
+
+
+			

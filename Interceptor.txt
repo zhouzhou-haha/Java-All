@@ -1,0 +1,89 @@
+Interceptor(拦截器/处理器)：
+	浏览器请求响应全流程(多个过滤器)：
+					      Tomcat				
+							过滤器Filter1		过滤器Filter2					Interceptor
+				http请求	  →		1.执行代码       →	1.执行代码			   携带Request	preHandle	→	Controller
+			 →					    	↑	    	→				→			←	Controller
+nginx反向代理  →	浏览器			      Servlet →	2.放行          →	2.放行	  	DispatcherServelt		postHandle	→	Controller
+			 ←					    			←				←			←	Controller
+			 	http响应	  ←		3.执行代码    	←	3.执行代码		           返回请求资源	afterCompletion	→	Controller
+												Web资源
+		补充：请求发送到Controller时，被Controller处理之前，必须经过Interceptors(0或多个)
+			DispatcherServelt分发器：拦截针对服务器的所有请求，分发到不同Controller中处理
+			
+					
+	拦截器：处理HTTP请求，在请求到达目标处理器之前，处理器处理请求之后，以及视图渲染之前执行特定的操作		AOP的具体实现
+	拦截器目的：在不修改原有代码的情况下，实现对请求和响应的统一处理
+
+
+	Interceptor应用：
+		日志记录		记录请求信息的日志，以便进行信息监控，信息统计，计算PV等
+		权限控制		登录检测，进入处理器检测是否登录
+		性能监控		通过拦截器在进入处理器之前记录开始时间，处理完后记录结束时间，得到该请求的处理时间
+		请求参数处理	读取Cookie得到用户信息将用户信息放入请求，方便后续流程使用
+		身份验证和授权	拦截器可以用于对HTTP请求进行身份验证和授权，例：检查用户是否具有执行某个操作的权限
+
+	创建拦截器Interceptor类：
+		1.创建Interceptor类(类实现HandlerInterceptor接口，该类就是Interceptor类)
+			@Component
+			public class MyInterceptor implements HandlerInterceptor{}
+
+		  创建Interceptor类(类继承HandlerInterceptorAdapter类，该类就是Interceptor类)
+			@Component
+			public class MyInterceptor extends HandlerInterceptorAdapter{}
+				
+		2.重写接口方法	
+			在请求处理之前被调用，进行一些预处理操作，返回false，执行拦截器afterCompletion方法											
+			void preHandler(HttpServletRequest request, HttpServletResponse response, Object handler)										 					
+				String token = request.getHeader("authorization");
+				Long token = jwttool.parseToken(token);
+				UserContext.setUser(token);				
+				return true;						只做演示，实际开发需自己写方法体
+
+			请求处理之后/视图渲染之前被调用，进行后处理操作
+			void postHandler(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView)	
+				
+			请求处理完后调用，进行资源清理操作		
+			void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)												  
+				UserContext.removeUser();
+
+				
+
+	配置拦截器Interceptor(将拦截器添加到配置中，相当于SpringMVC的配置文件)：
+		1.创建WebConfig类(类实现WebMvcConfigurer接口)
+			@Configuration
+			public class SpringMvcSupport implements WebMvcConfigurer
+
+		2.引入拦截器Interceptor
+			@Autowired
+			private MyInterceptor myInterceptor
+		
+		3.重写接口中的方法
+			@Override  
+     			public void addInterceptors(InterceptorRegistry registry) {  
+        			// 拦截所有请求，通过判断是否有 @LoginRequired 注解 决定是否需要登录  
+				registry.addInterceptor(new StopWatchHandlerInterceptor());
+        			registry.addInterceptor(MyInterceptor()).addPathPatterns("/**");  
+        			registry.addInterceptor(AuthorityInterceptor()).addPathPatterns("/**");  
+     			} 
+			
+		  将拦截器配置为一个bean,前提是拦截器类未添加@Component注解，加@Component注解不需要配置为一个bean
+			@Order(1)	注解配置指定顺序
+			@Bean
+			public MyInterceptor LoginInterceptor(){	
+				return  new MyInterceptor();	
+			}			
+			
+			@Order(2)
+			@Bean
+			public AuthorityInterceptor AuthorityInterceptor(){
+				return new AuthorityInterceptor();
+			}
+
+	多个Interceptor拦截器DispatcherServlet请求处理流程：
+		
+							拦截器1preHandler		拦截器1postHandler		拦截器1afterCompletion
+							
+		浏览器发起请求 -> DispatcherServlet -> 	拦截器2preHandler -> 处理器执行 -> 拦截器2postHandler -> 视图渲染 ->  拦截器2afterCompletion -> 浏览器收到响应
+
+							拦截器3preHandler		拦截器3postHandler	        拦截器3afterCompletion
