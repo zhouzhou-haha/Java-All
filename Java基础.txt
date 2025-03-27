@@ -1,0 +1,3312 @@
+java跨平台原理：Java可以在任意操作系统上面运行（同事用的是苹果电脑写java）
+提供不同版本的JVM虚拟机就可以在不同的操作系统上面运行java
+JRE  java程序运行时环境（如果只想要运行一个已有的java程序，只需要安装jre就可以了）
+JDK  java程序开发工具包（必须安装）
+SDK(Software Development Kit)	软件开发工具包，包括辅助软件开发的依赖包，代码示例，都可以叫做SDK
+
+java三大分支：
+	JavaSE	Java标准版
+	JavaME	Java小型版
+	JavaEE	Java企业版
+
+下载文件目录：
+	bin	可执行文件
+	conf	配置文件
+	lib	依赖的jar包
+	logs	日志文件
+	temp	临时文件
+	webapps	应用发布目录
+	work	工作目录
+
+下载安装：
+	tar.gz用于linux的操纵系统
+	zip用于windows的操作系统
+
+打开命令提示符窗口
+win+R
+calc			调计算器
+shutdown -s -t 10000	计划定时关机
+shutdown -a		取消定时关机
+输入cmd
+回车
+
+
+常用DOS命令			
+为什么叫做DOS命令，因为在1981年IBM和微软推出DOS操作系统
+CMD：利用命令行的方式操作计算机
+盘符名称： 回车   					表示进入盘符
+cd AllSoftwarePackage  				表示进入这个文件夹
+dir AllSoftwarePackage 		 		表示查看这个文件夹的目录
+cd ..  						回退到上一级目录
+cd AllSoftwarePackage\BaiduNetdisk 		进入多级目录
+cd AllSoftwarePackage\BaiduNetdisk > cd\   	回退到根目录
+cls 回车  					清屏命令
+exit						退出CMD
+Java基础.txt/文件名+后缀名				打开文件
+rd 文件夹名称 /s					删除文件夹
+del 文件名+后缀名					删除文件
+ipconfig					查看电脑IP地址
+java -version					确保安装有效Java版本
+mvn -v						确保安装Maven
+
+
+进制：
+	计算机是由逻辑电路组成，逻辑电路，只有两个状态：开关接通与断开 1/0
+	进制越大，表现形式越短
+             	类型：                                    引导符
+	二进制           0/1           0b/0B        例：0b1011 1110 -> 190
+	八进制           0-7             0          例：0123 -> 83
+ 	十进制           0-9             无                   
+	十六进制        0-9和a-f        0x/0X        例：0x1a2b ->  6699
+	
+	x进制转换成十进制：	按权展开法
+	例子：二进制
+	0b1011 1110 > 0 + 1 * 2 + 1 * 4 + 1 * 8 + 1 * 16 + 1 * 32 + 0 + 1 * 128 =190
+	二进制浮点数转换成十进制浮点数：
+	110.101 > 1 * 2 ^ 2 + 1 * 2 ^ 1 + 0 * 2 ^ 0 + 1 * 2 ^ -1 + 0 * 2 ^ -2 + 1 * 2 ^ -3 =6.625
+	
+	十进制转换成其他进制
+	十进制数48转二进制：			十进制浮点数6.625转二进制：
+		48 ÷ 2 = 24   余数0			整数部分：		小数部分：		
+ 		24 ÷ 2 = 12   余数0			6 ÷ 2 = 3   余数0 	0.625 * 2 =1.25   取整1
+ 		12 ÷ 2 = 6    余数0			3 ÷ 2 = 1   余数1	0.25 * 2 = 0.5	  取整0
+ 		6 ÷ 2 = 3     余数0			1 ÷ 2 = 0   余数1	0.5 * 2 = 1.0	  取整1
+ 		3 ÷ 2 = 1     余数1			反转：110		顺序：101		
+ 		1 ÷ 2 = 0     余数1			合并：110.101
+		此时商为0, 停止求余
+		此时余数的值分别为: 0 0 0 0 1 1	余数反转
+		反向取余数的值: 11 0000 , 此时的值即为二进制数
+
+	二进制和十进制之间的快速转换：8421码（BCD码中一种）
+	二进制和八进制之间的转换：
+		三位组合法：
+			例：	0b101010	二进制	  ->	八进制
+			101(5)	010(2)		0b101010	52
+						八进制	  ->	二进制
+						5   2		0b101  010
+	二进制和十六进制之间的转换：
+		四位组合法：	类似三位组合法
+
+	Java内置进制转换：
+		Integer类静态方法：	
+			toBinaryString(int i)			转换成二进制
+			toOctalString(int i)			转换成八进制
+			toHexString(int i)			转换成十六进制
+			toString(int i,int radix)		将i进制数据转换成对应radix进制数据
+	
+	原码：原始的二进制值	符号位1为正，0为负
+	反码：正数      反码与原码相同
+	      负数     符号位不变，其他位的值取反
+	补码：正数      补码与原码一致
+	      负数      符号位不变，其他位的值取反，末位+1
+
+	常见问题:
+		整数强制转换(数据溢出)
+		byte b  = (byte)130;	输出：-126
+
+
+
+环境变量：系统运行时需要的一些参数
+配置环境变量目的：让我们在任意目录下，都可以运行我们想要的程序
+
+配置Path 需要使用JDK的开发工具，这些工具在JDK的bin目录下
+为了方便使用javac和java命令，需要配置Path环境变量
+
+小技巧：可以使用上下箭头进行命令切换
+
+编译：javac：   Java文件名.java
+执行：java：    HelloWorld
+
+Bug  由来，世界上第一台计算机在运行程序的时候由于一只小甲虫导致程序错误，所有bug（甲虫）就成了错误的由来
+
+注释：在指定位置添加的说明性信息        快捷键ctrl+/
+
+Java程序中最基本的组成单位是类
+类的基本格式定义：
+public class Student（类名）{}
+
+public static void main（String[] args）{}		main方法是程序的主入口，代码的执行是从main方法开始的
+
+关键字：被Java语言赋予特殊含义的单词
+1.关键字的字母全部小写
+2.idea中对关键字有特殊的颜色标记（高亮显示）
+
+常量：pai=3.14，程序运行过程中，值不可改变
+常量分类：
+1.字符串常量   "你吃屁"
+2.整数常量    1
+3.小数常量     3712.23
+4.字符常量   'q'
+5.布尔常量   true/false
+6.空常量       null     空常量不能直接输出
+
+数据类型：
+	8种     基本数据类型  	字节
+		byte         	1
+		short        	2
+		int          	4
+		long         	8
+		float        	4
+		double       	8
+		char         	2
+		boolean      	1
+	引用数据类型：
+		类     接口       数组
+变量
+	定义变量： int a = 10;
+	修改变量： a = 20;
+使用注意事项：
+long类型定义的时候，防止整数过大，在定义的时候需要添加L
+浮点数默认是double类型，如果想要表示float类型需要添加一个f（防止类型不兼容）
+
+标识符：
+1.由字母/数字/下划线和美元符号组成
+2.不能以数字开头
+3.不能是关键字
+4.区分大小写（小写开头）
+
+命名规则：
+1.标识符是一个单词的时候首字母小写  user
+2.标识符是多个单词组成的时候，第一个单词首字母小写，其他字母首字母大写firstName（小驼峰命名法/用于方法变量）第一个单词首字母大写的时候（大驼峰命名法/类）
+
+类型转换：
+	自动类型转换：将范围小的变量赋值给一个表示范围大的变量
+	强制类型转换：把一个表示数据范围大的数值或者变量赋值给另一个表示数据范围小的变	量int k = (int)88.88;()后面的范围要比前面的范围大
+
+
+运算符：对常量或者变量进行操作的符号
+表达式：用运算符把常量或者变量连接起来符合java语法的式子
+	
+算术运算符：  加 + 减 - 乘 * 除 / 取余 %
+注意：整数相除只能得到整数，要想得到小数，必须有浮点数参与
+
+字符的”+“：int i= 10；char c = 'a' int j = i + c;    转成AscII码值
+字符串”+“：字符串进行+就是将两个字符串拼接起来
+”zhouzhou“ + 6 + 66 = zhouzhou666
+1 + 665 + "zhouzhou" = 666zhouzhou
+
+赋值运算符：     =  给变量赋值  a = 10；
+		+= i += 10；
+
+自增自减运算符： i++；       i++跟++i的结果是一样的
+注意：	但是当i++或者++i参与操作的时候，j = i++；是先把i的值赋给j，之后再做++操作
+	如果j = ++i，先进行++操作，之后把值赋给j；
+
+关系运算符：   ==    !=  >  <  >=   <=    返回true/false
+
+逻辑运算符：    3 < x < 6 是 x > 3 和 x <6     x > 3 && x < 6
+	逻辑与：     &      有false则是false
+	逻辑或：     |	  有true则是true
+	逻辑异或：   ^	  相同为false，不同为true
+	逻辑非：     !	  相反
+
+短路逻辑运算符 ：
+	短路与：	  &&	   只要左边是false不管右边表达式是true还是false都不执行
+	短路或：   ||       只要左边是true 右边不执行
+
+三元运算符(三目运算符)：关系表达式 ？表达式1 ： 表达式2；  int  max = a > b ? a : b; 			
+
+位运算符：对内存中二进制数据进行操作
+		注意：负数是补码参与运算
+	逻辑位运算符：			运算规则
+		逻辑与：     &      	同1为1，其余为0		例：	3 & 4
+		逻辑或：     |	  	同0为0，其余为1			011(3)
+		逻辑异或：   ^	  	相同为0，不同为1		   &	100(4)
+		逻辑非：     ~	  	取反			结果：	000
+		
+	移位位运算符：					
+		左移：	    <<		高位丢弃，低位补0		00000000000101010101
+		右移：       >>		整数左补0，负数左补1
+		无符号右移：  >>>		无论该数正负，右移之后左补0		
+		例：
+			左移:	3 << 2  3 * 2 ^ 2 = 12		
+			右移：	
+				正数：24 >> 2   	24 / (2 ^ 2) = 6
+				负数：-24 >> 2   -24 / (2 ^ 2) = -6
+			无符号右移：
+				正数与右移相同
+				负数:不做演示
+
+		判断偶数的两种方式：		
+		if(a % 2 == 0)
+		if(a & 1 == 0)
+	
+		结论：						不使用第三方变量交换a和b的值：
+			数据a对数据b异或两次，结果是a			a = a ^ b;
+			数据a异或两次，结果是0				b = a ^ b;
+			数据a对0异或，结果是a本身				a = a ^ b;
+
+
+	
+编码表：
+	常见字符集：
+		1.ASCII（美国）
+		2.GB2312/GBK/GB18030（中国）
+		3.UniCode（标准码）
+	、
+	概念：计算机中存储的数据都是用二进制数表示的
+	编码:将字符存储到计算机中
+	解码:将存储在计算机中的二进制数按某种规则解析出来
+	方法：
+		编码：byte[] bys = s.getBytes();	
+		/gteByte()   使用平台默认的字符集（UTF-8）将该String编码为一系列字节
+		解码：String ss = new String(bys,"UTF-8");
+		/String()    通过指定的字符集解码指定的字节数组构造新的String
+
+
+
+数据输入：Scanner
+1.导包		import java.util.Scanner;
+2.创建对象	Scanner sc = new Scanner(System.in);
+3.接受数据	int x = sc.nextInt();        sc.nextline()是输入字符串的数据
+
+
+流程控制：
+	循序结构：先后顺序执行
+	分支结构：（if/switch）
+	首先计算表达式的值，如果关系表达式的值为true就执行语句体，false不执行直接跳过
+	1.if（关系表达式）{
+		语句体；
+					if常用关系表达式符号：
+	}					&&	与，同时满足
+	2.if（关系表达式）{			||	或，一方满足
+	}else{
+	}
+	3.if（关系表达式）{
+		语句体1；
+	}else if（关系表达式）{
+		语句体2；
+	}else{
+		语句体；
+	}
+
+	switch（表达式）{             首先计算表达式的值
+		case 值：
+			语句体；
+			break；
+		case 值：
+			语句体；          有对应的值
+			break；
+		default：
+			语句体；
+			break；           所有情况都不匹配的时候，执行该处的内容
+	}
+
+	循环结构：（for/while/do...while）      求偶数和：
+	for（int i = 1；i < 10; i++）{         int sum = 0; 
+	      	循环体语句；		       for(int i = 1;i <= 100; i++){
+	}	                                    if(i % 2 == 0){
+			                            sum += i;
+			                            System.out.println(sum);
+		                                    }}
+	while循环：
+	while（条件判断语句）{        
+		循环体语句；                    while循环的变量之后可以继续使用
+		条件控制语句；                for循环的i不可以继续使用
+	}
+
+	执行判断语句，true，继续执行
+	while循环跟for循环可以互通  	
+
+	do...while 		     执行顺序是依次顺序执行
+	do{			     do{
+		循环体语句；		     System.out.println("HelloWorld");
+		条件控制语句；		   j++;
+	}while（条件判断语句）；       }while(j <= 5);  
+                          
+	注意：do...while循环是先执行循环体，即使条件不满足，任然会输出一次
+
+	for循环的死循环格式
+	for（;;）{
+		System.out.println("for");        控制台会一直输出for
+	}
+	while循环的死循环格式
+	while（true）{
+		System.out.println("周舟")         控制台会一直输出周舟
+	}
+
+	跳转控制语句：
+	continue：跳过某次循环体内容的执行
+	break；终止循环体内容的执行
+
+	循环嵌套      循环语句中包含循环语句称为循环嵌套
+	水仙花：for(int i = 1;i < 10 ; i++){
+			for(int j = 1；j < 10; j++){
+				for(int k = 1;k < 10;k++){
+					if(100 * i + 10 * j + k == i * i * i + j * j * j * + k * k * k){
+						sout()；
+					}
+				}
+			}
+		}         水仙花不止这一种解法，只为演示
+
+Random:用于产生随机数
+1.导包		import java.util.Random;
+2.创建对象	Randomr r = new Random();
+3.接受数据	int x = r.nextInt(10);    注意：获取数据的范围是[1,10)
+
+IDEA中辅助键和常用快捷键（实际开发）
+public static void main (String[] args)      快捷键psvm
+System.out.println();                        快捷键sout
+ctrl + P/ctrl + alt + 空格                    内容提示
+ctrl + /                                     注释
+ctrl + alt + L                               格式自动对齐
+调试debug f7                                  运行向下
+ctrl + alt + V                               自动生成左边接收数据类型
+atrl + B				     查看方法的底层实现
+alt + enter				     抛出异常/方法声明
+双击shift或者ctrl + n		             打开全局搜索	
+alt + 7 或者点击View -> ToolWindows -> Structure    打开类的所有信息
+alt + insert				     构造方法快捷键
+ctrl + alt + delete			     打开任务管理器/关机
+win + R					     打开cmd命令行
+ctrl + O				     重写方法快捷键
+ctrl + R				     批量修改内容快捷键
+ctrl + F				     查找	
+ctrl + B				     自动定位方法
+shift + tab				     选中代码左移一个tab
+tab					     右移一个tab
+shift + alt + ↑				     上移
+shift + alt + ↓				     下移
+ctrl + win + ←				     上一个桌面
+ctrl + win + →				     下一个桌面
+alt + 8					     打开控制台
+Ctrl + shift + F			     查找代码
+Ctrl + shift + I			     快捷打开开发者工具
+alt + tab					在两个应用之间来回切换	
+
+樱桃键盘：
+Ctrl + FN					f1~f12切换
+FN + F9						办公模式与游戏模式切换
+
+
+项目模块名称右键选择open in                    打开项目模块文件目录
+Idea底层控制台看不见显示信息点击控制台右上角的设置选择Move to   控制台到右侧
+
+       
+
+数组：	查询快，增删慢
+	用于存储多个相同类型数据的存储模型
+	数组初始化就是为数组元素分配空间，为每个数组元素赋值
+		动态初始化： 初始化只指定数组长度，由系统为数组分配初始值
+		int[]  arr  = new int[3];            数组中索引从0开始
+		静态初始化： 初始化时指定每个数组元素的初始值
+		int[]  arr  =  new int[]{1,2,23};
+		int[] arr = {1,2,32};
+
+	内存分配：
+		Java中内存分配 Java程序在运行时，需要在内存中分配空间
+		int[]  arr = new int[3]
+		在内存中会开辟一块空间存放int[] ,同时会开辟另外一块空间存放int[3];
+		new 就是用来在内存中开辟空间，系统会为存储空间添加默认值
+				内存空间
+		       int[]  arr         new  int[3]
+					    0	0
+					    1   0
+       				            2   0	
+		   栈内存（存储局部变量）     堆内存（存储的是new出来的）
+		注意：定义的名称arr在内存就是一个地址名称（标红）
+	        在实际开发中，如果访问的数组不再指向对内存的数据，会造成空指针异常
+
+	数组遍历：
+		  for循环
+			for（int i = 0 ; i < arr.length(); i++）{
+				sout（arr[i]);
+			}
+		  增强for循环
+			for（int number ：arr）{}	
+	数组常见操作： 
+	获取最值:(比较一个数组的最大值) 
+		int[] arr = {372,23,2232,13,43,4,5};
+		int max = arr[0];
+		for(int i = 1;i<arr.length();i++){
+			if(arr[i] > max){
+				max = arr[i];
+			}
+		}
+		sout(arr[i]);
+
+	数组常见报错：
+		数组下标越界：ArrayIndexOutOfBoundsException 使用的下标不在当前数组下标范围内
+	
+	数组排序：	将一组数据按照固定的规则进行排序
+		冒泡排序原理：对要进行排序的数据中相邻的数据两两比较，较大的数据放在后面，依次对所有的数据进行操作，直至所有数值按要求完成排序
+		冒泡排序结论：1.如果有n个数据进行排序，总共需要比较n-1次->arr.length-1
+			      2.每一次比较完毕，下一次的比较就会少一个数据参与
+		双重for循环实现冒泡排序：
+			for（int i = 0;i < arr.length-1;i++）{
+				for(int i = 0;i < arr.length - 1 -i;i++){
+					if(arr[i] > arr[i+1]){
+						int temp  = arr[i];
+						arr[i] = arr[i + 1];
+						arr[i + 1] = temp;
+					}
+				}
+			}
+			
+			
+		
+
+方法：将具有独立功能的代码块组织成一个整体，使其具有特殊功能的代码集
+方法定义：修饰符  返回值类型  方法名（参数列表）{方法体}
+	  public static void User(){}
+	  方法调用：
+		常量值的调用：isEvenNumber(10);
+   		变量的调用：int number = 10；
+		isEvenNumber(number);
+
+1.方法在定义时运行所需要使用的变量2.调用方法时需要传递变量
+形参：方法定义中的参数
+	1.基本数据类型作为形参和返回值
+	2.引用数据类型作为形参和返回值        类，抽象类，接口
+		2.1类名作为形参和返回值：
+			public void useCat(Cat c){}
+			CatOperator co = new CatOperator();   Operator方法中Cat时入参
+			Cat c = new Cat();      创建Cat对象
+			co.useCat(c);
+
+			public Cat gteCat(){
+				Cat c =new Cat();
+				return c;        方法的返回值时类名，返回的是该类的对象
+			}
+		2.2抽象类作为形参和返回值
+			AnimalOperator ao = new AnimalOperator();   Operator方法中Cat时入参
+			Animal a = new Cat();      多态创建Cat对象
+			ao.useCat(a);
+			
+			public Animal gteAnimal(){
+				Animal a =new Cat();
+				return a;        方法的返回值时类名，返回的是该类的对象
+			}
+		2.3接口作为形参和返回值
+			public void useJumpping(Jupping j){  Jumpping是接口
+				j.jump;
+			}
+			Jumpping j = new Cat();      Cat接口实现类，这里是接口多态
+
+			public Jumpping gteJumpping(){
+				Jumpping j = new Cat();
+				return j;        方法的返回值是接口，返回的是该接口的实现类对象
+			}
+实参：方法调用的中的参数（常量/变量）       
+
+
+带返回值方法定义和调用：
+	定义格式：
+	public static 数据类型  方法名（参数）{
+		return 数据；           如果想把数组中的元素输出在控制台就不需要设置返回值
+	}
+	public static int getMax(int a,int b){
+		return 100;
+	}
+	方法的返回值通常会使用变量来接收，否则该返回值将无意义
+	注意：方法调用结束之后，方法在内存中会消失	
+
+	注意：void表示无返回值，可以省略return，方法到return之后不执行
+
+方法重载：指在同一个类中，多个方法拥有相同的方法名，方法的参数不相同（类型/数量不同）
+	与返回值无关
+	public class MethodDemo{
+	public static void fn(int a){
+		方法体			对比两个方法方法名相同参数相同是方法重载
+	}					与返回值类型无关
+	public static int fn(int a){
+		方法体
+	}
+	}
+方法的参数传递：
+	基本数据类型传递参数：形参不影响实参
+	引用数据类型传递参数：形式参数的改变，影响实际参数的值
+
+System.out.println("内容")；     输出内容并换行
+System.out.print("内容")；       输出内容不换行
+
+
+Debug：供程序员使用的程序调试工具，可以用于查看程序的执行流程，追踪程序执行过程
+Debug调试：断点调试，断点是一个标记，告诉我们从哪里查看
+	1.点击断点
+	2.右键点击运行debug->跳出弹框
+	3.点击弹框中的向下箭头（快捷键 F7）
+
+递归：在方法体内自己调用自己
+注：一定要有递归出口：否则内存溢出
+	不死神兔：	
+		public static int f(int n){
+			if(n == 1 || n == 2){	
+				return 1;
+			}else{
+				return f(n-1)+f(n-2);
+
+			}	
+		}
+
+
+练习：已知一个数组 arr = {19,28,37,46,50};用程序实现把素组中的元素值交换，交换后的数组 arr = {50,46,37,28,19};并在控制台输出交换后的数组元素
+public static void reverse(int[] arr){
+	for(int start = 0;end = arr.length-1;start <= end;start++;end--){
+		int temp = arr[start];        temp是临时内存
+		arr[start] = arr[end];        start是交换开始的值
+		arr[end] = temp;              end是交换最后的值
+	}	
+}
+
+
+
+面向对象
+package：
+	1.包	例：package com.example.javase_code.Animal;
+		定义：其实就是文件夹
+		作用：对类进行分类管理
+	2.导包     例：import java.util.Scanner;
+
+类和对象：
+	类：类是对现实生活中一类具有共同属性和行为的事务的抽象        人类
+		1.类是对象的数据类型
+	对象(POJO)：是能够看得到摸得着的真实存在的实体                     人
+
+		只要是对象，在进行操作之前必须进行不为null的判断，在实际开发中，否则会报NullException异常错误
+		
+	属性：对象具有的各种特征，每个对象的每个属性都有特定的值
+
+	类的定义：类是Java程序的基本组成单位
+		public class User{}
+	类的组成：属性和行为
+		属性：在类中是通过成员变量体现
+		行为：类中是通过成员方法体现的    （与之前的方法比较去掉static关键字）
+	创建对象：
+		User user = new User();
+	使用对象：
+		user.eat();/user.name;	
+
+	对象内存图：
+		      栈内存                             堆内存
+		main（）                             new Student()
+		Student s  001（地址）               001 name  null 
+		study() 方法执行完毕，方法消失          age    0
+
+	成员变量：类中方法外的变量      堆内存
+	局部变量：方法中的变量          栈内存
+
+修饰符：
+	private           public       默认（不写）        protected
+    只能在本类中访问        公开         同一个包下的类      子类可访问
+
+	priavte提供对应的get/set供其他类访问     （构造方法）
+
+关键字：
+	this关键字表示是当前对象，this.name表示的是当前对象的成员变量name
+	 如果方法中的形参与成员变量同名，没有this修饰的变量是形参，this被哪个对象调用就代表是哪个变量
+
+	super关键字表示的是父类的对象， 访问父类的成员变量 ，super.age访问的是父类的成员变量age
+		super()		调用父类构造方法
+	
+	fianl关键字表示的是最终的
+		方法：被final修饰的方法表示是最终的，不可重写等操作
+		变量：
+			基本类型变量：final修饰常量
+			引用类型变量：final Student 地址值不能变，内容可变
+		类：最终类，不能被继承
+	
+	static关键字:表示是被所有对象共享的，static修饰的变量和方法是属于类的，不属于对象
+		static修饰的变量和方法叫做静态变量/方法
+		访问方式：
+			1.类名.属性名(有static修饰)      例：Student.university
+			2.对象名.方法名（无static修饰）
+		访问特点：静态的成员方法只能访问静态的成员变量/方法
+		
+	transient关键字：被transient关键字修饰的属性默认不参与序列化
+
+
+
+对象三大特征：
+	1.封装    通过访问类提供的方法来对信息的操作和访问             构造方法(省略)
+             	补充：如果在实体类中构造方法不写无参构造的时候，系统会提供一个默认的无参构造方法
+		实体类：	entity													表字段		
+			用于说明某实体中所包含的属性，与数据库中的字段保持一致						应用
+		     	dto：数据传输对象，根据实际的业务需求决定（对象）具体包含哪些属性，将所要的数据返回前端		service层	前端传入		dto需要实现序列化
+			vo：查询返回的结果										表示层（页面）	后端传出
+			po：用于持久化对象，通常与数据库表一一对应，负责将数据存储到数据库或从数据库中读取数据		持久层		
+
+			实体类类型之间转换：
+				BeanUtil.copyProperties(user,UserVO.class)
+
+			举个例子：如果一个学生（entity），包含id,学号，姓名，班级，性别，院系，专业
+			但是前端的业务只需要返回学生的学号，姓名，班级，专业
+				如果使用entity返回对象数据则会造成不必要的数据泄露（id、性别等）所以使用dto作为实体类比较好
+
+	2.继承    
+		(弱鸡使用)类继承：可以使其子类具有父类的属性和方法，还可以在子类中重新定义，追加属性和方法
+		(高手使用)接口继承：一个接口可以继承另一个接口的成员和方法，实现接口的扩展和复用
+				Java只支持单继承
+
+		类继承定义格式：public class User extends Person
+		接口继承定义格式：public interface ZxhcService<T> extends IService<T> {}
+
+		属性： 方法体内 >  子类属性 > 父类属性
+		子类中所有的构造方法”第一行“都会默认访问父类中无参的构造方法
+
+	注意：     父类中没有无参构造方法
+			1.使用super关键字调用父类的带参构造方法
+			2.在父类自己提供一个无参构造方法
+		
+		方法重写：@Override  子类的方法与父类的相同，子类的新方法覆盖原有的方法
+		子类重写方法的访问权限不能比父类低
+		补充：
+			接口中含有default修饰的方法(默认方法)，实现该接口的类会继承接口中的默认方法
+
+	3.多态	
+		多态形式：具体类多态，抽象类多态，接口类多态 
+		前提：有继承（方法重写）/实现关系
+		同一个对象在不同时刻表现出来的不同形态
+		父（类/接口）的引用指向子（类/实现）的对象   
+			例：Animal animal = new Cat（）；    ->
+		多态中成员访问：
+			成员变量：编译运行看左边
+			成员方法：编译看左边，运行看左边         成员方法有重写，成员变量没有
+	多态转型：
+		向上转型：将父类引用指向子类对象
+			例：Animal animal = new Cat（）；    ->
+		向下转型：将父类的引用指向子类的引用        解决多态不能访问子类的特有功能
+			强制类型转换：
+				例：Man man = (Man)Person
+			向下转型是不安全的，转换之前需要判断是否可以转换	
+			if(Person instanceof Student){
+				Man man = (Man)Person；
+			}
+
+抽象类：      只可以用来被继承，继承的子类必须要重写抽象类的中的抽象方法，否则子类也是抽象类
+	一个没有方法体的方法应该定义为抽象方法，类中没有抽象方法，该类必须定义为抽象类
+	抽象类成员：
+		成员变量：1.变量/2.常量
+		构造方法：1.无参/2.全参          多态进行实例化
+		成员方法：1.抽象方法/2.普通方法
+	
+	定义：被abstract修饰的方法/类称之为抽象方法/类
+		定义格式:
+			public abstract class 类名{
+				public abstract 返回值类型 方法名(参数列表);
+ 			}
+		子类调用：
+			public class Dog extends Animal{
+				@Override
+				抽象类中的方法
+				Person person = new Student();     通过多态的方式实例化
+			}
+
+
+
+接口（interface）：
+	定义：接口是一种特殊的抽象类，该类中所有方法都是抽象方法
+	抽象类实现接口可以不重写接口中的方法，但是继承的子类需要实现接口并且重写方法
+	定义格式：
+		接口：    用interface修饰
+			public interface Jumpping{
+			}
+		类：
+			public class Cat implements Jumpping{
+			}
+		实例化：
+			Jumpping j = new Cat();     多态实例化
+	
+	接口只能存在常量和方法声明：
+		常量：默认修饰符	public static final			常见：	常量接口
+		成员方法：默认修饰夫	public abatract				方法接口(不实现方法)		
+		
+	类和接口的关系：
+		实现关系，可以单实现，也可以多实现，还可以在继承一个类的同时实现多个接口
+		例:public class InterImpl extends Object implements Intel1,Intel2,Intel3{}
+		报警门：	
+		public interface Alram{
+			void alarm();
+		}
+		public abstract class Door{
+			public abstract void open();
+			public abstract void close();
+		}
+		public class AlarmDoor extends Door implements Alarm{
+			public void open(){}
+			public void close(){}
+			public void alarm(){}
+		} 
+
+	案例：我们现在又乒乓球运动员和篮球运动员，乒乓球教练和篮球教练。为了出国交流，跟乒乓球相关的人	员都需要学习英语。请分析这个案例中又哪些具体类，那些抽象类，哪些接口，用代码实现
+		分析：从具体到抽象                人（抽象类）             
+			乒乓球运动员         抽象类       抽象类           接口
+			篮球运动员	   运动员	教练          学习英语
+			乒乓球教练	    学习		教
+			篮球教练
+		实现：从抽象到具体
+		使用：具体类的对象
+
+	接口和接口的关系：
+		继承关系，可以单继承，也可以多继承
+		接口继承定义：public interface Inter3 extends Inter1,Inter2{}
+		例：
+			public interface BasicExpertKnowledgeBaseLikeService extends ZxhcService<BasicExpertKnowledgeBaseLike> {}
+			public interface ZxhcService<T> extends IService<T>{}
+			注释：	BasicExpertKnowledgeBaseLikeService接口继承自ZxhcService接口
+				ZxhcService<T>继承MybatisPlus的IService<T>接口
+	
+	实现类与实现类与接口的关系：
+		public class BasicExpertKnowledgeBaseLikeServiceImpl extends ZxhcServiceImpl<BasicExpertKnowledgeBaseLikeMapper, BasicExpertKnowledgeBaseLike> implements BasicExpertKnowledgeBaseLikeService {}
+			BasicExpertKnowledgeBaseLikeService == A  
+			ZxhcService == B
+			因为接口A继承自B接口 --> A中方法继承自B --> A的实现类方法已在B实现类实现 --> 所以接口A实现类继承自B接口实现类
+			同时AImpl实现类实现A接口，所以需要implements该接口
+			
+	抽象类和接口的区别：
+		抽象类：常量/变量/普通方法/抽象方法/构造方法
+		接口：常量/抽象方法
+
+	接口的组成更新：
+		常量/抽象方法
+		默认方法（Java 8）
+		静态方法（Java 8）
+		私有方法（Java 9）
+		
+		默认方法：
+			定义格式：public default 返回值类型 方法名（参数列表）{}
+				例：public default void show3(){}
+			默认方法不是抽象方法，不强制被重写，可以被重写，重写的时候去掉default关键字	
+			public可以省略，default不能省略
+		默认方法：
+			定义格式：public static 返回值类型 方法名（参数列表）{}
+				例：public static void show(){}
+			静态方法只能通过接口名调用，不要求被重写
+			public可以省略，static不能省略
+
+			补充：接口中含有default修饰的方法(默认方法)，实现该接口的类会继承接口中的默认方法
+			     接口继承接口，
+			     
+		
+		私有方法：
+			默认方法和静态方法包含一段相同的代码实现，抽取成一个共性方法，用私有隐藏（私有）
+			定义格式：
+				1.private 返回值类型 方法名（参数列表）{}
+					例：private void show（）{}
+				2.private static 返回值类型 方法名（参数列表）{}
+					例：private static void method（）{}
+			默认方法可以调用私有的静态方法和非静态方法
+			静态方法只能调用私有的静态方法
+				
+
+
+API与Swagger:
+	应用程序编程接口
+	Java API：指的JDK中提供的各种功能的Java类，不需要关心这些API如何实现
+	JDK API:提供了JDK中大部分类以及类中成员的信息
+	API文档：	
+		API文档用于前后端交互，后端提交一个json格式的api接口用于前端访问，后端提供最新接口需要实时更新最新的消息和改动
+
+		文档结构: Field Summary    成员变量/属性
+		        Constructor Summary    构造方法
+			Method Summary     类中方法介绍
+		
+	Swagger：	世界上最流行的Api框架，生成API文档
+		Swagger就是一个用来定义接口标准,接口规范,同时能根据你的代码自动生成接口说明文档的一个工具
+		Swagger作用：
+			接口在线文档在线自动生成
+			功能测试
+		
+		Swagger使用：
+			1.引入依赖
+			<dependency>
+				<groupId>com.github.xiaoymin</groupId>
+				<artifactId>knife4j-spring-boot-starter</artifactId>			Knife4j是Swagger生成Api文档增强解决方案
+				<version>3.0.2</version>
+			</dependency>
+				
+			2.编写Swagger配置类(百度一下)
+
+		访问Swagger地址：
+			http://localhost:测试服务端口号/地址
+
+		Swagger常用注解：
+			@EnableSwagger			开启swagger
+			@Api()				用于类指定接口的描述文字
+			@ApiOperation()			用于方法对接口中方法的描述
+			@ApiOperationSupport(order = 1)
+				 order			设置优先级，值越小，排序越靠前
+			@ApiModel(“实体类”)   		用于对类加一个文档注释
+			@ApiParam()  			对参数的添加元数据（说明或是否必填等）
+			@ApiModelProperty(“用户名”)   	用于方法，字段的文档注释
+			@ApiIgnore()			用于类/方法/方法参数表示这个方法或者类被忽略，不出现在API文档中
+			@ApiImplicitParam() 		用于接口，对接口参数进行说明
+			@ApiImplicitParams() 		用于接口，包含多个 @ApiImplicitParam，对接口中参数进行说明
+			@ApiResponses()			用于请求的方法上，表示一组响应
+				@ApiResponses(value = {@ApiResponse(code = 500, msg= "INTERNAL_SERVER_ERROR",response = R.class)})
+
+
+
+String类：
+	特点：字符串不可变，值在创建之后不可被更改，可以被共享
+	定义：String s = new String();/String s = "abc";
+	注意：通过new创建的字符串对象，每一次new都会申请一个内存空间，地址值不同
+
+	字符序列相同，直接赋值的方式都只会建立一个String对象，在字符池中维护，所以常量比较的方式==会返回true，两个由直接赋值方式存在常量池中的地址相同
+	==和equals区别：
+		==：
+			基本数据类型：比较数据值是否相同
+			引用数据类型：比较两个对象的地址
+		equals只比较两个对象的值，不能作用于基本数据类型          字符串的内容比较用equals
+	
+	遍历字符串：for(int i = 0;i < s.length; i++){
+		   	s.chaAt(i);     返回索引处的char值
+		   } 
+
+	字符串反转案例：         输入abc，输出cba，倒序遍历
+		public static String reverse(String s) {
+        		String ss = "";
+        		for (int i = s.length()-1; i >= 0; i--) {
+           		ss += s.charAt(i);
+        		}
+        		return ss;}
+	
+	String类中的方法:
+		equals         				比较字符串中的内容，严格区分大小写
+		charAt         				返回指定索引处的char值
+		length()           			返回字符串的长度
+		startsWith()				测试此字符串是否以指定的前缀开始
+		endWith()         			测试此字符串是否以指定的后缀结尾
+		valueOf()				将传入的值转换为字符串
+		string1.concat(string2)			连接两个字符串
+		isEmpty()				判断字符串是否为空
+		contains()				是否包含指定的字符
+		trim()					返回字符串，忽略首位空白和尾部空白
+		toUpperCase(String str)			将String中的所有字符都转换为大写
+		toLowerCase(String str)			将String中的所有字符都转换为小写
+		toString()				返回字符串本省
+		toCharArray()				将字符串转换为新字符数组
+		substring(begin,end)			截取字符串中起始位到末位的字符串
+		split()					根据给定正则拆分表达式
+		lastIndexOf(Stirng str)			子字符串在字符串中最右出现的索引
+		indexOf(Char ch)			字符在字符串中第一次出现的索引
+		
+	使用字符串“+“操作进行字符串拼接的时候，会得到一个新的String对象保存在内存中
+
+StringBuilder： 
+	StirngBuilder对象中的内容是可变的，空白可变字符串对象
+	构造方法：
+		1.StringBuilde sb = new StringBuilder();      创建一个空白字符串
+		2.StringBuilder sb = new StringBuilder("hello"); 
+		3.new StringBuilder()     也创建了一个对象，匿名对象
+	append： 添加       
+		注意：添加的内容返回给对象本身，可以使用链式编程
+			sb.append("hello").append("world").append(100);
+	reverse: 反转  顺序颠倒
+	toString:可以实现将StringBuilder转化成String
+	sort：       排序，如果是数值型数组，按照数值大小
+
+String和StringBuilder之间进行转换：
+	StringBuilde转换成String   toString方法
+                String转换成StringBuilder  可以通过构造方法进行转换
+
+StringBuffer：用法与StringBuilder一致，JDK5开始，被StringBuilder替代
+	
+String/StringBuilder/StringBuffer区别：				       效率
+String               内容是不可变的					低
+StringBuilder        创建的对象是一个空白可变字符串对象，线程不安全		高
+StringBuffer	     创建的对象是一个空白可变字符串对象，线程安全		中
+
+
+集合基础：
+	数组：长度固定（存储空间固定）
+	集合：存储空间可变的存储模型，存储的数据容量可以发生改变
+
+集合：
+	ArrayList：	实现长度可变的数组
+		ArrayList<E>：	<E>中的E是集合中存储的元素的数据类型，可用引用数据类型替代
+	构造方法：
+		ArrayList<String> array = new ArrayList<>();   输出结果：[]
+
+	添加元素：add("hello")/add(1,"hello")
+	删除元素：remove（”hello“）     删除指定元素，返回删除成功
+		  remove("1")       删除索引位置元素，返回被删除的元素
+	修改元素：set(1,"hello")     修改指定索引处的元素，返回被修改的元素
+	查询元素：get(0);            返回指定索引处的元素
+	查询元素个数： size()         返回集合中元素的个数
+
+	遍历集合：
+		for (int i = 0; i < array.size(); i++) {
+            		System.out.println(array.get(i));}
+
+	集合常见错误：
+		索引越界：IndexOutOfBoundsException
+
+
+
+内部类：
+	定义：在一个类中定义另一个类
+	内部类的定义格式：
+		public class Outer{
+			public class Inner{
+			}
+		}
+	访问特点：
+		内部类可以访问外部类的成员，包括私有
+		外部类需要访问内部类的成员，必须创建对象
+	成员内部类：     类中套类
+		例：public class	Outer{
+			private int num =10;
+			private class Inner{        private 私有
+				public void show(){
+					sout(num);      访问外部类私有属性	
+				} 
+			}
+			public void method(){
+				Inner i= new Inner();      
+				oi.show();		
+			}
+	    	    }
+		调用内部类的属性：
+			1.创建内部类的对象
+				Outer.Inner oi = new Outer().new Inner();/////
+				Outer outer =new Outer();
+				o.method;
+	静态内部类：      由static修饰的成员内部类
+	局部内部类：      类中的方法中套类
+		例：public class	Outer{
+			private int num =10; 
+			public void method(){
+				class Inner{       
+				public void show(){
+					sout(num);      	
+				} 
+			    }
+			Inner i  =new Inner();
+			i.show();
+			}		
+	    	    }
+ 	匿名内部类：是局部内部类的一个特殊形式，本质是继承了该类或者实现该接口的子类匿名对象		用的最多
+		前提：存在一个类或者接口，类可以是具体类也可以是抽象类
+		public interface Inter{
+			void show();
+		}
+		public class Outer{
+			public viod method（）{
+				Inter i = new Inter(){
+					@Overrride
+					public void show(){
+						sout("匿名内部类")；
+					}
+				}；
+				i.show();
+			}	
+		}
+	匿名内部类实际开发使用：需要把接口作为形参或者返回值的时候，接口是作为一个对象，而匿名函数本质是继承了抽象类或者实现接口的匿名对象
+				接口类型参数
+	例：	
+		jo.method(new Jumpping(){
+			@Override
+			public void jump(){
+				sout("可以调高了")；
+			}
+		})
+
+
+
+Java8常用类API：
+	Object类是Java所有类的父类，Object中很多方法由natice修饰，称为本地方法
+	本地方法主要调用底层语言实现，C/C++
+	object类：
+		getClass	返回运行时类的Class对象
+		toString	返回对象的字符串表示形式          
+					建议所有子类重写子方法（alt+insert/toString）
+		equals		没有重写，比较地址值，重写之后比较内容
+					建议所有子类重写子方法（alt+insert/equalsandHash）	
+		hashCode	如果没有重写方法，默认返回对象的内存地址			
+	Math类：
+		abs	绝对值
+		round	四舍五入
+		ceil	12.34 	13
+		floor	12.34	12
+		max	
+		min
+		pow（double a,b)    返回a的b幂次方
+		random	返回double的正值[0.0,1.0)
+	
+	System类：
+		exit	终止当前运行的Java虚拟机
+		currentTimeMillis	返回当前时间（当前时间ms）  通常跟日期类连用
+	
+	Arrays类：
+		toString	返回数组内容的字符串表示形式
+		sort	按照数字排序指定的数组
+		aslist	返回由指定数组支持的固定大小的列表
+			List<String> list =Arrays.asList("hello","world") ;
+			
+	基本类型包装类：     用于基本数据类型和字符串之间的转换
+		装箱：将基本数据类型转换成包装类     
+		拆箱：将包装类转换成基本数据类型
+		基本数据类型		包装类
+		byte                    Byte
+		short			Short
+		int			Integer
+		long			Long
+		float			Float
+		double			Double
+		char			Charcter
+		boolean			Boolean
+		
+			Integer i = new Integer(100);已过时
+	    装箱		Integer i = Integer.valueOf(100);  传入的参数可以是数字也可以是字符串
+	自动装箱		Integer i = 100；    JDK5之后简化
+	    拆箱			int x = i.intValue();
+	 自动拆箱      i += 200；    i = i + 200；//这里i从integer转为int	
+
+		int和String的相互转换：
+			int -> String
+				1.int number = 100;
+			  	  String s1 = "" +number;
+				2.String s = String.valueOf(number);    
+			String -> int
+				1.String ->  Integer -> int
+	    				Integer i = Integer.valueOf(s);  ✔
+	     			int x = i.intValue();
+				2.String ->  int
+					int i = Integer.parseInt(s);     ✔
+	
+	日期类：	
+		Date：			日期类
+			构造方法：
+				Date date  = new Date;    		输出：Sun Aug 09 09:28:09 CST 2023
+				Date date = new Date(long time); 
+			常用方法:
+				getTime()    //从1970年1月1日到现在的毫秒值
+					d.getime()*1.0/1000/60/60/24/365   具体年
+				setTime()    //设置时间，给毫秒值
+
+		SimpleDateFormat：      	格式化类
+			构造方法：
+				SimpleDateFormat sdf = new SimpleDateFormat();无参
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");带参
+			常用方法：
+				格式化：format(Date date)    		将Date转化成String类型
+				解析：parse(String source)      		将String转化成Date类型
+					调用：sdf.format(date);
+		
+		Calendar：		日历类	为操作日历字段提供了一些方法
+			构造方法：
+				Calendar c = Calendar.getInstance();     
+			常用方法：
+				get	获取给定日历字段的值
+				set	设置当前
+				add（YEAR，10）	    对给定的字段添加或减去对应的值
+		
+		BigDecimal:		小数精确运算类
+			此类目的：
+				float/double浮点数计算不能得出精确的结果
+				满足商业计算要求，得出精确计算结果
+			构造方法：
+				BigDecimal bd1 = new BigDecimal(String val/"0.1");
+			常用方法：
+				bd1.add(bd2);		加法
+				bd1.subtract(bd2);	减法
+				bd1.multiply(bd2);	乘法	
+				bd1.divide(bd2);		除法
+				
+			常见问题：
+				ArithmeticException	10.0/3.0除不尽报错
+				bd1.divide(bd2,精确几位，舍入模式);			10.0/3.0(精确两位)
+					RoundingMode.UP		进一法		3.34
+					RoundingMode.Floor	去尾法		3.33
+					RoundingMode.HALF_UP	四舍五入		3.33
+
+Java项目当中调用第三方接口方式：
+	JDK网络类HttpURLConnnection
+	Apache common封装HttpClient/CloseableHttpClient/OkHttp等Http客户端库
+	SpringBoot提供RestTemplate(封装OkHttp/HttpClient)
+	Hutool提供的HttpUtil
+		
+性能：HttpURLConnection < HttpClient < RestTemplate < WebClient
+HttpURLConnection类：		标准的Java接口，通过URL发起HTTP请求，获取响应等功能			*********
+	使用场景：
+		获取网络流实现文件上传和下载		从远程服务器下载文件/将文件上传到服务器
+		处理HTTP响应			用于处理服务器返回的HTTP响应
+
+	HttpURLConnection基本常识：
+		HttpURLConnection基于HTTP协议，支持GET/POST/PUT/DELETE等各种请求方式
+		若使用HTTPS协议请求，使用HttpURLConnection子类HttpsURLConnection完成请求操作
+	
+	HttpURLConnection使用步骤：
+		1.URL url = new URL("url");							创建一个URL对象
+		2.HttpURLConnection conn =  (HttpURLConnection)url.openConnection()		调用URL对象的openConnection()获取HttpURLConnection对象实例
+		3.conn.setRequestMethod("get")							设置HTTP请求使用的方法：GET/POST/其他请求
+		   	getRequestMethod()							获取请求方法
+		  conn.setRequestProperty(key,value)						设置一般请求属性。如果已存在具有该关键字的属性，永信值改写其值
+		4.conn.setConnectTimeout(6*1000)						设置连接超时的毫秒数
+		5.conn.setReadTimeOut(6*1000)							设置读取超时的毫秒数
+		4.conn.connect()								连接指定资源，在设置完请求方法，请求头，请求体等属性后调用
+		7.InputStream inputStream = conn.getInputStream()				获取服务器返回的输入流(获取响应数据)
+		8.FilOutputStream fileOut = new FileOutputStream(filePath) 			获取输出流，将输入流中数据写入到输出流中
+		9.conn.disconnect()								调用disconnect()将HTTP连接关掉
+		
+	HttpURLConnection设置连接参数方法：
+		conn.setDoInput(true)				URL链接可以用于输入和输出
+		conn.setDoOutput(true)				URL链接可以用于输入和输出
+		conn.setAllowUerInteraction(true/false)		true，在允许用户交互的上下文中对URL进行检查
+		conn.setUseCaches(true)				true,允许使用缓存	
+			注意：POST方式不能使用缓存
+		conn.setDefaultUserCaches("")			将此URLConnection的useCaches字段的值设置为指定的值
+
+	HttpURLConnection设置请求头或响应体：
+		conn.setRequestProperty(key,value)		设置一般请求属性。如果已存在具有该关键字的属性，永信值改写其值	
+	             getRequestProperty(String key)		获取指定请求头属性的值，请求头中不存在指定的属性，返回Null
+		conn.addRequestProperty(key,value)		添加由键值对指定的一般请求属性
+
+	相应信息头获取：
+		conn.getContentEncoding				返回content-encoding头字段的值
+		conn.getContentLength				返回content-length头字段的值
+		conn.getContentType				返回content-type头字段的值
+		conn.getDate					返回date头字段的值
+		conn.getExpiration				返回expires头字段的值
+
+	获取响应：
+		getInputStream					返回打开连接读取的输入流
+		getReponseCode					获取服务器的响应代码
+		getReponseMessage				获取服务器的响应信息
+		getReponseMethod				获取发送请求的方法
+
+
+HttpClient：			Java标准库，主要用于执行HTTP请求和处理响应。HttpClient构建请求，发送请求并处理响应
+	HttpClient使用场景：
+		第三方接口遵循Restful设计风格，使用HTTP客户端库发送HTTP请求
+		支持各种HTTP方法(GET/POST/PUT/DELETE),满足不同业务需求
+
+	HttpClient使用步骤：
+	1	引入HttpClient依赖
+		<dependency>
+    			<groupId>org.apache.httpcomponents</groupId>
+    			<artifactId>httpclient</artifactId>
+			<version>4.5.13</version>
+		</dependency>
+
+	2	Java程序使用HttpClient：
+		发送Get请求：
+			CloseableHttpClient httpClient = HttpClient.newHttpClient();					创建HttpClient对象
+			HttpGet httpGet = new HttpGet("http://localhost:8080/patentinfo/getPatentinfo");			创建HTTP GET请求实例，指向指定URL					
+			CloseableHttpReponse reponse = httpClient.execute(httpGet);					执行HTTP GET请求并获取响应对象										
+			int statusCode = reponse.getStatusLine().getStatusCode();					返回响应状态码
+			HttpEntity entity = reponse.getEntity();							获取响应体
+			String body = EntityUtils.toString(entity);							解析响应体
+			//关闭资源
+			reponse.close();					
+			httpClient.close();
+
+			
+		发送Post请求：
+			CloseableHttpClient httpClient = HttpClient.newHttpClient();					创建HttpClient对象
+			HttpPost httpPost = new HttpPost("Post接口请求路径")						创建HTTP POST请求示例，指向指定URL
+
+			//设置Post请求参数
+			JSONObject jsonObject = new JSONObject();							创建JSON对象
+			jsonObject.put("username","admin");
+			jsonObject.put("password","123456");
+
+			StringEntity entity = new StringEntity(jsonObject.toString());					将json对象封装到StringEntity中
+			entity.setContentEncoding("utf-8");								指定编码方式
+			entity.setContentType("application/json")							指定请求数据格式	
+			httpPost.setEntity(entity);									设置Post请求体参数
+			
+			CloseabkeHttpClient response = httpClient.execute(httpPost);					执行HTTP POST请求并获取响应对象
+			int statusCode = response.getStatusLine().getStatusCode();					获取响应状态码
+			HttpEntity body = response.getEntity();								获取响应体
+			String s = EntityUtils.toString(body);								解析响应体															解析响应体		
+							
+
+RestTemplate默认依赖JDK提供http连接的能力(底层实现默认：HttpURLConnection)
+RestTemplate:
+	RestTemplate是Spring提供用于访问Rest服务的同步客户端，RestTemplate提供多种访问远程HTTP服务的方法
+		简化与http服务通信方式，统一Restful标准，封装http链接，传入url及返回值类型即可	
+
+	RestTemplate只是对Http客户端封装，本身没有实现Http相关基础功能，底层实现需要配置http客户端类库ClientHttpRequestFactory(修改RestTemplate默认客户端)
+
+	RestTemplate常用方法：
+		get请求		getForEntity			返回ReponseEntity，包含：HTTP响应体，HTTP状态码，contentType，contentLength，Header		
+				getForObject			HTTP协议响应体
+
+		post请求		postforEntity
+				postForObject
+				postForLocation
+
+		exchange(url,method,requestEntity,reponseType,uriVariables)			执行请求并获取响应结果	
+		属性：
+			url			请求的URL
+			method			http请求方法
+			requestEntity		包含请求头和请求体的实体(包含null)
+			reponseType		响应类型，将响应体转换为指定类型
+			uriVariables		请求参数
+
+	使用RestTemplate：
+	1	RestTemplate是Spring框架提供，引入SpringBoot依赖
+		<dependency>
+    			<groupId>org.springframework.boot</groupId>
+    			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+	2	新建RestTemplate配置类
+		@Configuration
+		public class RestTemplateConfig {
+
+    		@Bean			注入RestTemplate到Spring容器，需要使用RestTemplate时候使用@Autowired注入即可使用
+    		public RestTemplate restTemplate(ClientHttpRequestFactory factory){
+        		return new RestTemplate(factory);		
+    		}
+
+    		@Bean
+    		public ClientHttpRequestFactory simpleClientHttpRequestFactory(){
+        		SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        		factory.setReadTimeout(5000);//单位为ms
+        		factory.setConnectTimeout(5000);//单位为ms
+        		return factory;
+    			}
+		}
+
+	3	使用RestTemplate
+		@Autowired
+		private RestTemplate restTemplate;
+
+		利用RestTemplate发起http请求，得到http响应
+		restTemplate.exchange(
+			"http://localhost:8081/items?ids={ids}",		请求URL
+			HttpMethod.GET,						请求方法
+			null,							请求头和请求体的实体
+			new ParameterizedTypeReference<List<ItemDTO>>() {}，	返回结果类型(字节码/参数类型引用)
+			Map.of("ids"，CollUtil.join(idList,","))			请求参数(集合参数类型用工具类拼接为字符串)
+		);
+			
+		解析响应
+		reponse.getBody()			获取响应体
+		reponse.getStatusCode()			获取响应状态码
+		reponse.getHeader()			获取响应请求头
+		
+		if(!reponse.getStartusCode().is2xxSuccessful){
+			return;				查询失败，直接结束
+		}
+
+
+WebClient：	在Spring WebFlux中，WebClient是一个响应式，非阻塞的HTTP客户端，用于调用RestFul服务
+		
+		
+异常：
+	Throwable是Java语言中所有错误和异常的父类
+	Throwable：
+		1.Error      严重错误不可捕捉
+		2.Exception	异常可利用
+			2.1	RuntimeException(运行时异常)	编译期间不检查Exception报错回来修改代码
+			2.2	非RuntimeException(编译时异常)	编译期间就处理，否则程序不能运行
+	注意：编译时异常只是有可能出现异常，不是一定会出现异常
+
+	Throwable的成员方法：	
+		1.getMessqge		返回出现该异常的原因        输出开始/3（这里的3就是原因）/结束
+		2.printStackTrace	将异常的错误信息输出在控制台（输出最全，一般使用这个）
+	例：	try {
+            		int[] arr = {1, 2, 3};
+            		System.out.println(arr[3]);     //出现异常会自己产生一个异常对象e
+        	}catch(ArrayIndexOutOfBoundsException e){
+            		e.printStackTrace();}           //对象e调用方法			
+		3.toString		输出异常原因和异常名称
+	
+	JVM的默认处理方案：
+		1.把异常的名称，异常的原因及异常出现的位置等信息输出在控制台
+		2.程序停止执行
+	例：	Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: 7
+			at com.example.javase_code.SimpleDateFormat.test.main(test.java:11)
+	
+	异常处理：
+		1.try{                                 例：try{
+		//可能会出现异常的代码				int[] arr = {2,13,23,44};
+		  }catch(需要捕获的异常类型){			sout(arr[4]);
+		//如果出现了这类异常，要执行的操作		   }catch(Exception e){
+		  }finally{					sout（"数组访问索引不存在"）;}
+			finally控制的语句一定会执行
+		  }
+			
+		2.throws（如果程序任然想往下执行，用trycatch，throws不进行处理）
+			例： public static void main(String[] args) throws ParseException
+			采用throws异常处理，将来谁调用谁处理
+		
+		3.在三层架构当中
+			
+
+	自定义异常：
+		定义格式：public class 异常类名 extends Exception{
+				无参构造；
+				带参构造；
+			}
+	   例：   public class ScoreException extends Exception{
+    			public ScoreException() {}
+    			public ScoreException(String message) {
+        			super(message);
+    			}}
+		在调用的时候需要手动抛出异常
+		public void checkScore(int score) throws ScoreException {
+        		if(score < 0 || score > 100){
+            			throw new ScoreException();     throw抛出异常，方法体内语句执行
+        		}else{					一定执行
+           		        System.out.println("分数正常");
+        		}}
+				
+	异常类型：
+		NoSuchElementExceptipon			Iterator中被请求的元素不存在
+		ConcurrentModificationException		
+	
+工具类的涉及思想：（自定义）
+	1.构造方法用private修饰
+	2.成员用public static修饰      用来用类名访问成员方法
+		
+
+		
+集合进阶：
+	堆：先进先出	
+	栈：先进后出
+	集合类：提供一种存储空间可变的存储模型，存储的数据容量可以发生改变     【】
+		单列		双列
+		周舟		1  周舟
+		周程程		2  周程程
+		周宇		3  周宇
+		周舟		4  周xx	
+	Collection：单列            
+		List：可重复
+			ArrayList		注：继承自上一个接口的功能都可以使用
+			LinkedList
+		Set:不可重复
+			HashSet
+			TreeSet                注：Collection/List/Set/Map都是接口
+
+	Collection：
+		是单列集合的顶层接口，表示一组对象
+		JDK不提供此接口的任何直接实现，由它更具体的子接口（List/Set）实现
+		
+		Collection集合创建对象：
+			Collection<String> c = new ArrayList<String>();     多态创建对象
+		
+		常用方法：
+			add	  添加元素              boolean返回值类型
+			remove	  删除元素        boolean
+			clear     清空元素
+			contains  判断集合中是否包含指定元素		boolean
+			isEmpty   判断集合是否为空		boolean
+			size      集合的长度	
+			
+	 	Collection集合遍历：
+			Iterator：迭代器，collection集合专用遍历方式		只能从前往后遍历
+				Iterator获取方式：
+					Iterator<String> it = c.iterator();    与Collection集合元素类型一致
+				Iterator方法：
+					next()	返回迭代中的下一个元素
+					hasNext()	判断迭代中是否有更多元素，有返回true
+			遍历：
+				while(it.hasNext()){
+					String s = it.next();
+					sout(s);
+				}
+	
+	List：单列集合  
+		特点：
+			有序：储存和取出的元素顺序一致
+			可重复：存储的元素可以重复
+
+		创建对象：
+			List<String> list = new ArrayList<String>();
+			可变长字符串转换成list集合
+			List<String> list = Arrays.asList("admin","jack","tom","alice");
+		
+		List特有方法：		特有：因为是有序的
+			add(index,E)	添加
+			remove(index)	删除		常见错误：IndexOutOfBoundsException(索引越界异常)
+			set(index,E)	修改		补充：set值：@Builder注解，例如：patentInfo.builder().patentGuid(patentGuid).patentName(patentName).build();
+			get(index)	查询
+			list.parallelStream()	list集合转化为流,多线程并发处理大规模数据(并行流)
+			list.stream()		list集合转化为流
+			
+			并行流处理：		将内容分成多个数据块，用不同线程处理每个数据块内容，最后合并每个数据块计算结果
+				list.stream().parallel().filter().sequential().map().reduce()
+					parallel()			将一个流转为并发流
+					filter()			过滤数据块中元素
+					sequential()			将并发流转为数据流
+					
+			判断List非空：
+				1.if(CollectionUtil.isNotEmpty(list)){}
+				2.ListUtils.emptyIfNull(list).stream			
+					list为空，返回空list
+					list不为空，返回list本身
+
+		List遍历：(4种)
+			1.iterator遍历        
+			2.for循环		带索引添加删除时使用
+				for(int i = 0;i < list.size();i++){
+					Stirng s = list.get(i);		使用itrator会出现并发并发处理异常
+					if(s.equals("world")){
+						list.add("javaee");       使用for循环解决问题
+					}
+				}
+	        最常用	3.增强for循环	内部原理是一个Iterator迭代器
+				定义格式：for(元素数据类型 变量名：数组或者Collection集合){}
+				遍历：for(String s: list){}
+			4.Lambda表达式
+				userlist.stream().forEach(user ->{
+					sout(user);
+				})
+					
+		ListIterator：列表迭代器        List集合特有的迭代器	可以任一方向遍历
+			ListIterator获取方式：
+				ListIterator<String> lit = list.listIterator();    与Collection集合元素类型一致
+			
+			ListIterator常用方法：
+				next()		返回迭代中的下一个元素
+				hasNext（）	判断迭代中是否有更多元素，有返回true
+				previous（）	返回迭代中的上一个元素
+				hasPrevious（）	判断迭代中在相反方向是否具有更多元素，有返回true
+				add()		将指定的元素插入列表
+			
+			遍历：
+				while(lit.hasNext()){
+					String s = lit.next();
+					if(s.equals("world")){
+						lit.add("javaee");       这里ListIterator不会出现问题
+					}
+				}
+			
+		ArrayList(顺序存储):
+			底层数据结构：数组        特点：查询快增删慢，
+			遍历方式：
+				1.iterator
+				2.普通for循环 
+				3.增强for循环
+		LinkedList(链式存储)：
+			底层数据结构：双向链表	    特点：查询慢增删快       需要增删使用
+			创建LinkedList对象：
+				LinkedList<String> ll = new LinkedList<String>();
+			遍历方式：
+				1.iterator
+				2.普通for循环
+				3.增强for循环
+			LinkedList特有方法：	
+				addFirst(e)	在列表开头插入指定的元素	
+				addLast(e)	在列表末尾插入指定的元素
+				getFirst	返回列表的第一个元素
+				getLast		返回列表的最后一个元素
+				removeFirst	从列表删除并返回第一个元素
+				removeLast	从列表删除并返回最后一个元素
+
+	Set：单列集合
+		特点：
+			无序：存储和取出的元素顺序不一致
+			不可重复：存储的元素不可重复
+				
+		创建对象：
+			Set<String> set = new HashSet<String>();
+			HashSet<String> hs =new HashSet<String>();
+		
+		常用方法：
+			与Collection集合接口常用方法一致	
+
+		遍历方式：(2种)
+			1.增强for循环
+			for(String s : hs){
+           			System.out.println(s);
+        		}
+			2.iterator遍历
+	
+		哈希值：JDK2根据地址/字符串/数字算出来的int数值
+			hashCode（）	返回对象的哈希码值		
+			注：同一个对象调用多次hashCode（）方法返回的哈希值时相同的
+			未重写的hashCode（）不同对象的hash值时不相同的
+			通过重写可以实现不同对象的hash值相同       
+			例：
+				Student s1 = new Student("林青霞",30);	输出：41359092
+       				Student s2 = new Student("周舟",20);	输出：149928006
+		
+		HashSet：
+			底层数据结构：哈希表(HashMap)	
+			特点：无序不可重复	
+			哈希表：底层用数组 + 链表实现，是一个元素为链表的数组
+
+			在实际开发中，需要重写(自动生成)hashCode方法，保证不可重复
+			
+		哈希表原理：数组	    0	1   2    3  4 .........15
+			     存储位置           hello	  通话
+	"hello"  99162322  %16   2	       world	
+	"world"  113318802       2	       java
+	"java"   3254818 	 2
+	"world"	 113318802	 2
+	"通话"	 1179395	 3
+	"重地"	 1179395	 3      注：先比较哈希值，再比较内容，内容相同排除
+		
+		LinkedHashSet：
+			底层数据结构：哈希表(HashMap)和链表
+				链表保证元素有序，数据的存储和取出顺序一致
+				哈希表保证元素不可重复
+
+			特点：有序不可重复
+			
+			创建对象：
+				LinkedHashSet<String> lhs = new LinkedHashSet<String>();
+		
+		TreeSet：
+			用TreeSet集合存储自定义对象
+				无参构造使用的是自然排序进行排序，带参构造用的是比较器排序			
+			自然排序：让元素所属的类实现Comparable接口，重写compareTo方法
+			比较器排序：让集合构造方法接受Comparator的实现类对象（匿名函数），重写compare方法
+			
+			特点：
+				有序：不是指存储和取出的顺序，指按照一定的规则进行排序
+					TreeSet()	根据元素的自然排序进行排序
+					TreeSet(Comparator comparator)	根据指定的比较器进行排序
+
+			创建对象：
+				无参构造 -> 类的自然排序
+					TreeSet<Student> ts = new TreeSet<Student>();	  
+					注：基本类型存储的时候使用包装类
+
+					public class Student implements Comparable<Student>	
+				
+					@Override
+   						public int compareTo(Student o) {
+        					int num = this.age - s.age;    
+						int num2 = num == 0 ? this.name.compareTo(s.name) : num;
+						return num2
+    					}
+				带参构造 -> 比较器构造
+					TreeSet<Student> ts = new TreeSet<Student>(new Comparator<Student>() {
+            					@Override
+            					public int compare(Student o1, Student o2) {
+        这里用匿名函数作为接口实现类对象传参        		int num = o1.getAge() - o2.getAge();
+                					int num2 = num == 0 ? o1.getName().compareTo(o2.getName()) : num;
+                					return num2;
+            					}
+					});
+				
+					注：0表示后一个对象跟前一个相同，1表示前后对象不相同升序，-1降序输出
+
+			遍历方式：	
+				增强for循环
+
+	List/Set/Map区别：
+		Collection：	存储单列数据集合
+			List：
+				有序且可重复
+				可存储多个null值
+			Set：	
+				无序且不可重复
+				HashSet/LinkedHashSet底层是HashMap，只可以存在一个null值，TreeSet不能存储null值
+
+		Map：		存储键值对双列数据集合
+			无序，键不可重复，值可重复
+			HashMap只能存储一个key为null的值，TreeSet/HashTable不能存储null值
+		
+	Map：双列集合      接口   映射
+		映射：用简单的值映射一个复杂的值
+		Map<K,V>：
+			K：键的类型
+			V：值的类型
+			KV表示键值对：一个键映射到(对应)最多一个值
+				Hash表保证键的唯一性
+		Map：
+			HashMap/HashTable/TreeMap/LinkedHashMap
+				
+				TreeMap			基于红黑树实现
+				LinkedHashMap		基于Hash表和链表实现
+
+		创建对象：
+			Map<K,V> map = new HashMap<K,V>();
+			Map<String,String> map = new HashMap<String,String>();
+			TreeMap<String,String> map = new TreeMap<String,String>();
+			LinkedHashMap<String,String> map = new LinkedHashMap<String,String>();
+ 		
+		常用方法：
+	        增	put(Obj key,Obj value)；	新增/修改，看key是否存在，如果存在就修改key对应的值,如果不存在就是放入一组新的键值对
+			putAll(Map map) 	将一个map添加到当前map
+	        删	remove(key)		根据键删除键值对元素
+			clear()			移除所有键值对元素
+			isEmpty（）		判断集合是否为空
+			containsKey/Vlaue	判断集合是否包含指定键/值
+			size()			集合长度
+
+		查(4种)	get(key)	根据键返回值		
+				s.split(",")[0/1]
+			KeySet()	获取所有键的集合         返回值类型Set
+			values()	获取所有值的集合	  返回值类型是Collection
+			entrySet（）	获取键值对的集合	  返回值类型是Set
+	
+		遍历方式：
+			1.增强for循环
+				1.1键KeySet
+					Set<Integer> keySet = map.keySet();
+					for(Integer key: keySet){
+						String value = map.get(key);
+						sout(key + value);
+					}					
+				1.2值value
+					Collection<String> values = map.values();
+					for(String value: values){
+						sout(value);
+					}
+				1.3键值对entrySet
+					Set<Map.Entry<Integer, String>> entrySet = map.entrySet();
+					for(Map.Entry<Integer, String> entry: entrySet){
+						sout(entry.getKey() + entry.getValue());
+					}
+
+			2.迭代器
+			3.普通for循环
+		
+		HashMap/HashTable/TreeMap/LinkedHashMap区别和使用场景：
+			HashTable：				使用场景
+				线程安全，同步
+				key/value不可以是null
+			HashMap：
+				线程不安全，不同步
+				key/value可以是null		快速查找和插入键值对的场景
+			TreeMap：				
+				按键的自然排序/自定义排序遍历键值对				
+				基于红黑树实现			对元素的键进行排序的场景
+			LinkedHashMap：
+				基于Hash表和链表实现
+				根据元素插入顺序排序		保持元素插入顺序的场景(先对元素排序，再插入)
+		
+		Propieties：	
+		概述：
+			1.是一个Map体系的集合类
+			2.Propieties可以保存到流中或从流中加载
+			
+		构造方法:
+			Properties prop =new Properties();
+        		prop.put("190310301","周舟");
+        		prop.put("190310301","哈哈");
+        	 	prop.put("190310322","周宇");
+		
+		Properties特有方法：
+			setProperty（ String key，String value）	设置集合的键和值
+			getProperty（Stirng key）		根据键获取值
+			stringPropertyNames（）		获取键的集合
+		
+		Properties和IO流结合的方法：
+			load（Reader reader）	将文本文件中的数据读取到Property集合中
+			store（Writer writer）	将集合Property中的数据保存到文本文件中
+				例：
+					Properties prop = new Properties();
+					prop.setProperty();
+					FileWriter fw =new FileWriter("路径")；
+					prop.store(fw,null);   null是描述信息
+ 
+                                           
+Collections：	是针对集合操作的工具类
+	Collections类的常用方法：
+		sort：	将指定的列表升序排序
+		reverse：将指定列表中的元素的顺序反转
+		shuffle：使用默认的随机源随记排列指定的列表
+
+			
+
+泛型：		
+	好处：1.避免强制类型转换	2.将运行时期的问题提前到编译期
+	
+	定义：将操作的数据类型指定为一个参数，在创建泛型类对象的时候才确定参数类型T
+		注：在调用的时候参数类型必须是引用数据类型
+
+	适用范围：类/接口/方法        
+		泛型类：
+			定义格式：
+				public class person<T>{
+					private T Person；
+				}
+			表示类中存在一个不确定的类型参数，<>中的T被称作类型参数，用于指代任何数据类型
+			类中不确定类型参数：
+				成员变量类型
+				入参类型
+				返回值类型
+		
+		泛型方法：
+			定义格式：
+				public class TestMethod<U> {
+					public <T, S> T testMethod(T t, S s) {
+					return null;
+					}
+				}
+			类中不确定类型参数：
+				入参类型
+				返回值类型
+			注：泛型方法与泛型接口不一样，泛型类是在末尾加<T>，泛型方法是在前面加<T>
+
+		
+		泛型接口：
+			定义格式：
+				public interface Inter<T> {
+    					public abstract void show(T t) ;
+				}
+				public class  InterImpl<T> implements Inter<T>{
+					@Overrride
+					public void show(T t){
+						sout(t);
+					} 
+				}
+			方法中不确定类型参数：
+				入参类型
+				返回值类型	
+	
+	类型通配符：表示各种泛型List的父类
+		List<?>	表示元素类型未知的List，元素是任一类型
+	        上界通配符Arraylist<？extends T>		T及其子类型
+			注：一种实际的数据类型，数据类型实参
+		下届通配符Arraylist<？super T>		T及其父类型
+		
+		创建对象：
+			List<?> list = new ArrayList<Object>();
+			List<? extends Number> list = new ArrayList<Number>();
+			List<? extends Number> list = new ArrayList<Integer>();
+			List<? super Number> list = new ArrayList<Number>();
+			List<? super Number> list = new ArrayList<Object>();
+			
+	可变参数：
+		定义：可变参数又称参数个数可变，用作方法的形参出现
+
+		格式：修饰符 返回值类型 方法名（数据类型...变量名）{}
+			例：public static int sum(int b，int...a){	可变参数需要放在最后
+				int sum = 0;
+				for(int i ：a){	
+					sum += i；	可以对数组a进行遍历
+				}
+			   }       sum(10,20,30,40)
+				注：a是数组
+		
+		使用：Arrays数组类中的asList方法，返回集合不能做增删操作，可以修改
+
+
+
+File类：
+	File：是文件和目录路径名的抽象表示，文件和目录通过File封装成对象
+
+	文件路径：
+		相对路径：是相对于某个位置开始声明的文件路径
+		绝对路径：是一个固定的文件路径，从盘符号开始声明
+			例：C:\\users\\Default表示一个文件绝对路径
+	
+	构造方法：
+		1.File f1 = new File("路径")；	路径只是表示形式没必要说一定存在
+		2.File f1 = new File("父路径" + "子路径")		输出结果跟1一样
+		3.File f1 = new File("父路径")；
+		  File f2 = new File(f1,"子路径")；
+
+	常用方法：	
+		createNewFile()		创建文件
+		mkdir（）		创建文件下的目录		根据方法判断创建的是文件还是目录
+		mkdirs()		创建文件下的多级目录
+		isDirectory（）		判断创建路径名是否是目录
+		isFile()		判断创建路径名是否是文件
+		exists()		判断创建路径文件是否存在
+		getAbsolutepath()	获取绝对路径
+		getPath()		将路径转换为路径字符串
+		getName()		获取路径名表示的文件或目录名称
+		list()			返回路径名表示的文件或目录字符串数组
+		listFile()		返回路径名表示的文件或目录的File对象数组
+		delete()		删除抽象路径名表示的文件或目录
+		.(一个点)		获取相对路径
+		length()		获取文件大小
+	
+	案例：定义一个方法，用于获取给定目录下的所有内容
+		public static void getAllFilePath(File srcFile){
+			File fileArray = srcFile.listFiles();
+			if(fileArray != null){
+				for(File file : fileArray)
+				if(){
+					if(file.isDirectory){
+						getAllFilePath(file);
+					}
+				}else{	
+					sout(file.getAbsolutePath());
+				}
+			}
+		}
+
+	MultipartFile类：		MultipartFile是SprinfgMVC提供简化上传操作的工具类
+		不使用框架之前，使用原生的HrrpServletRequest接收上传的数据，文件以二进制流传递到后端，需要自己转换为File类
+		
+		MultipartFile常用方法：
+			String getName()
+			String getOriginalFileName()
+			String getContentType()
+			boolean isEmpty()
+			long getSize()
+			byte[] getBytes()
+			InputStream getInputStream() throws IOEception
+			transferTo(Path dest) throws IOException,IllegalStateException
+
+
+IO流：		用来处理设备间数据传输问题
+	IO：输入/输出(Input/Ouput)，指程序与外部世界(文件/网络等)之间的数据交换过程
+	流：是对数据传输的总称，数据在设备间的传输称为流
+	
+	使用场景：文件赋值，上传，下载，内容删除
+
+	IO流分类：		实际开发最常用的是FileInputStream/FileOutputStream
+		流的流向：
+			输入流：Reader/InputStream	FileReader/InputStream    读数据
+			输出流：Writer/OutputStream	FileWriter/OutputStream   写数据
+		流的数据类型：
+			字节流：InputStream/OutputStream    是输入/出流的类的超类
+				BufferIn/OutputStream:缓冲输入/输出流
+					字节缓冲流仅仅提供缓冲区，真正的读写还得靠基本的字节流对象进行操作
+			字符流：Reader/Writer
+		流的角色：
+			结点流：FileInputStream/BufferedInputStream	
+				FileInputStream直接从文件读取数据
+				BufferedInputStream封装FileInputStream，有缓冲功能
+			处理流：用于对一已存在的节点流进行连接和封装，通过封装后的流来实现流的读写
+		
+		***何时使用字节流，字符流
+			如果数据可以通过记事本的方式方式打开，还能读懂里面的内容，用字符流。
+			否则用字节流，不知道使用哪种类型的流，使用字节流
+		
+		字节流构造方法：
+			FileInputStream fis = new  FileInputStream("路径");
+			FileOutputStream fos = new  FileOutputStream("路径");
+			BufferedOutputStream bos = new BufferdedOutputStream();
+			BufferedInputStream bis = new BufferedInputStream();    字节读写优先这种
+		
+		写入方法：
+			1.write(int b)		//指定的字节写入此文件输出流
+			2.write(byte[] b) 	//一次写一个字节数组数据
+			3.write(byte[] b,int off,int len)	将一定长度的字节数据从指定的字节数组偏移量off开始写入数据
+			fw.write("\r\n"); 	内容后面带换行
+	
+		读取数据方法：
+			1.read()	从输入流读取一个字节的数据	
+				注：文件到达末尾返回值是-1
+			2.read(byte[] b)	从输入流读取最多b.length个字节的数据到一个数组
+				byte[] bys = new byte[5];
+		字节数组		int len = fis.read(bys);
+				sout(new String(bys));      
+			3.read(byte[] b,int off,int len)	将一定长度的字节数据从指定的字节数组偏移量off开始读取数据
+				len = （fis.read(bys)!= -1			
+
+		追加写入：
+			FileOutputStream(String name,true)
+			创建文件输出流以指定名称写入文件，第二个参数是true,字节在文件的末尾写入
+
+		案例：（字节流）
+			复制图片：
+				FileInputStream fis = new  FileInputStream("E//itacast//mn.jpg");
+				FileOuputStream fos = new FileOutputStream("mn\\zhouzhou.jpg");
+				byte[] byte =new byte[1024];
+				int len;
+				while((len = fis.read(bys)) != -1){
+
+				}
+
+	     	字符流：
+			概念：字符流 = 字节流 + 编码表
+			字符流中编码解码的两个类：
+				InputStreamReader     解码：字节 -> 字符
+				OutputStreamWriter    编码：字符 -> 字节
+			
+			字符流构造方法：
+				OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream("路径"))；
+				InputStreamReader isr = new InputStreamReader(new FileInputStream("路径"))；
+				FileReader fr = new FileReader("路径")；	FileReader/Writer是子类
+				FileWriter fw = new FileWriter("路径")；
+				BufferedReader br = new BufferedReader(new FileReader("路径"));
+				BufferedWriter bw = new BufferedWriter(new FileWriter("路径"));
+				
+
+			字符流写入方法：
+				1.write(int b)		//写入一个字符
+				2.write(char[] c) 	//一次写一个字符数组数据
+				3.write(char[] c,int off,int len)	将一定长度的字符数据从指定的字符数组偏移量off开始写入数据
+				4.write(String str)	写一个字符串
+				5.write(String[] c,int off,int len)	
+					注意：写完之后需要flush将写入的数据刷新到文件中刷新缓冲
+
+			字符流读取数据：
+				1.read()	从输入流读取一个字符的数据	
+				2.read(char[] c)	从输入流读取最多b.length个字符的数据到一个数组     
+				3.read(char[] c,int off,int len)	将一定长度的字符数据从指定的字符数组偏移量off开始读取数据
+				len = （isr.read(chrs)!= -1
+
+			字符缓冲流：
+				BufferedReader/Writer：将文本写入/读取字符输出/入流，缓冲字符
+				特有方法：
+					BufferedWriter：
+						newLine()：一行行分隔符
+					BufferedReader：
+						readLine():读一行文字   结尾已到达返回null
+						while(line = br.readLine()!=null){
+							write(line);
+							br.newLine();
+							br.flush();
+						}
+			
+			案例：
+			1.把ArrayList集合中的字符串数据写入到文本文件。要求：每一个字符串元素作为文件中的一行元素
+				public static void main(String[] args) throws IOException{
+					ArrayList<String> array = new ArrayList<String>();
+					array.add("hello");
+					array.add("world");
+					array.add("java");
+					BufferedWriter bw = new BufferedWriter(new FileWriter("Stream//array.txt"));
+					for(String s:array){
+						bw.write(s);
+						bw.newLine();
+						bw.flush();
+					}
+					bw.close();
+				}
+			
+			2.把文本文件中的数据读取到集合中，并遍历集合。要求：文件中每一行数据是一个集合元素
+				public static void main(String[] args){
+					BufferedReader br = new BufferedReader(new FileReader("Stream//array.txt"));
+					ArrayList<String> array = new ArrayList<String>	();
+					String line;
+					while((line = br.readLine())!= null){
+						array.add(line);
+					}
+					br.close();
+					for(String s:array){
+						sout(s);
+					}
+				}	
+		
+			复制文件标准写法：	
+			FileReader fr = null;
+			FileWriter fw = null；
+			try{
+				fr = new FileReader("D:\\1\\123");
+				fw = new FileWriter("D:\\1\\123");
+				char[] chars = new char[2024];
+				String content = "";
+				while(-1 != (count = fr.read(chars))){
+				//读出来之后直接写到流中
+				fr.write(chars,0,count);
+				fr.flush();
+				}
+			}catch(FileNotFoundException e){
+				e.printStackTrace();
+			}catch(IOEception e){
+				e.printStackTrace();	
+			}finally{
+				if(fr != null){
+					try{
+						fr.close();
+					}catch(IOException){
+						e.printStackTrace();
+					}
+				}
+				if(fw != null){
+					try{
+						fw.close();
+					}catch(IOException){
+						e.printStackTrace();
+					}
+				}
+			}				
+			
+
+	特殊操作流：
+		标准输入流：System.in
+		标准输出流：System.out
+		异常输出流：System.error
+	
+	打印流：
+		字节打印流:PrintStream    输出流	
+			PrintStream ps = new PrintStream("路径")；
+			特有方法：print/println
+		字符打印流:PrintWriter
+			PrintWriter pw = new PrintWriter("路径"，true)；
+			注：第二个true是自动刷新
+
+	对象序列化流：
+		对象序列化：将对象保存到磁盘中，或者在网络中传输对象
+			在创建实体类的时候实现serializable接口/implements Serializable对象在文件永久保存
+			Serializable是标记接口，不需要实现任何方法
+			
+		对象序列化流：    对象 -> 流
+				ObjectOutputStream
+			ObjectOutputStream oos = new ObjectOutputStream("路径")；
+		对象反序列化流： 流  -> 对象d
+				ObjectInputStream
+			ObjectInputStream ois = new ObjectInputStream(new FileOutputStream("路径"))；
+		
+		***常见错误：
+			InvalidClassException：
+			对象序列化一个对象后，修改对象所属文件，读取数据出问题
+		解决方案：
+			在创建实体类的时候，声明一个序列化id值
+			private static final long serialVersionUID = 42L;
+		
+		transient:
+			被transient关键字修饰的属性默认不参与序列化
+
+	Propieties：
+		Propieties可以保存到流中或从流中加载
+		Properties和IO流结合的方法：
+			load（Reader reader）	将文本文件中的数据读取到Property集合中
+			store（Writer writer）	将集合Property中的数据保存到文本文件中
+				例：
+					Properties prop = new Properties();
+					prop.setProperty();
+					FileWriter fw =new FileWriter("路径")；
+					prop.store(fw,null);   null是描述信息
+
+	Stream流：	类似流水线，对流水线上的物品(元素)进行操作，操作完成后再放回流水线	
+		应用范围：
+			Stream流完成过滤操作
+			一般是和Lambda表达式一起使用
+			例：list.stream().filter(s ->s.startsWith("张"))；、
+		Stream流的使用：
+				生成操作		通过数据源(集合，数字等)生成流:	Stream（）
+				中间操作		一个流后面可以跟0个或多个中间操作，做出某种程度的数据过滤/映射，返回一个新的流
+				终结操作		一个流只能有一个终结操作，当这个操作执行之后，流就无法再被操作
+				收集操作		对数据使用Stream流的方式操作完毕，将流中的数据收集到集合中
+				
+			Stream流的生成：
+					1.Collection体系的集合可以使用默认方法stream()生成流
+						Stream<String> listStream = list.stream();
+						Stream<String> setstream = set.stream();
+
+					2.Map体系的集合间接生成流
+						Map<String, Integer> map = new HashMap<>();
+        					Stream<String> keyStream = map.keySet().stream();
+        					Stream<Integer> valuestream = map.values().stream();
+        					Stream<Map.Entry<String, Integer>> entrystream = map.entrySet().stream();
+
+					3.数组通过Stream接口的静态方法of生成流
+						String[] strArray = {"hello","world","java"};
+        					Stream<String> strArrayStream = Stream.of(strArray)；
+
+			中间操作：		
+			开发常用	1.filter(Predicate predicate)			过滤
+					list.stream().filter(s ->s.startsWith("张")).forEach(System.out::println);
+
+				2.limit(long maxSize)				取前maxSize个元素输出
+					list.stream().limit(3).forEach(System.out::println);
+
+				3.skip(long n)					跳过n个元素，将list剩余元素输出
+					list.stream.skip(2).limit(2).forEach(System.out::println);
+
+				4.concat(Stream a,Stream b)			合并a和b两个流为一个流
+					Stream<String> s1 = list.stream().limit(4);
+					Stream<String> s2 = list.stream().skip(2);
+					Stream.concat(list1.stream(),list2.stream()).forEach(System.out::println);					
+						
+			开发常用	5.distinct()					返回没有重复数据的流，有重复数据会被删掉
+					Stream.concat(s1,s2).distinct().forEach(System.out::println);
+				
+				6.sorted()					流中的元素根据顺序排序，返回流
+				顺序		list.stream().sorted().forEach(System.out::println);
+				比较器排序		list.stream().sorted((s1,s2) ->{
+							int num = s1.length() - s2.length();
+							int num2 = num==0 ? s1.compareTo(s2):num;
+							return num2;
+						}).forEach(System.out::println);
+							
+			开发常用	7.map(Function mapper)				返回由给定函数应用于此流元素的结果组成的流			
+					R apply(T t) 给定一个T类型的参数返回一个结果R
+						将集合中的字符串数据转换为整数之后在控制台输出
+						list.stream().map(s ->Integer.parseInt(s)).forEach(System.out::println);
+
+				8.mapToInt(ToIntFunction mapper)		返回一个IntStream包含将给定函数应用于此流的元素结果	
+						int result = list.stream().mapToInt(Integer::parseInt).sum();
+
+			终结操作：
+				9.forEach(Consumer<T>)				对此流的每个元素执行操作
+					Consumer接口中的方法	void accept(T t)	对给定的参数执行操作
+						list.stream().forEach(System.out::println);
+	
+				10.count()					返回此流中的元素个数
+					list.stream().filter(s ->s.startWith("张")).count();
+
+				11.reduce(初始值,lambda表达式)			规约操作，从初始值开始进行相加操作
+					List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5);
+					int sum = numbers.stream().reduce(1, Integer::sum);
+					int sum = numbers.stream().reduce(Integer::sum).get();			获取流中的Integer数据求和总数
+								
+					
+			收集操作：		将数据收集到集合中
+				调用方式：list().Stream().collect(Collectors.toList())	
+					
+				toList()	将元素收集到集合中
+				toSet()		将元素收集到Set集合中
+				toMap()		将元素收集大Map集合中
+				例：
+					Stream<String> listStream = list.stream().filter(s -> s.length() == 3);
+        				List<String> names = listStream.collect(Collectors.toList());
+					Set<Integer> ages = setStream.collect(Collectors.toSet());
+					Map<String,Integer> map =arrayStream.collect(Collectors.toMap(s -> s.split(",")[0],Collectors.toMap(s -> s.split(",")[1])
+
+
+NIO/BIO/AIO：	用于处理输入输出(IO)操作的不同机制	
+	NIO		同步非阻塞方式处理IO数据	
+		服务器实现模式：一个连接一个线程(线程对某个IO事件进行监听，并继续执行其他任务，不需要阻塞等待)
+
+			Client	  ↔	缓存(Buffer)	↔	通道(Channel)	↘
+				
+			Client	  ↔	缓存(Buffer)	↔	通道(Channel)
+								 		→	选择器(Selector)	 ←	线程	 →	Server
+			Client	  ↔	缓存(Buffer)	↔	通道(Channel)
+
+			Client	  ↔	缓存(Buffer)	↔	通道(Channel)	↗
+
+			Buffer(缓冲区)：NIO通过缓冲区进行读写操作(读：将Channel中数据填充到Buffer 写：将Buffer中数据写入到Channel)	
+			Channel(通道)：双向的，可读可写的数据传输通道，NIO通过Channel实现数据的输入输出
+			Selector(选择器)：允许一个线程处理多个Channel，由Selector分配线程处理事件
+
+		特点:	线程可以对某个IO事件进行监听，并继续执行其他任务，不需要阻塞等待
+			NIO基于Buffer和Channel读写数据，避免直接将字节写入通道	
+			NIO可以在单个线程上处理多个请求，并发性能较好，可根据需要选择适合的类型
+			NIO允许用户手动管理缓冲区的内存分配和回收
+			NIO无法保证IO操作结果可靠，可能出现部分读写或错误数据
+
+		适用场景：连接数目多，并发读写操作相对较少场景
+
+	BIO		同步阻塞方式处理IO数据	
+		服务器实现模式：一个连接一个线程(客户端有连接请求时服务器端启动一个线程进行处理)
+
+			Client		→	线程		↘
+			
+			Client		→	线程		→		Server
+
+			Client		→	线程		↗
+		
+		特点：	调用I/O操作时，线程被阻塞，无法进行其他任务
+			高并发处理I/O操作，BIO性能较差，大量线程被阻塞，可以用线程池改善
+
+		适用场景：简单，低频，短连接通信
+	
+	AIO(NIO2.0):	异步非阻塞方式处理IO数据
+		服务器实现模式：一个有效请求一个线程(线程异步发起I/O请求，当I/O操作完成时通过回调函数通知线程)			回调：AIO模型中，一个异步操作完成后，会通知线程进行后续处理
+
+			Client	  →	缓存(Buffer)	→	通道(Channel)	↘
+				
+			Client	  →	缓存(Buffer)	→	通道(Channel)
+								 		→	选择器(Selector)	 →	线程	 →	Server
+			Client	  →	缓存(Buffer)	→	通道(Channel)
+
+			Client	  →	缓存(Buffer)	→	通道(Channel)	↗
+
+		特点：	线程非阻塞，应用程序无需等待I/O操作完成，操作完成时，操作系统通知应用程序
+			AIO适合处理大量并发连接，编程模型相对简单
+
+		适用场景：连接数目多，并发读写操作较多场景
+				
+
+	
+多线程：
+	程序/进程/线程关系：
+		程序    --	运行 --> 进程 -- 包含 --> 多个线程
+
+	并发与多线程关系：
+		并发：同一个对象被多线程同时操作
+		
+	进程:正在运行的程序,系统资源分配的单位(idea正在运行就是进程)
+	线程:进程中的一条执行路径(进程中包含若干个线程)，客户端发起的一个请求就是一个线程			多核 -> 多个CPU -> 多线程
+		单线程：一个进程中只有一条执行路径			例：车太多，一条道路容易造成阻塞
+			a.select()		
+			b.select()		单线程：a查询完成之后开始b查询
+
+		多进程：一个进程有多条执行路径			例：车太多，拓宽多条道路不容易造成阻塞
+			a.select()		
+			b.select()		多线程:a查询 -> 开始查询	a/b查询同步执行
+						      b查询 -> 开始查询	
+
+		补充：
+			程序运行时，即使没有创建线程，后台也会有多个线程(主线程main()/gc(垃圾回收机制)线程)
+			main()线程称为主线程(系统入口，执行整个程序)					main线程:用户线程
+			线程的运行由调度器(CPU)安排调度,不能人为干预					gc线程:守护线程(daemon)，守护程序正常执行
+			同一份资源，资源抢夺，添加并发控制
+			
+	同步：
+		一个进程(客户端)在执行某个请求的时候，如果该请求需要一段时间才能返回信息，
+		那么这个进程会一直等待下去，直到收到(服务端)返回信息才继续执行下去（接收到返回信息才会执行下面代码）
+	异步：
+		不需要一直等待下去，而是继续执行下面的操作，不管其他进程的状态，
+		当有信息返回的时候会通知进程进行处理（不需要等待返回信息，直接继续执行下面的操作）
+
+	线程类构造方法：
+		1	Thread thread = new Thread();				创建Thread对象
+		2	Thread thread = new Thread("线程1")			创建线程指定线程实例名
+		3 	Thread thread = new Thread(Runable接口实现类)		创建指定线程目标对象，实现Runable接口
+		4 	Thread thread = new Thread(Runable接口实现类，线程名称)	创建新Thread对象
+
+	多线程的实现方式：
+		方式一：继承Thread类				Thread类实现Runable接口
+			定义类继承Thread类			
+			重写run()方法
+			创建类对象，调用start()方法启动线程
+
+		实现：	
+			public class PatentInfo extends Thread{
+				@Override
+				public void run{					//另一个线程
+					for(int i = 0;i < 20;i++){
+						sout("支线程" + i)
+					}						
+				}
+
+				public static void main(String[] args){			//main线程，主线程
+					PatentInfo patentInfo = new PatentInfo();	创建线程对象
+					patentInfo.start();				start()方法交替执行(启动多线程)
+											run()方法顺序执行(没有启动多线程模式)
+					for(int i = 0;i < 20;i++){
+						sout("主线程" + i)
+					}
+				}
+			}
+
+			执行结果：主线程/支线程交替出现	
+		
+	*****	方式二：实现Runable接口							可用匿名内部类/Lambda表达式改进
+			定义类实现Runable接口                				
+			重写run方法
+			创建Thread类对象，将MyRunable类对象作为参数调用start()启动线程
+			 
+		        优点：支持一个对象被多个线程调用 
+
+		实现：
+			public class PatentInfo implements Runable{
+				@Override
+				public void run{					另一个线程
+					for(int i = 0;i < 20;i++){
+						sout("支线程" + i)
+					}						
+				}
+
+				public static void main(String[] args){			main线程，主线程
+					new Thread(patentInfo).start()			将Runable接口实现类对象作为参数创建Thread对象，启动多线程		
+					for(int i = 0;i < 20;i++){
+						sout("主线程" + i)
+					}
+				}
+			}
+		
+		补充：
+			Lambda表达式：
+				Thread thread = new Thread(() -> sout("周舟是大帅哥"))；	
+				thread.start();
+				
+			匿名内部类：
+				Thread thread = new Thread(new Runable(){
+					@Override
+					public void run(){
+						sout("周舟是大帅哥")；
+					}
+				});
+				thread.start();
+				
+		方式三：实现Callable接口
+			定义类实现Callable接口
+			重写call方法，抛出异常			call()方法可以有返回值，可以抛出异常
+			
+		实现：
+			方法一：使用Callable接口 + FeatureTask实现多线程
+			public class PatentInfo implements Callable<返回值类型>{		返回值类型需要上下一致
+
+				@Override
+				public 返回值类型 call() throws Exception{			
+					支线程逻辑
+				}
+
+				public static void main(String[] args){
+					Callable<返回值类型> callable = new PatentInfo();					创建Callbale接口实现类对象
+					FetureTask<返回值类型> featureTask = new FutureTask<>(callable);			将Callable接口实现类对象作为参数传递，创建FutureTask对象‘		
+					new Thread(futureTask).start();							将FutureTask作为参数创建Thread对象，启动多线程
+
+					try{
+						返回值类型 object = futureTask.get();					获取Callable中call方法的返回值，FeatureTask包装类执行Callable任务
+					}catch(Exception e){
+						e.printStackTrace();				
+					}
+				}
+			}
+
+			方法二：使用Callable接口 + 线程池实现多线程
+			public class PatentInfo implements Callable<返回值类型>{		返回值类型需要上下一致
+
+				@Override
+				public 返回值类型 call() throws Exception{			
+					支线程逻辑
+				}
+
+				public static void main(String[] args){
+					ExecutorService executorService = Executors.newFixedThreadPool(2);		创建线程池，指定线程池大小
+
+					Callable<返回值类型> task = new PatentInfo();					创建Callable接口实现类对象
+					Future<返回值类型> future = executorService.submit(task);				提交任务到线程池
+
+					try{
+						返回值类型 object = future.get();						获取任务结果
+					}catch(Exception e){
+						e.printStackTrace();				
+					}finally{
+						executorService.shutdown();						关闭线程池
+					}
+				}
+			}
+
+	*****	方式四：使用线程池
+·			定义类实现Runable接口                				
+			重写run方法
+			创建线程池			
+
+		实现：
+			public class PatentInfo implements Runable{		
+
+				@Override
+				public void run(){			
+					支线程逻辑
+				}
+
+				public static void main(String[] args){
+					ExecutorService service = Executors.newFixedThreadPool(10);			创建可以同时执行10个任务的线程池
+					service.execute(new PatentInfo());						Runable接口实现类对象作参数，提交任务执行指定线程操作
+					service.shutdown();								关闭线程池
+				}
+			}
+			
+	Thread类的常用方法：
+		start()				启动线程，调用当前线程的run()方法					
+		run()				启动线程，执行内部逻辑			
+		setName(String name)		将线程的名称修改为name
+		getName()			获取线程的名称	
+		currentThread()			获取当前正在执行的线程对象		Thread.currentThread().getName()
+		getPriority()			获取线程的优先级			默认5：NORM_PROORITY
+		setPriority()			设置线程的优先级			优先级：1-10	1:MIN_PRIORITY/10:MAX_PRIORITY/5：NORM_PROORITY
+		sleep()				使当前正在执行的线程停留（暂停执行）指定的毫秒数
+		join()				一个线程等待另一个线程完成执行；当前线程暂停，直到被调用的线程结束
+			t1.join();		
+			t2.start();			t1线程死亡执行t2线程
+	     	t1.setDaemon(true)		设置为守护线程，当主线程执行完毕时，Java虚拟机退出，守护线程很快执行完毕
+		activeCount()			统计当前有效线程的数量
+		wait()	`			挂起，会释放已得到的所有资源和锁的使用权，必须要其他程序来唤醒才能重新执行
+		notify()			用于唤醒被挂起的单个线程
+		notifyAll()			唤醒被挂起的所有线程
+		isAlive()			判断当前线程是否存活		
+
+		sleep()补充：	
+			每个对象都有一个锁，sleep()方法不会释放锁，sleep时间达到后线程进入就绪状态	
+			sleep()调整延时，放大隐藏问题
+			模拟倒计时，模拟网络延时
+
+		守护线程补充：
+			守护线程服务用户线程，thread.setDaemon(true)将用户线程变成守护线程
+			虚拟机不用等待守护线程执行完毕，确保用户线程执行完毕即可
+			
+	线程调度：	
+		调度策略：	
+			分时调度模型：	所有线程轮流使用CPU的使用权，平均分配每个线程占用CPU的时间片
+			抢占式调度模型：	优先让优先级高的线程使用CPU，线程优先级相同，随机选择一个，优先级高的线程获取的CPU时间片相对多一点，机率高
+			
+		补充：	Java使用抢占式调度模型
+			使用方法：get/setPriority		获取/设置线程优先级
+			
+	线程控制：
+		ThreadUtil.sleep()			使当前正在执行的线程停留指定毫秒数
+		ThreadUtil.join()			一个线程等待另一个线程完成执行；当前线程暂停，直到被调用的线程结束
+		ThreadUtil.setDaemon()			设置线程为守护线程
+		
+	线程生命周期/状态：
+			 	  阻塞(sleep,wait,同步锁定)
+
+			       ↓		   ↑
+		   新建 ----> 就绪 ------> 运行 ----> 死亡	
+		       start      抢时间片  run  结束
+
+		阻塞：代码不往下继续执行
+	
+	线程安全：同一时间内只有一个线程能访问的资源
+		线程安全问题标准：
+			1.是否有多线程
+			2.是否有共享数据
+			3.是否有多条语句操作共享数据	
+
+		线程安全的类(了解)：
+		StringBuffer	
+			如果不需要线程安全的实现，使用StringBuilder替代StringBuffer
+
+		Vector		
+			如果不需要线程安全的实现，使用ArrayList替代Vector
+			线程安全：Vector用Collections中synchronizedList方法替代Vector
+				Collections.synchronizedList(new Arraylist<String>())
+
+		Hashtable	
+			如果不需要线程安全的实现，使用HashMap代替HashTable
+
+	线程同步：多线程访问同个资源不会导致数据不一致或竞争死锁				
+		数据一致性：每个线程在自己的工作内存工作，内存控制不当会造成数据不一致		并发：同一个对象被多线程同时操作/多线程访问同一个对象	
+			解决思路：某一时刻只有一个线程能访问共享数据，避免出现数据不一致	
+		避免竞争：防止多个线程同时修改同一资源
+		
+		例子：银行取钱 -> 夫妻二人取同一账户(总：500w)，妻：取300w；夫：取400w -> 银行账户数据出错，数据不一致
+
+		解决办法：队列 + 锁
+
+
+	锁机制 synchronized:	线程获得对象的排它锁，独占资源，其他资源必须等待
+		缺点：线程非常多的时候，每个线程都去判断同步上的锁，很耗费资源，降低程序运行效率
+
+		同步代码块：							对需要修改的资源加锁，操作锁的线程只能一次获取一个资源
+			synchronized（任意对象/obj）{			
+				多条语句操作共享数据的代码
+			}
+
+		同步方法：
+			定义格式：修饰符 synchronized 返回值类型 方法名（方法参数）{}
+			
+			同步方法锁对象：synchronized(this){}				补充：this代表当前对象的实例
+
+		静态同步方法：
+			定义格式：修饰符 static synchronized 返回值类型 方法名（方法参数）{}
+			
+			静态同步方法：synchronized（类名.class）{}
+				
+	死锁(避免出现)：A使用B的资源才能运行，B锁住A的资源才能运行，A/B都对自己的资源上锁，AB双方陷入等待/"死锁"
+		
+		产生死锁条件(不满足1个以上)：
+			互斥条件：一个资源只能被一个进程使用
+			请求与保持条件：一个进程因请求进程被阻塞，对已获得的资源保持不放
+			不剥夺条件：进程已获得的资源，在使用完之前，不能强行剥夺
+			循环等待条件：若干进程之间形成头尾相接的循环等待资源关系
+		
+
+	锁机制Lock：		JDK5.0提供的更强大的线程同步机制，提供对共享资源的独占访问，每次只能有一个线程对Lock对象加锁
+		接口：java.util.concurrent.locks.Lock		
+		实现类：ReentranLock
+
+		常用方法：
+			lock()		获得锁
+			unlock() 	释放锁
+		
+		实现类实例化/加锁/释放锁
+			Lock lock = new ReentranLock();			Lock锁实例化
+			try{
+				lock.lock();				加锁
+				多条语句操作共享数据的代码
+			}finally{
+				lock.unlock();				释放锁
+			}
+			
+	其他锁：
+		悲观锁：悲观指的总是预期最差的情况，多个线程总是要修改被锁住的内容	
+		乐观锁：预期最好的情况，多个线程在访问同一个资源的时候，只是查看内容不会对资源造成修改
+
+	线程通信：
+		常用方法：
+			wait()		挂起，释放已得到的所有资源和锁的使用权，其他程序唤醒才能重新执行
+			notify()	唤醒被挂起的单个线程
+			notifyAll()	唤醒被挂起的所有线程
+
+		典型应用：
+			生产者/消费者问题(现实排队取餐)：
+				生产者：生产线程 	--> A
+				消费者：消费线程	--> B
+			管程法	缓冲区：消费不能直接使用生产者的数据，之间有"缓冲区"  --> C
+			
+				A生产者将产品交给前台店员，B消费者从前台店员处取走商品
+				生产者：没有生产产品之前，通知消费者等待[wait()]；生产产品后，通知消费者消费[notify()]
+				消费者：消费之后，通知生产者已经结束消费[notify()]，需要生产新产品以供消费[wait()]
+
+
+设计模式：	代码设计经验的总结
+	单例设计模式：确保类在内存中只有一个对象，该实例必须自动创建，且对外提供
+		确保类在内存中只有一个对象：
+			1.构造方法私有化				
+			2.在成员位置自己创建一个对象			
+			3.通过一个公共的方法提供访问	
+
+		饿汉单例模式(饿汉模式)
+		饿汉模式：类一加载就创建对象，下面Student类中Student s = new Student();
+			private Student(){}					
+			priavte static Student s = new Student();	静态方法只能访问静态变量，private防止外部代码修改										
+			punblic static Student getStudent(){	外界能直接创建对象用static
+				ruturn s;}
+
+		懒汉单例模式(懒汉模式/懒加载)	存在线程安全问题，需要添加锁
+		懒汉模式：需要用的时候，才创建对象
+			priavte Student(){}
+			private static Student s = null;	
+			public synchronized static Student getStudent(){
+				if(s == null){
+					s = new Student();
+				}
+				return s;
+			}
+		实际开发中，一般使用饿汉模式
+		单例模式的应用：RunTime类
+
+
+
+枚举：	
+	将变量的值一一列出来，变量的值只限于列举出来的值范围内
+	单例模式/枚举对比：
+		单例模式：一个类只有一个实例
+		枚举：一个类有多个实例
+	
+	定义格式：
+		public enum 枚举类名{
+			枚举项1，枚举项2，枚举项3....;
+			变量名(构造方法参数)，，，；
+		}
+
+	注意：		所有类中可以有的枚举类都可以有
+		所有自定义的枚举类都是enum的子类
+		枚举类的第一行必须是枚举项
+		枚举类可以有构造器，但是必须是private的
+		枚举类有抽象方法，枚举项必须重写抽象方法
+		switch(light){			枚举的switch用法
+			case RED:
+				sout("红")；
+				break；
+			case GREEN:
+				sout("绿");
+				break；
+			case YELLOW:
+				sout("黄");
+				break；
+		}
+
+	补充：枚举就是数据字典
+		数据字典和枚举基本一样
+		数据字典是整个系统和用户的角度出发的一个概念，使系统更加方便操作
+		枚举是从程序角度出发，为了制定程序中经常要使用的某些常量集合
+
+
+
+反射：
+	类加载：
+		程序需要使用某个类时，该类未加载到内存中，系统会通过类的加载，类的连接，类的初始化三步骤对类进行初始化
+		JVM会连续完成这三个步骤，这三个步骤称为类加载或类初始化
+		
+		类的加载：将class文件读入内存，为之创建一个对象java.lang.Class
+			类加载器：	ClassLoader
+				负责将.class文件加载到内存中，并为之生成对应的java.lang.Class对象/负责加载类对象
+
+				ClassLoader中的两个方法：		ClassLoader.
+					getSystemClassLoader()		返回用于委派的系统类加载器
+					getParent()			返回父类加载器
+			
+			JVM的类加载机制(了解即可，不作介绍，百度一下)
+			
+		类的初始化：对类变量进行赋值
+			初始化步骤：
+				类还未被加载和连接，程序先加载并连接该类
+				类的直接父类还未被初始化，先初始化其父类
+				类中有初始化语句，一次执行这些初始化语句
+			
+			类初始化时机：
+				创建类的实例
+				调用类的类方法
+				访问类或接口的变量，或者为变量赋值
+				反射强制创建某个类对应的对象
+				初始化某个类的子类
+				用Java.exe运行某个主类
+					
+	反射：	
+		抽象：一个User实体类就是过程的抽象
+		反射：抽象的抽象：
+			一系列的对象时Java的一个个类，尝试找到类的共同点，对类进行再一次的抽象
+
+		Java反射机制：
+			在运行时去获取一个类的变量和方法信息，然后通过获取到的信息来创建对象，调用方法的一种机制
+
+		获取当前类的类对象java.lang.class：
+			反射调用一个类，先获取该类的字节码文件对象，类型为Class的对象
+			1.Student.class将会返回Student类对应的Class对象
+				例:Class<Student> c1 = Student.class;
+	
+			2.getClass()	返回该对象所属类对应的Class对象		
+				例:Student s = new Student();
+        			   Class<? extends Student> c3 = s.getClass();
+
+			3.(静态)forName(String className)	传入参数是某个类的相对路径
+				例:Class<?> c4 = Class.forName("com.example.javase_code.reflect.Student");
+		
+		
+		反射获取构造方法并使用：
+			获取构造方法：
+				1.1 getConstructors()	获取类中所有公共的构造方法对象的数组
+				1.2 getConstructor()	获取类中一个公共的构造方法对象
+				例： 
+					Class<Student> c1 = Student.class;
+				    	Constructor<?>[] cons = c.getConstructors();
+				
+				2.1 getDeclaredConstructors()	获取类中所有的(私有/公共)构造方法对象的数组
+·				2.2 getDeclaredConstructor()	获取类中一个(私有/公共)构造方法对象
+				例： 
+					Class<Student> c1 = Student.class;
+				    	Constructor<?>[] cons = c.getDeclaredConstructors();
+			
+			创建对象方法：
+				newInstance()		根据指定的构造方法创建对象
+				例：
+					Constructor<?> con = c.getConstructor(String.class, int.class);
+       					Object obj = con.newInstance("周舟", 20);
+					
+				实体类中私有构造方法：
+					private Student(String name);
+					暴力反射调用私有构造方法：	
+						Class<?> c = Class.forName("com.example.javase_code.reflect.Student");				
+						Constructor<?> cons = c.getDeclaredConstructor(String.class);
+						cons.setAccessible(true);	
+							值为true，取消访问检查，否则不能调用私有方法创建对象
+						Object obj = cons.newInstance("周舟");	
+		
+		反射获取属性/成员变量Field：
+			1.1 getField(String fieldName)		获取单个公共成员变量
+			1.2 getDeclaredField(String fieldName)	获取单个(公共/私有)成员变量
+
+			2.1 getFields()				获取所有公共成员变量,返回数组
+			2.2 getDeclaredFields()			获取所有(公共/私有)成员变量，返回数组
+			
+			用于给成员变量赋值的方法：
+				fieldName.set(obj,value)	给obj对象的成员变量fieldName赋值为value
+				例：name.set(o,"周程程");
+
+				暴力反射访问私有成员变量：
+					需要加上.setAccessible(true)	
+						值为true，取消访问检查，否则不能调用私有成员变量
+				例：		private String name;
+					Field name = c.getDeclaredField("name");
+        				name.setAccessible(true);
+			
+			Field类中的常用方法：
+				getName		获取属性的名字
+				getType		获取属性的类型的类对象
+				getModifiers	获取属性的修饰符
+	
+		反射获取成员方法并调用：	
+			1.1 getMethod(String methodName,Class parameterType)		获取单个public修饰的方法
+			1.2 getDeclaredMethod()						获取单个(公共/私有)的方法
+
+			2.1 getMethods()		获取所有public修饰的方法，包括继承来的方法，返回数组
+			2.1 getDeclaredMethods()	获取所有(公共/私有)类中的方法，返回数组
+			
+			获取成员方法：
+				例：	
+					Class<?> c = Class.forName("com.example.javase_code.reflect.Student");
+        				Method[] declaredMethods = c.getDeclaredMethods();	获取类中所有方法
+					Method s = c.getMethod("study",String.class);	获取类中单个方法
+					
+				访问私有成员方法：
+					需要加上.setAccessible(true)	
+						值为true，取消访问检查，否则不能调用私有成员变量
+				例：		private void function();
+					Method s = c.getMethod("study",String.class);
+					s.setAccessible(true);
+					
+			调用成员方法：
+				Object invoke(obj,args)		方法.invoke(对象，参数)
+					例：
+						Method s = c.getMethod("study",String.class);	获取方法
+        					Constructor<?> con = c.getConstructor();创建构造器
+        					Object obj = con.newInstance();		创建对象
+        					s.invoke(obj,"周舟");			调用方法
+							注:方法有返回值可以自动生成 alt + enter + V
+
+			Method类中的常用方法：
+				toString()
+				getName()		获取方法名
+				getParameterTypes	获取参数列表中参数的类型数组
+				getModifier		获取方法的修饰符
+				getReturnType		获取方法返回值类型
+		
+		补充：反射可以越过泛型检查，获取到原始的方法所需要的参数类型
+		例：有一个ArrayList<Integer>集合，想在集合中添加一个字符串数据
+			ArrayList<Integer> array = new ArrayList<>();
+        		Class<? extends ArrayList> c = array.getClass();
+        		Method add = c.getMethod("add", Object.class);
+        		add.invoke(array,"hello");
+        		add.invoke(array,"world");
+        		add.invoke(array,"java");
+        		System.out.println(array);
+			
+
+网络编程：
+	计算机网络：
+		将地理位置不同具有独立功能的多台计算机及其外部设备，通过通信线路连接起来，
+		在网络操作系统，管理软件和通信协议的协调下，实现资源共享和信息传递的计算机系统
+	
+	网络编程：
+		在通信协议下，实现网络互连的不同计算机上运行的程序可以数据交换
+	
+	网络编程三要素：
+		1.IP地址		每台计算机设备唯一的标识号
+		2.端口(号)	端口号可以唯一标识设备中的应用程序
+		3.协议		通信双方必须同时遵守才能完成数据交换	
+			常见协议：	UDP/TCP协议
+		
+		IP地址：
+			IPv4：
+				给每个连接在网络的主机分配一个32位地址，二进制表示
+				IP：11000000 10101000 00000001 01000010（二进制表示法）
+				IP: 192.168.1.66(点分十进制表示法)		
+			IPv6：
+				网络的发展，IPv4的扩展，128位地址长度，16个字节
+				IP: 16组二进制数
+				注意：IP地址经常被写成十进制的形式，中间使用.分割不同字节
+				
+			常用命令：
+			cmd命令	ipconfig	查看本机IP地址
+				ping IP地址	检查网络是否连通
+		
+			特殊IP地址：	
+				127.0.0.1  代表本机地址，用来测试
+
+		InetAddress类：		表示IP地址
+			主要功能：
+				(静态)getByNmae("主机名")	确定主机名称的IP地址
+				getHostName		获取IP地址的主机名
+				getHostAddress		返回文本显示中的IP地址字符串	
+		
+		端口号：
+			定义：两个字节表示的整数，取值范围是0-65535，0-1023是知名网络服务和应用，
+			普通应用程序使用1024以上的端口号，端口号被另外一个服务占用，会导致当前程序启动失败
+
+		协议：	
+			定义：计算机网络中，连接和通信的规则被称为网络通信协议
+			UDP协议：	用户数据报协议
+				UDP协议：无连接通信协议，在数据传输时候，数据发送端和接收端不建立逻辑连接
+				一台计算机向另一台计算机发送数据，发送端无需确定接收端是否存在，接收端无需反馈是否收到数据
+			
+				应用：音频/视频/普通数据传输	
+		
+				原理：在通信两端建立Socket对象，但是这两个Socket只是发送，接收数据对象
+
+			DatagramSocket类：	Socket对象
+				UDP发送数据：
+					创建发送端Socket对象		DatagramSocket ds = new DatagramSocket();
+					创建数据，把数据打包		DatagramPacket dp = new DatagramPacket(4个入参);   
+					调用Socket对象的方法发送数据	ds.send(dp);
+					关闭发送端			ds.close();
+				
+				UDP接收数据：
+					创建接收端Socket对象		DatagramSocket ds = new DatagramSocket(port);
+					创建数据包，接收数据		DatagramPacket dp = new DatagramPacket(2个入参);
+					调用Socket对象的方法接收数据	ds.receive(dp);	
+					解析数据包，将数据在控制台显示	byte[] datas = dp.getData();/String dataString = new String(datas);
+					关闭接收端			ds.close();
+
+			TCP协议：	传输控制协议
+				TCP协议：面向连接协议，在传输数据之前，在发送端和接收端建立逻辑连接
+				两台计算机可靠无差错数据传输，客户端向服务端发送连接请求，每次连接都要经过“三次握手”	
+				三次握手：
+					客户端与服务器之间的三次交换     保证连接
+					第一次握手：客户端向服务器发出请求连接，等待服务器确认
+					第二次握手：服务器向客户端返回一个响应，通知客户端收到了连接请求
+					第三次握手：客户端向服务器发送确认信息，确认连接
+				
+					模型简化：A：里面有人吗 B：有  A：我进来了				
+
+				应用：上传文件/下载文件/浏览网页
+				
+				原理：在通信两端建立Socket对象，在通信两端形成网络虚拟链路，通过Socket产生的IO流进行网络通信
+
+			ServerSocket类：			创建和管理传统的TCP连接
+				TCP发送数据：
+					创建客户端的Socket对象		Socket s = new Socket(host,port);
+					获取输出流，写数据			OutputStream os = s.getOutputStream();
+					释放资源				s.close();
+				
+				TCP接收数据：
+					创建服务器端的Socket对象（ServerSocket）	ServerSocket ss = new ServerSocket(port);
+					监听客户端连接，返回一个Socket对象		Socket s = ss.accept();
+					获取输入流，读数据，并把数据显示在控制台	InputStream is = s.getInputStream();
+										int len = is.read(bys);
+										String data = new String(bys,0,len);	
+					释放资源					ss.close()；
+
+
+Java8Lambda表达式与Stream流:
+	函数式接口：有且仅有一个抽象方法的接口(一个Controller中只有一个方法，Service层中实现方法体只有一个)
+
+	定义：
+		@FunctionalInterface	表示这是一个函数式接口	建议加上,不加没事
+		public interface MyInterface{
+			void show() [throws Exception];				若方法体中出现异常，直接在接口方法抛出即可
+		}
+	
+	常用函数式接口：
+		Supplier<T>		生产接口		生产数控的类型由泛型指定
+			T get();		生产数据	生产逻辑由Lambda表达式实现
+			例：
+				private static String getString(Supplier<String> sup){
+					return sup.get()}
+
+				Lambda调用：
+				String s = getString(() -> "林青霞")
+
+		Consumer<T>		消费型接口	消费数据的类型由泛型指定
+			void accept(T t);	接受单个输入参数并且不返回结果的操作
+			default Consumer<T> andThen(Consumer after)
+			例：
+				private static void operatorString(String name, Consumer<String> con1,Consumer<String> con2){
+					con1.andThen(con2).accept(name);}
+
+				Lambda调用：
+				operatorString("林青霞",s -> System.out.println(s),s->System.out.println(new StringBuilder(s).reverse().toString()));
+
+		Predicate<T>
+			test(T t);		对给定的参数进行判断（由Lambda表达式实现），返回一个布尔值
+			default Predicate<T> negate();			逻辑非
+			default Predicate<T> and();			短路与
+			default Predicate<T> or();			短路或
+			例：
+				public static boolean cheackString(String s, Predicate<String> pre){
+				       	return pre.test(s);
+        				return pre.negate().test(s);}
+				
+				Lambda调用：
+				boolean b1 = cheackString("hello", s -> s.length() > 8);、
+
+		Function<T,R>		接受一个参数并产生结果的函数		T：函数输入类型，R：函数结果类型
+			适用范围：	通常用于对参数进行处理，转换，然后返回一个新的值
+				R apply(T t);		输入一个参数返回一个结果
+				default<V> FunctionandThen(Function after);	
+
+			例：
+				private final Map<String,Function<T,String>> nameSuppliers = new HashMap<>();
+				
+				public Builder<T> addNameSupplier(String key,Function<T,String> supplier){		Function<T，String>：函数，接收T类型对象，生成String字符串	
+					this.nameSuppliers.put(key,supplier);				
+					return this;	
+				}
+
+
+	函数式编程思想：需要又输入量，输出量的计算方案，"拿数据做操作"
+	Lambda表达式的标准格式：
+		三要素：形式参数/箭头/代码块
+		格式：（形式参数）-> {代码块}
+	
+		形式参数：如果有多个参数，参数之间用逗号隔开；没有参数，留白
+		代码块：方法体内容
+	
+	Lambda表达式的使用前提：
+		1.有一个接口，接口中有且仅有一个抽象方法
+		2.必须有上下文环境，才能得出Lambda对应的接口
+			局部变量赋值: Runable r = （）-> sout("周舟学java")；
+			调用方法参数：useFlyable(s -> System.out.println("带你装逼带你飞，带你储进垃圾堆"));
+		
+		已有接口：
+			public interface Eatable {
+    				void eat();}
+		已有接口实现类：	
+			public class EatableImpl implements Eatable{
+    			@Override
+    			public void eat() {
+        			System.out.println("每天两小时，生命不息，运动不止");}}
+		比较三种方式：
+			1.接口多态
+			Eatable e =new EatableImpl();
+        		useEatable(e);
+			
+			private static void useEatable(Eatable e){
+       				e.eat();}
+
+			2.匿名内部类
+			useEatable(new EatableImpl(){
+            			@Override
+            			public void eat() {
+                			System.out.println("一天一苹果，医生远离我");
+            			}
+        		});
+			
+			3.Lambda表达式
+			useEatable(() -> {	无参
+            			System.out.println("一天一苹果，医生远离我");
+        		});
+			useFlyable((String s) -> {	带参（接口中方法参数）
+            			System.out.println("带你装逼带你飞，带你储进垃圾堆");
+        		});
+			useAddable((int x,int y)->{	带参（接口中的方法参数）
+            			return x+y;		方法体（接口中方法的实现）
+        		});
+				函数式接口作为方法参数：
+			startThread(() -> System.out.println(Thread.currentThread().getName()+"线程启动"))；
+				函数式接口作为方法返回值：
+			private static Comparator<String> getComparator(){ 
+				return (s1,s2) -> s1.length() -s2.length();}
+			
+	
+	Lambda表达式的省略模式：
+		1.参数的类型可以省略，有多个参数，都要省去，参数只有一个，小括号可以省略
+			useFlyable(s -> {	
+            			System.out.println("带你装逼带你飞，带你储进垃圾堆");
+        		});
+		2.代码块语句只有一条，可以省略大括号和分号
+			useFlyable(s ->	System.out.println("带你装逼带你飞，带你储进垃圾堆"));
+		3.有return情况下，return也要省略掉，代码块只有一条
+
+	Lambda表达式与匿名内部类的区别：
+		匿名内部类：
+			所需类型：接口，抽象类，具体类
+			使用限制：接口中存在多于一个抽象方法，只能使用匿名内部类
+		Lambda表达式：
+			所需类型：只能是接口
+			使用限制：接口有且仅有一个抽象方法
+
+		
+	方法引用符 ::	
+		实际开发：一般参数是0或者1个的时候使用方法引用
+		::  Lambda要表达的函数方案已经存在于某个方法的实现中，可以通过::来应该应用该方法作为Lambda的替代者  
+			例：
+				Lambda	s -> System.out.println(s);
+				idea提示	::	System.out::println	让System.out中的println方法来取代Lambda
+		
+		Lambda表达式方法引用：
+			常见的引用方式：
+				引用类方法		类名::静态方法		Integer::parseInt
+					Lambda表达式被类方法替代的时候，它的形式参数全部传递给静态方法作为参数
+				引用对象实例方法		对象::成员方法		new Calculator()::calculate
+				引用类实例方法		类名::成员方法		String::substring
+				引用构造器		类名::new		Student::new 
+
+	Lambda补充：	**************
+		List转Stream流进行数据处理：		JDK8新特性
+		1	stream.collect(Collectors.toList())		收集流中数据到集合中
+			实际开发：List<String> ids = list.stream().map(list::getId).collect(Collectors.toList());
+				使用场景：将集合中的某一列数据单独提取出来到List中
+											
+		2	stream.collect(Collectors.toSet())		收集流中数据到Set中
+			实际开发：Set<String> ids = list.stream().map(list::getId).collect(Collectors.toSet());
+				使用场景：将集合中的某一列数据单独提取出来到Set中		
+
+			保存数据到List与Set的区别：
+				Stream流数据 -> List		数据可重复，且有索引下标
+				Stream流数据 -> Set		数据不重复，没有索引下标
+
+		3	stream.toArray(String[]::new)			收集流中数据到数组中
+			实际开发：ArrayList<String> arrayList = list().stream.filter(e ->  e > 18).collect(Coll ectors.toCollection(ArrayList::new));		
+				使用场景：将集合中的数据经过筛选条件保存到数组中
+						
+		4	stream.collect(Collectors.toMap())		收集流中数据到双列集合Map	
+			Map<String,String> = users.stream().collect(Collector.toMap(users::getId,users::getName));
+				使用场景：提取属性构造映射
+
+		5	stream.findFirst()				获取流中第一个元素				
+			stream.findAny()				获取流中任何一个元素
+			
+		6	stream.anyMatch(e -> 条件)			流中至少有一个元素匹配给定条件，有返回true;没有返回false
+			stream.allMatch(e -> 条件)			流中所有元素匹配给定条件，满足返回true;没有返回false
+			stream.noneMatch(e -> 条件)			流中没有元素匹配给定条件，没有返回true;有返回false
+
+		7	将普通流转换为数值流：
+				mapToInt -> IntStream			将普通流转换为Int类型的数值流，返回类型：IntStream
+				mapToDouble -> DoubleStream		将普通流转换为Double类型的数值流，返回类型：DoubleStream
+				mapToLong -> LongStream			将普通流转换为Long类型的数值流，返回类型：LongStream
+						
+
+		Collectors工具类：
+			流中数据聚合/分组/分区/拼接操作：
+			分组：	Map<String, List<Employee>> map = employees.stream().collect(Collectors.groupingBy(Employee::getCity));
+			分区：	
+			聚合：	max/min/average		sum/count	
+					list.stream().mapToInt(Person::getAge).max()/min()/average();		
+						max/min/average返回类型：OptionalInt处理IntStream数值流
+						sum/count返回类型：Long
+
+			list.stream().collect()		收集流中元素
+
+			常用Collectors方法详解：
+				Collectors.toList()						流中元素收集到List中
+				Collectors.toSet()						流中元素收集到Set中
+				Collectors.toMap(键(映射函数)，值(映射函数))			将流中元素收集到Map中
+				Collectors.counting()						计算流中个数	
+				Collectors.joining("，","{","}")					将流中数据连接成一个字符串，参数：分隔符，前缀，后缀
+				Collectors.groupingBy(键，值)					将流中的元素根据指定的分类函数进行分组			
+				Collectros.summingInt()						将流中的元素根据指定函数映射到整数值，进行求和
+				Collectors.averagingInt()					计算流中整数值的平均值
+				Collectors.maxBy(comparator) 					根据流中提供比较器确定最大元素
+				Collectors.minBy(comparator)					根据流中提供比较器确定最小元素
+				Collectors.toCollection(ArrayList::new)				将流中元素收集到一个新的集合中
+				Collectors.mapping(String::toUpperCase,Collectors.toList())	将流中的元素转换成另一个类型
+				Collectors.collectingAndThen(Collectors.groupingBy(String::length),Collections::unmodifiableMap)
+					收集元素，对结果进行再处理						
+				Collectors.reducing(0，Integer::sum)				将流中每个整数累加起来		
+					规约操作，将流中元素规约成单一结果(规约：求和，最大值，最小值)
+		
+					
+Java8日期API与容器API：
+	优点：Date不格式化，输出日期可读性差；Java8时间类直接输出可读性好
+	     Date存在线程安全问题，Java8时间类都是线程安全的
+		
+	日期类：
+		ZoneId：			时区类
+			构造方法：
+				ZoneId shanghaiZoneId = ZoneId.of("Asia/Shanghai");		设置时区
+				ZoneId systemZoneId = ZoneId.systemDefault();			获取系统默认时区	
+			常用方法：
+				Set<String> zoneIds = ZoneId.getAvailableZoneIds();					获取所有的合法的"区域/城市"字符串
+				ZoneId zone = TimeZone.getDefault().toZoneId();						将老时区转化为新时区
+				ZoneDateTime zonedDateTime = ZoneDateTime.of(localDateTime,shanghaiZoneId)		根据ZoneId将localDateTime转化为ZonedDateTime	
+
+		Instant：		时间戳类(可精确到纳秒)		时间戳 = 秒数 + 纳秒(从初始时间开始)		初始时间：1970年1月1日00:00
+			构造方法：
+				Instant now = Instant.now();					获取Instant的时间
+					
+			常用方法：			Epoch:初始点/起始点
+				Instant.now()							获取当前时刻Instant时间戳
+				Instant.ofEpochSecond(long epochSecond)				给定秒数创建Instant对象
+				Instant.ofEpochSecond(long epochSecond,long nanoAdjustment)	给定秒数和纳秒数创建Instant对象
+				Instant.getEpochSecond()					获取时间戳秒数部分		
+				Instant.getNano()						获取时间戳纳秒部分
+				Instant.plusSeconds(long second/millis/nanos)			增加秒数/增加毫米数/增加纳秒数
+				Instant.minusSeconds(long seconds/millis/nanos)			减少秒数/减少毫米数/减少纳秒数
+				isBefore(Instant other)/isAfter(Instant other)			比较Instant的先后顺序
+				compareTo(Instant other)					比较两个Instant对象{返回：负数(当前对象小于比较对象)/0(当前对象等于比较对象)/正数(当前对象大于比较对象)}
+				Instant.toString()						将Instant对象转为字符串对象
+				Instant.atZone(ZoneId zone)					将Instant对象转化为ZonedDateTime对象
+				Instant.atOffSet(ZoneOffSet offSet)				将Insatnt对象转化为OffSetDateTime对象
+				Instant.toEpochMilli()						将Instant对象转为毫米数
+				Instant.fromEpochMilli(long epochMilli)				从毫米数创建Instant对象
+				Instant.until(Instant insatnt1,Instant insatnt2)		计算两个Instant之间的时间差
+			
+		Duration/LocalTime/LocalDate/LocalDateTime/ZonedDateTime：		时间类
+			构造方法：
+				LocalDateTime now()				从默认时区中的系统时钟获取当前日期时间			
+				LocalDateTime of(int year,int dayOfMonth,int hour,int minute，int second)		年月日时分秒
+				
+				LocalDate now()
+				LocalDate of(int year,int month,int dayOfMonth)						年月日
+
+			常用方法：大部分简略(见名知意，过于简单)
+				LocalDateTime beginTime = LocalDateTime.of(date,LocalTime.MIN);			获取一天的开始时间
+				LocalDateTime endTime = LocalDateTime.of(date,LocalTime,MAX);			获取一天的结束时间
+					
+		DateTimeFormatter：	时间格式化类
+			默认静态方法：	
+				格式化：
+				String format(DateTimeFormatter formatter)	使用指定的格式化程序格式化此时间日期
+				解析：
+				LocalDateTime parse(CharSequence text,DateTimeFormatter formatter)
+						使用特定格式化程序从文本字符串中获取LocalDateTime的实例
+				获取日期格式化对象：
+				DateTimeFormatter ofPattern(String pattern)	使用指定的模式创建格式化程序
+
+			例：	格式化:
+				String format = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-DD HH:mm:ss"));	
+				解析：
+				String  s = "2023-11-22 10:13:11"
+				LocalDateTime parse = LocalDateTime.parse(s,DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+
+	容器类：
+		Optional容器类：		
+			作用：Optional是一个容器，放置可能为空的值，值存在时，Optional内部保存这个值；值不存在时，Optional为空
+			构造方法：
+				Optional optional = Optional.of(value)			创建不包含null值的对象；value为null，抛出NullPointerException
+				Optional optional = Optional.ofNullable(value)		value值可以为null，返回Optional.empty(空的Optional实例)
+				
+			常用方法：
+			1	Optional.empty()				创建空Optional对象		
+			2	Optional.isPresent()				判断值是否存在,存在返回true，不存在返回false
+			3	Optional.ifPresent(Lambda表达式)			如果Optional中有值，执行consumer操作；否则不执行
+			4	Optional.get()					获取Optional中的值，Optional中值为null，抛出NoSuchElementException
+			5	Optional.orElse()				如果Optional中的值为null，返回指定默认值
+			6	Optional.orElseGet(Lambda表达式)			如果Optional中的值为null，通过Lambda表达式获取一个默认值
+			7	Optional.orElseThrow(Lambda表达式)		如果Optional中的值为null，通过Lambda表达式抛出异常
+			8	Optional.filter(Lambda表达式)			返回满足Lambda表达式的Optional值；否则返回空Optional值
+			9	Optional.map(Lambda表达式)			值存在，对Optional中的值进行函数运算，返回新的Optional
+			10	Optional.flatMap()				值存在，对Optional中的值进行函数运算，返回新Optional，否则，返回空Optional
+			
+			实际开发：
+			2	return !Optional.ofNullable(routeFly).isPresent();				
+			
+				Optional.ofNullable(							
+					super.getOne(
+						new LambdaQueryWrapper<Plan>()
+							.eq(Plan::getPlanName, name)
+            						.eq(Plan::getDeptCode, deptCode)
+							.ne(Objects.nonNull(id), Plan::getId, id)))
+			3	).ifPresent(f -> {												
+					throw new SeviceException("出错啦")					
+				});		
+
+				
+
+				Optional.ofNullable(hangarProperties.getHangar())
+			9		.map(HangarDetails.getGatewaySn)					Optional中值存在，对值进行运算
+			7		.orElseThrow(() -> new ServiceException("缺少机库配置"))；			Optional中值不存在，通过Lambda表达式抛出异常
+				
+模块化：
+	模块化在Java7，8已经有了概念，到Java9才真正成熟	
+	在两个模块的src目录下新建一个名为module-info.java的描述性文件，使用模块导出和模块依赖进行配置
+	模块导出格式：exports 包名； 	myOne	exports com.itheima_01;
+	模块依赖格式：requeires 模块名；	myTwo
+		例：
+			module myOne{
+				exports com.itheima_01;
+				exports com.itheima_03;
+		
+				provides MyService with Itheima；	Provides语句为接口指定实现类
+			}
+		
+			module myTwo{
+				requires myOne；
+				uses MyService；
+			}
+
+			myTwo使用服务：
+			public static void main(String[] args){
+				加载服务
+				ServiceLoader<MyService> myServices =  ServiceLoader.Load(MyService.class);	
+				for(MyService my: myServices){
+					my.service();
+				}	
+			}
+			
+		
+	模块服务：	
+		从Java6开始，Java提供了一种服务机制，允许服务提供者和服务使用者之间完成解耦
+		简单的说，服务使用者只面向接口编程，不清楚服务提供者的实现类
+		
+
+注解：
+	定义：也叫元数据，一种代码级别的说明
+
+	JDK内置注解：
+	     ***@Override	用来修饰方法，表示该方法是重写父类的方法，不是会报错
+		@Deprecated	标记程序使用的类，方法已经过时
+		属性：	since	指定该API从哪个版本过时
+			forRemoval	指定该API将来是否会被删除
+		@SuppressWarnings	取消编译器检查，不用在编译完成后出现警告信息	标注位置：类，字段，方法，构造方法，局部变量
+			@SuppressWarnings(value = "all")
+			注解演示：		@SuppressWarnings(“unchecked”)		
+						告诉编译器忽略unchecked警告信息，如使用List，ArrayList等未进行参数化的警告信息
+					@SuppressWarnings(“deprecation”)
+						告诉编译器忽略使用注解@Deprecated警告信息
+					@SuppressWarnings(“unchecked”, “deprecation”)
+						告诉编译器同时忽略unchecked和deprecation的警告信息
+						
+		@FunctionalInterface	表示接口是函数式接口
+	
+	元注解：
+		定义：对注解进行注解的注解
+		
+		常用元注解：
+			@Retention	指定被修饰的注解保留多长时间
+				@Retention(RetentionPolicy.RUNTIME)		注解信息在class文件中，JVM可以得到信息
+				属性：
+					RetentionPolicy.RUNTIME			默认
+					RetentionPolicy.CLASS
+					RetentionPolicy.SOURCE
+					
+			@Target		注解使用位置
+				value属性：
+					ElementType.TYPE			应用于类，接口，枚举
+					ElementType.FIELD			应用于属性
+					ElementType.METHOD			应用于方法
+					ElementType.PARAMETER			应用于形参
+					ElementType.CONSTRUCTOR			应用于构造函数
+					ElementType.LOCAL_VARIABLE		应用于局部变量
+					ElementType.ANNOTATION_TYPE		应用于注解类型
+					Elementtype.PACKAGE			应用于包
+
+			@Documented	被该注解标记的元素可以被Javadoc文档化
+	
+	自定义注解：
+		public @interface 注解名称{	本质是接口
+			属性列表；
+			属性定义格式：
+				返回值类型 属性名()[default 默认值]；
+				String name() default "zz";
+    				int age();
+		}
+		注意：使用default关键字初始化，使用注解可以不对属性赋值
+		     属性名称是value，可以直接定义值，value省略
+		     数组赋值，用{}包裹
+
+		例：自定义注解AutoFill，@AutoFill，对公共字段自动填充
+			@Target(ElementType.METHOD)				
+			@Retention(RetentionPolicy.RUNTIME)										
+			public @interface AutoFill{
+				OperationType value();			数据库操作常量类:OperationType(UPDATE INSERT)	
+			}
+
+			
+XML:	是一种可扩展的标记语言
+	标记语言：通过标签来描述数据的一门语言		
+		<dependency></dependency>
+		<br/>
+	可扩展：标签的名字是可以自定义的		
+		
+	XML文件作用：
+		进行数据存储和数据传输		mapper文件
+		作为项目的配置文件(配置信息)		pom.xml
+	
+	xml文件的两种约束格式
+		dtd		.dtd后缀
+		schema		.xsd后缀
+
+	XML解析：
+		从Xml文件中读取到数据
+		解析思想：
+			DOM文档对象模型
+		
+		常见XML解析技术：
+			JAXP
+			JDOM
+			DOM4J		常用/公司使用
+			pull
+
+		XML解析案例:使用DOM4J解析xml文件，将解析到的数据封装到学生对象中，并将学生对象存储到ArrayList集合中
+			1.创建学生类
+			2.导入jar包
+				lib -> 导入jar包 ->add  as library
+			3.创建解析器
+				SAXReader saxReader = new SAXreader();
+			4.通过解析器读取xml文档数据，得到document对象							XML文件：
+				Document document = saxReader.read(new FileInputStream("xml文件地址"))		<students>	
+			5.获得根节点元素											<student id = "stu001">
+				Element rootElement = document.getRootElement();						<name>风清扬</name>
+			6.从根节点查找其他节点元素											<age>20</age>
+				List<Element> elements = rootElement.elements("student");				</student>
+			7.遍历集合得到每一个学生元素									</students>	
+				for(Element studentElement : elements){
+					Attribute attribute = studentElement.attribute("id");
+					String id = attribute.getValue(); 
+					Element nameElements = studentElement.element("name");
+					String name = nameElements.getText();
+				}
+
+
+单元测试：	JUnit是最小的单元测试框架
+	针对单个方法或者整个类进行测试
+	作用：
+		单元测试用于判断某个特定条件下某个方法的执行
+		执行单元测试证明某段代码的执行结果是否一致
+
+	优点：
+		可以生成全部方法的测试报告，结果绿色，通过
+		某个方法测试失败，不影响其他测试方法的测试
+
+	在test文件夹下添加对应的测试类添加Test注解
+	
+	断言：就是判断
+		JUnit测试框架中Assert类：实现断言
+		Assert.assertEquals(ecpected/30,result/20)
+
+		例子：	aaplyFeedbackReplyInfo = BeanUtil.copy(dto,ApplyFeedbackReplyInfo.class);
+			assert applyFeedbackReplyInfo != null;				
+			
+			作用：验证applyFeedbackReplyInfo是否为null，如果applyFeedbackReplyInfo为null，抛错AssertionError
+				
+	Junit常用注解：
+		@Test
+		@Before		在测试用例之前执行
+		@After		在测试用例之后执行
+		@BeforeClass	方法首先执行，用于初始化资源
+		@AfterClass	方法最后执行，用于释放资源
+
+日志：
+	普通输出：	sout回车输入
+	高级输出：	日志输出
+		获取日志记录对象：
+			1.private static Logger log = LoggerFactory.getLogger(DeptController.class);
+			2.注解@Slf4j
+			
+		日志输出：
+			log.info("周舟是大帅哥")；
+	
+	
+			
+		
+	
