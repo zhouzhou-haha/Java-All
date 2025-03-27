@@ -82,7 +82,7 @@ SpringBoot整合Apache POI：
 
 		单元格值数据类型：
 			String			字符串类型				getStringCellValue()		获取String类型单元格的值
-			Numeric			数值类型(包括日期)				getNumericCellValue()		获取Numeric类型单元格的值	
+			Numeric			数值类型(包括日期)			getNumericCellValue()		获取Numeric类型单元格的值	
 			Boolean			布尔值类型				getBooleanCellValue()		获取Boolean类型单元格的值
 			Formula			公式					getCellFormula()		获取Formula类型单元格的值
 			Error			错误					getErrorCellValue()		获取Error类型单元格的值
@@ -134,7 +134,7 @@ SpringBoot整合EasyExcel：			快速简单避免OOM的java处理Excel工具
 		@ExcelIgnore							标记字段在读写Excel时被忽略
 		@ExcelIgnoreUnannotated						标记类，表示类中所有未标记@ExcelProperty的字段在读写时被忽略
 		@ExcelProperty(列名)						指定字段对应的Excel列名或索引
-		@ExcelWith(列宽)							设置Excel表格单个字段列的宽度
+		@ExcelWith(列宽)						设置Excel表格单个字段列的宽度
 		@ColumnWidth(全局宽度)						设置Excel表格列的宽度
 		@HeadStyle(fontStyle = FontStyle.BLOD)				定义表头的样式(字体颜色)
 		@ContentStyle(fontStyle = FontStyle.ITALIC)			设置单元格内容样式
