@@ -1,0 +1,482 @@
+SpringBoot：
+	SpringBoot底层原理：
+		配置优先级：
+			.properties -> yml -> yaml
+			打包：	maven指令：package
+				jar：普通模块打包(SpringBoot项目都是Jar包)
+				war：普通web程序打包
+				pom：父工程或者聚合工程，当前模块不写代码，仅进行依赖管理
+
+			运行jar包：
+				Java [options] -jar <jar 文件> [args...]
+
+		Bean管理：
+			获取bean对象：	单例bean
+				获取IOC容器对象：
+					private ApplicationContext applicationContext；
+				根据bean的名称获取：
+					DeptController bean = (DeptController)applicationContext.getBean("deptController");
+				根据bean的类型参数获取：
+					DeptController bean = applicationContext.getBean(DeptController.class);
+				根据bean的名称和类型获取：
+					DeptController bean = applicationContext.getBean("deptController",deptController.class);
+			
+			bean作用域：
+				singleton	IOC容器内同容器的bean只有一个实例(默认)
+				prototype	每次使用该bean会创建新的实例
+				@Scope注解配置作用域：
+					@Scope("prototype")
+					注：实际开发中，绝大部分Bean都是单例的，也就是说绝大部分Bean不需要配置scope属性
+		
+			第三方bean：	一般放在配置类当中
+				@Bean	在方法上添加，将方法返回值交给IOC容器，称为IOC容器的bean对象·
+					属性：name/value指定bean名称
+						实际开发中一般不指定bean名称，未指定，默认是方法名
+				@Bean
+				public SAXReader saxReader(){
+					return new SAXReader();
+				}
+					第三方bean需要依赖其它bean对象，直接在bean定义方法中设置形参即可
+
+			常用方法：
+				BeanUtil.copyProperties();	将一个对象中的内容拷贝到另一个对象中
+				BeanUtil.copyToList();		将一个List中的内容拷贝到另一个List中
+				
+		SpringBoot原理：
+			起步依赖原理：maven的依赖传递
+			(SpringBoot原理)自动配置原理：
+				SpringBoot引入依赖的jar包提供的bean和配置类加载到Spring的IOC容器中？
+				方案一：	@ComponentScan组件扫描第三方依赖包
+					缺点：繁琐
+				方案二：	@Import导入   注解@Import导入类会被加载到IOC容器中
+						@Import(TokenParser.class)
+					@EnableXxxx注解，封装@Import注解，导入对应的bean和配置类
+					@Conditional	类/方法
+						按照一定的条件进行判断，满足给定条件后才会注册对应的bean到IOC容器中
+						@ConditionalOnClass		判断环境中是否有对应字节码文件/类，才注册bean到IOC容器
+						@ConditionalOnMissingBean	判断环境有没有对应的bean，才注册bean到IOC容器
+						@ConditionalOnProperty		判断配置文件中有对应的属性和值，才注册bean到IOC容器
+
+	自定义starter：
+		在实际开发中，经常会定义一些公共组件，提供各个项目团队使用
+			SpringBoot官方提供起步依赖：
+				<dependencies>
+					<dependency>
+						<groupId>org.springframework.boot</groupId>
+						<artifactId>spring-boot-starter-web</artifactId>
+					</dependency>
+				</dependencies>
+			其他技术提供起步依赖：
+				第三方技术-spring-boot-starter	第三方技术整合SpringBoot	
+
+
+	SpringBoot配置文件：
+		application.properties:
+			server.port = 8080
+
+		application.yml:(实际开发)
+			server:
+			  port: 8080
+
+		.properties 和 .yml 可以共存，但是 .properties 配置⽂件的优先级最⾼；即如果 .properties 和.yml 中出现了相同的配置，会以 .properties 为主
+		Spring Boot 在加载配置过程中，加载完.properties ⽂件之后，也会加载 .yml ⽂件的配置信息。
+
+			注意：bootstrap.yml文件优先级比application.yml优先机高很多
+
+	SpringBoot多环境开发-Profiles：
+		多环境：开发完的程序可能会运行在不同的环境上
+		
+		问题：在不同环境下开发测试需要反复修改配置文件中的配置信息
+		解决方案：Profiles为每一种环境提供一份独立的数据源信息
+			
+		Profiles可以用来隔离应用程序配置的各个部分，并在特定环境下指定部分配置生效
+
+		常见运行环境名称：
+			dev	开发环境
+			test	测试环境		
+			port	生产环境
+
+		多环境开发单文件配置：
+			application.yml:
+				分割不同环境配置：---
+				指定环境配置：
+				   spring：
+				         config：
+				       activate：
+				         on-profile：环境名称
+				指定环境配置生效：
+				   spring：
+				         profiles：
+				            active：环境名称
+		   注意：特定环境的配置和通用配置信息冲突，特定环境中的配置生效
+
+		多环境开发多文件配置(实际开发)：	
+			application-dev.yml:	开发环境配置信息
+			application-test.yml:	测试环境配置信息
+			application-prod.yml:	生产环境配置信息
+			application.yml:	共性配置并激活指定环境
+			激活指定环境：
+			1.	spring：
+				    profiles：	
+				    active：环境名称
+			2.IDEA快捷键：(实际开发推荐使用)	
+				启动旁边  ⋮ -> Edit... -> Active profiles指定环境 -> apply -> OK
+
+			3.alt + 8 打开控制台 -> "+" -> Run Configuration Type -> Spring Boot -> 选择需要启动的服务右键 -> Edit -> Active profiles指定环境 -> apply -> OK
+
+		Profiles-分组功能：
+			application-devServer.yml	服务器相关配置
+			application-devDB.yml		数据源相关配置
+			application-devSelf.yml		自定义配置
+
+		使配置文件同时生效：	application.yml	
+			spring：
+		  	  profiles：
+		    	    active：环境名称	
+		    	      group:
+		      	        "dev":devServer,devDB,devSelf	 	
+
+	IDEA前端页面位置：
+		classpath -> Resources
+			classpath:/static 
+			classpath:/public 
+			classpath:/resources
+	
+	异常处理：	
+		1.try{}catch{}/throw{}
+		2.@SneakyThrows(Exception.class)	
+		3.全局异常处理器	Result封装错误信息		
+			@RestControllerAdvice			@RestControllerAdvice定义异常处理器
+			public class GlobalExceptionHandler {
+    				@ExceptionHandler(Exception.class)	@ExceptionHandler当前方法捕获哪种类型的异常
+    				public Result ex(Exception ex){
+        				ex.printStackTrace();
+        				return Result.error("对不起，操作失败，请联系管理员");
+    				}}
+		全局处理异常流程：在未写trycatch时，全局处理异常类会定位到异常位置，手动修改代码抛出异常，全局异常处理接住异常并抛出异常信息
+
+	事务管理：
+		问题：删除一个部门，同时还需要删除一个部门下的所有员工，两个接口。
+			如果两个接口中间出现异常，只会删除部门信息，部门员工不会被删除，造成数据不一致
+			解散部门在实际开发中，都要记录操作日志，记录成功还是失败
+
+		解决方案：事务管理
+		@Transactional		service层的方法，类，接口上
+			将当前方法交给spring进行事务管理，方法执行前，开启事务；成功执行完毕，提交事务；出现异常，回滚事务
+
+			加上@Transactional注解之后，默认情况下只有出现RuntimeException才会回滚
+				属性：@Transactional(rollbackFor = Exception.class)
+					rollbackFor用于控制出现何种异常，回滚事务
+				属性：@Transactional(prpagation = Propagation.REQUIRED)
+					属性值：
+					   (常用)REQUIRED	有就加入，没有就创建事务
+					   (常用)REQUIRES_NEW	总是创建新事务(事务之间不相互影响)
+						SUPPORTS	有就加入，没有就在无事务中运行
+						NOT_SUPPORTED	不支持事务，在无事务状态下运行，有就挂起事务
+						MANDATORY	必须有事务，否则抛异常
+						NEVER		必须没事务，否则抛异常
+					propagation指定	一个事务方法被另一个事务方法调用时，这个事务方法如何进行事务控制
+
+		实际开发例子：
+			@Transactional(rollbackFor = Exception.class)
+    			@Override
+    			public R updateTeAndRePatentVO(TeAndRePatentVO teAndRePatentVO) throws ParseException {
+			对表进行更新操作，先删除再插入使用事务管理
+			if(ObjectUtil.isNotEmpty(rePatent)) {
+            			//存在Patent更新
+            			BeanUtils.copyProperties(teAndRePatentVO, researchUnitPatent);
+            			researchUnitPatentMapper.update(researchUnitPatent, new LambdaQueryWrapper<ResearchUnitPatent>().eq(ResearchUnitPatent::getPatentGuid, teAndRePatentVO.getPersonalPatentGuid()));
+        		}else{
+            			//不存在删除原表数据，新增新表数据
+            			technologyUnitPatentMapper.delete(new LambdaQueryWrapper<TechnologyUnitPatent>().eq(TechnologyUnitPatent::getPatentGuid, teAndRePatentVO.getPersonalPatentGuid()));
+            			BeanUtils.copyProperties(teAndRePatentVO, researchUnitPatent);
+            			researchUnitPatent.setCreateTime(new Date());
+            			researchUnitPatentMapper.insert(researchUnitPatent);
+        		}
+				
+
+
+		
+	文件上传：	讲本地图片，视频，音频等文件上传到服务器，供其他用户浏览或下载的过程
+		前后端逻辑：将文件的服务器地址返回给前端，前端访问地址，将数据显示出来
+		前端：	form表单
+			<form action = "/upload" method = "post" enctype = "multipart/form-data">
+				姓名：<input type = "text" name = "username"><br/>
+				年龄：<input type = "text" name = "age"><br/>
+				头像：<input type = "file" name = "image"><br/>
+				<input type = "submit" value = "提交">
+			</form>
+			注：
+				前端三要素：method = "post"	提交方式：post
+					  type = "file"		文件上传按钮
+					  enctype = "multipart/form-data"	不加格式上传仅为文件名
+		
+		后端：
+			Springboot配置文件：
+				spring.servelt.multipart.max-file-size = 10MB		配置单个文件最大上传大小
+				spring.servelt.multipart.max-request-size = 100MB	配置单个请求最大上传大小(一次请求可以上传多个文件)
+			
+			服务端用MultipartFile接收文件
+				上传文件成功后，文件不会被保存	
+				文件存储：
+					本地存储：	将接收到的文件，将文件存储再本地服务器磁盘上
+						file.transferTo(new File("E:\\images\\"))	//将文件存储在服务器的磁盘目录中E:\\images
+					
+					阿里云OSS：(实际开发)
+						阿里云：是阿里巴巴气息全球领先的云计算公司，国内最大的云服务提供商
+						阿里云OSS：阿里云对象存储OSS，是安全可靠的云存储服务，可以通过网络随时存储和调用包括文本，图片，视频在内的各种文件
+						
+						第三方服务通用思路：
+							账号注册登录，基本配置
+							官方SDK编写入门程序
+							集合使用，开发业务功能
+
+						使用步骤：
+							注册阿里云 -> 开通对象存储服务 ->  创建bucket -> 获取AccessKey密钥 -> 参照官方SDK编写入门程序 
+							bucket:	OSS的存储空间，用于存储文件的容器
+							AccessKey：身份凭证，证明是阿里云OSS服务的合法用户		
+			
+			本地存储(Controller)：
+				public class UploadController{
+					@PostMapping("/upload")
+					public Result upload(String username,Integer age,@RequestParam("image")MultipartFile image) throws Exception{
+						String originalFilename = image.getOriginalFilename();		获取原始文件名
+						构造唯一文件名(uuid)
+						int index = originalFilename.lastIndexOf(".");			获取文件后缀名	
+						String extname = originalFilename.substring(index);
+						String newFileName = UUID.randomUUID().toString() + extname;		
+						iamge.transferTo(new File("E:\\images\\" + newFileName));	将接收到的文件存储到磁盘文件中(本地存储)
+						return Result.success();
+					}
+				}
+				补充：Postman上传文件，将key中属性text改为File
+				唯一文件名：
+					uuid(通用唯一识别码)
+					引入第三方路径，tomcat中添加资源路径，将文件上传到项目之外的一个文件中，Idea和tomcat都访问资源路径
+			
+			阿里云OSS存储:
+				Controller:
+					查看阿里云OSS储存SDK文档，编写工具类
+					@PostMapping("/upload")
+  					public Result upload(MultipartFile image){		
+						aliOSSUtils.upload(image);
+					}
+				
+				工具类：
+					application.properties:
+						aliyun.oss.endpoint = oss-cn-beijing.aliyuncs.com
+						aliyun.oss.accesskeyId = AccessKeyId
+						aliyun.oss.accessKeySecret = Ebh4Hu7kNK8HW8tSFFhjO9w8dZ2WES
+						aliyun.oss.bucketName = web-zhousir
+
+					@Component
+					public class AliOSSUtils {
+    						private String endpoint;	@Value("${配置文件中的key}")引入
+    						private String accessKeyId;
+    						private String accessKeySecret;
+    						private String bucketName;
+
+    						public String upload(MultipartFile file) throws IOException {
+        						InputStream inputStream = file.getInputStream();
+        						String originalFilename = file.getOriginalFilename();
+        						String fileName = UUID.randomUUID().toString() + originalFilename.substring(originalFilename.lastIndexOf("."));
+        						OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
+        						ossClient.putObject(bucketName, fileName, inputStream);
+        						String url = endpoint.split("//")[0] + "//" + bucketName + "." + endpoint.split("//")[1] + "/";
+        						ossClient.shutdown();
+        						return url;
+    						}
+					}
+
+	登录认证：
+		登录校验：已登录，执行业务操作(统一拦截请求，校验是否登录)，未登录，返回错误信息
+			登录标记(会话技术)：用户登录成功之后，每一次请求，都可以获取该标记
+			统一拦截：
+				过滤器Filter
+				拦截器Interceptor
+			
+			会话：用户打开浏览器，访问web服务器的资源，会话建立。知道一方断开连接，会话结束，一次会话中可以包含多次请求和响应
+				会话跟踪：服务器需要识别多次请求来自同一浏览器，在同一会话的多次请求共享数据
+				Cookie：		客户端(浏览器)
+					Cookie就是一些数据信息，存储在电脑文本文件中。
+					用于存储服务器返回给客服端的信息，客户端(浏览器)进行保存(浏览器存储数据信息，在后续的HTTP请求中再次发送给服务器)
+					在下一次访问该网站时，客户端会将保存的cookie一同发给服务器，服务器再利用cookie进行一些操作。
+					利用cookie我们就可以实现自动登录，保存游览历史，身份验证等功能。
+						
+					例如：当打开一个网站时，这个网站曾经登录过，我们再次打开网站时，不需要再次登录，直接进入首页
+
+					cookie表示：键值对(key-value)
+						cookie常用属性：
+							name		cookie名字
+							value		cookie的值
+							path		定义web站点可以访问该cookie的目录
+							expires		表示cookie的过期时间
+							Max-Age		有效期，单位秒
+							size		表示cookie的大小
+							priority	优先级
+						
+					Cookie的HTTP传输：
+					HTTP请求(Request Headers)：
+						浏览器携带cookie(cookie中path值的cookie)，以key:value形式表示。多个cookie用；进行隔开。 
+						
+					HTTP响应(Reponse Headers)：
+						前端携带Cookie用户信息，后端核对用户信息与数据库信息是否匹配，服务器设置cookie返回给浏览器
+						匹配后在Reponse Headers返回记录用户状态的cookie值userToken
+						HTTP响应中Set-Cookie表示形式：Set-Cookie:cookie名字，cookie值
+						
+					Cookie请求有无对比：
+						没有Cookie信息状态下请求：
+							 客户端				服务器
+								 →	请求(保存请求)	→
+							保存Cookie←	响应(响应添加Cookie返回)	
+
+						 存有Cookie信息状态的请求：
+							   客户端				服务器
+								 →	请求(请求中添加Cookie发送)	检查Cookie
+								 ←	响应
+								
+					Cookie生命周期：
+						会话性：	cookie仅保存在客户端的内存中，客户端关闭cookie失效
+						持久性：	cookie保存在用户硬盘中，直至生存期结束或用户主动将其销毁
+								
+					Cookie应用：
+						会话管理:Web应用程序用于管理用户会话(登录退出)
+						购物车功能:电子商务网站中，Cookie可以用于存储用户的购物车信息，包括商品数量，种类，价格
+						身份认证：使用Cookie实现"记住我"功能，让用户在一定时间内无需重新输入用户名和密码可自动登录
+							
+					Cookie常见方法：
+						new Cookie(String name,String value)		创建Cookie对象
+						getValue()					得到cookie保存的值
+						getName()					获取cookie的名字
+						setMaxAge(int expiry)				设置cookie有效期，默认-1	
+						setPath(String uri)				设置cookie作用域	
+						HttpServletRequest和HttpServletResponse对Cookie常见操作：
+						response.addCookie(Cookie cookie)		将cookie给客户端进行保存
+						request.getCookies()				得到客户端传过来的cookie对象		
+
+					缺点：不能跨域
+						跨域：浏览器不能执行其他网站的脚本，是浏览器对JavaScript试加的安全限制
+						同源：域名，协议，端口都相同
+						但凡其中有一个不一样都是跨域
+							
+				Session：	session代表客户端与服务器的一次会话过程
+					session是存储于服务器的特殊对象，服务器为每个客户端创建一个session，	
+					JsessionId是session的唯一标识，服务端可以利用session实现数据共享。
+					这个session是服务器共享，客户端独享		补充：SessionId保存在Cookie中					
+					缺点：服务器集群无法直接使用session
+
+					session原理示意图：
+					A客户端				服务器				A客户端的Session
+							HTTP请求				创建		
+					B客户端				tomcat				B客户端的Session
+							HTTP请求				创建
+					C客户端								C客户端的Session
+
+					session底层实现机制：
+															服务端(request.getSession得到session)
+							→	http请求，如果有JSESSIONID就携带			→	先判断这个id对应的session是否存在
+															存在返回id对应的session，不存在创建session
+						客户端	
+								
+							←	http响应，如果有服务端创建session返回新的JSESSIONID	←	直接创建一个新的session并返回以Cookie形式向客户端返回JESSIONID					
+
+					Session存储形式：
+						key-value
+							key	字符串
+							value	对象
+
+					session常用方法：
+						request.getSession()		得到客户端对应的session，没有创建新的session
+						setAtrribute(String s,object o)	在session存放属性
+						getAttribute(String s)		从session中得到s对应的属性
+						removeAttribute(String s)	从session中删除s对应的属性
+						getId()				得到session对应的id
+						invalidate()			使session立即失效
+						setMaxInactiveInterval(int i)	设置session最大的有效时间
+
+					cookie/session区别：
+								cookie			session				
+						保存		客户端			服务器
+						安全		不安全			安全
+						存储数据量	 小			 多
+								携带JsessionId		创建SessionId						
+						
+				Jwt令牌技术(实际开发)：用于通信双方以Json数据格式安全的传输信息
+					JWT令牌(JSON Web Token)：	用户身份的标识，本质字符串
+						存储:客户端/浏览器
+						组成：
+							第一部分：Header(头)		令牌类型，签名算法		{"alg":"H5256,"type":"JWT"}
+							第二部分：Payload(有效载荷)	自定义信息，默认信息	{"id":"1"，"username":"Tom"}			
+							第三部分：Siggnature(签名)		防止token被修改，根据header，payload，指定密钥通过签名算法得来
+
+								获取用户Id：	Long UserId = AuthUtil.getUserId();
+										使用ThreadLocal存放/获取用户Id(百度搜索ThreadLocal工具类)		ThreadLocalConfig.getCurrentId();
+							
+						Base64：基于64个可打印字符表示二进制数据的编码方式
+
+						Java生成校验JWT令牌：	API：Jwts		
+							<dependency>
+								<groupId>io.jsonwebtoken</groupId>
+								<artifactId>jjwt</artifactId>
+								<version>0.9.1</version>
+							</dependency>
+		
+							生成令牌：
+								Map<String,Object> claims = new HashMap<String,Object>();
+        							claims.put("id",1);
+        							claims.put("name","tom");
+        							String jwt = Jwts.builder().signWith(SignatureAlgorithm.HS256,"zhouzhou")//签名算法
+                									.addClaims(claims)      //自定义内容(载荷)
+                									.setExpiration(new Date(System.currentTimeMillis() + 3600 * 1000))//设置有效期
+                									.compact();
+        							System.out.println(jwt);
+				
+							 解析令牌：
+								Claims claims = Jwts.parser()
+                								.setSigningKey("zhouzhou")  //签名密钥
+                								.parseClaimsJws("eyJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoidG9tIiwiaWQiOjEsImV4cCI6MTcwMTg0NjAzOX0
+										.YxkZ9ZefYIUzTfw48lt69zAo2t238_GxOzdkgX4SMus") //解析令牌
+                								.getBody();
+        							System.out.println(claims);	
+
+						实际开发：登录之后请求头中会携带token
+								token <-> Blade-Auth		token <-> Authorization
+				
+			统一拦截：
+				过滤器Filter：	
+					JavaWeb三大组件(Servelt,Filter,listener)之一
+					过滤器通过拦截路径可以把对资源的请求拦截下来，从而实现特殊功能(登录校验，统一编码处理，敏感字符处理)
+						
+					Filter快速入门：
+						1.定义Filter：定义一个类实现Filter接口，重写所有方法
+						2.配置Filter：Filter类上添加@WebFilter注解，配置拦截资源路径
+							*****详细代码见spring-mybatis中Demofilter
+						
+						执行流程：
+							请求 -> 放行前逻辑 -> 放行 -> 资源 -> 放行后逻辑
+						
+						拦截路径：
+							/*	拦截所有
+							/emps/*	拦截目录下所有资源
+							/Login	拦截具体路径
+
+				过滤器链：一个项目中可以配置多个过滤器，这多个过滤器形成了一个过滤器链
+					注解配置的Filter，优先级是按照过滤器类名得自然排序来执行的
+
+				拦截器Interceptor：
+					拦截器是一种动态拦截方法调用的机制，Spring框架提供，动态拦截控制器方法的执行
+					作用：拦截请求，在指定方法调用前后，执行预先设定的代码
+				
+					Interceptor快速入门：
+						1.定义拦截器：定义类实现HandlerInterceptor接口，重写其所有方法
+						2.注册拦截器：定义类实现WebMvcConfigurer接口，重写addInterceptor方法
+							*****详细代码见spring-mybatis中LoginCheckInterceptor
+
+						执行流程:
+							Filter(拦截所有请求) -> DispatcherServlet -> Interceptor(拦截Spring中的请求) -> COntroller业务接口
+							
+						拦截路径:	
+							/*	/depts /emps /login		一级路径
+							/**	/depts /depts/1 /depts/1/2	任意级路径
+							/depts/*      				/depts下的一级路径
+							/depts/**      				/depts下的任意路径
