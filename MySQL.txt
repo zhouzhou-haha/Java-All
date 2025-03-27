@@ -46,14 +46,14 @@ MySQL(关系型数据库):		关系型数据库：在关系模型基础上，由�
 	
 	数据类型：
 		数值类型		
-			int		带符号的整数			(-2^32,2^32-1)		4Byte
+			int		带符号的整数				(-2^32,2^32-1)		4Byte
 			tinyint 	范围较小的整数(存储布尔值/很小整数)	(-2^8,2^8-1)		1Byte	
-			smallint 	范围较大的整数			(-2^16,2^16-1)		2Byte
-			mediumint	中等大大的整数			(-2^24,2^24-1)		3Byte
-			bigint		极大整数值			(-2^64,2^64-1)		8Byte
-			integer		范围较大的整数						4Byte
-			float		单精度浮点数						4Byte
-			double		双精度浮点数						8Byte
+			smallint 	范围较大的整数				(-2^16,2^16-1)		2Byte
+			mediumint	中等大大的整数				(-2^24,2^24-1)		3Byte
+			bigint		极大整数值				(-2^64,2^64-1)		8Byte
+			integer		范围较大的整数							4Byte
+			float		单精度浮点数							4Byte
+			double		双精度浮点数							8Byte
 		字符串类型
 			char		定长字符串
 			varchar		变长字符串
@@ -70,9 +70,9 @@ MySQL(关系型数据库):		关系型数据库：在关系模型基础上，由�
 		
 	SQL：Structured Query Language	操作关系型数据库编程语言/结构化查询语言
 		SQL语句分类：
-			DDL	数据定义语言	定义数据库对象(数据库，表，字段)	Data Definition Language
-			DML	数据操作语言	对数据库中的数据进行增删改操作	Data Manipulation Language
-			DQL	数据查询语言	查询数据库表中的记录		Data Query Language
+			DDL	数据定义语言	定义数据库对象(数据库，表，字段)		Data Definition Language
+			DML	数据操作语言	对数据库中的数据进行增删改操作		Data Manipulation Language
+			DQL	数据查询语言	查询数据库表中的记录			Data Query Language
 			DCL	数据控制语言	创建数据库用户，控制数据库访问权限	Data Control Language
 		
 	单表设计：	CRUD	增删改查的简写
@@ -84,7 +84,7 @@ MySQL(关系型数据库):		关系型数据库：在关系模型基础上，由�
 				use database db1；				选择使用的数据库
 				drop database [if exists] db1;
 				show create database(if not exists)数据库名；
-				show databases；					查询所有数据库
+				show databases；				查询所有数据库
 				select database();				查询当前数据库
 			
 			表操作：
@@ -625,7 +625,7 @@ MySQL(关系型数据库):		关系型数据库：在关系模型基础上，由�
 			查看隔离级别：select @@ TRANSACTION_ISOLATION;
 			设置事务隔离级别：transaction-isolation = READ-UNCOMMITTED(隔离级别)
 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
 MySQL进阶：	
 	MySQL体系结构：
 		连接层		负责与客户端的连接，负责用户认证授权，管理用户权限和访问控制
