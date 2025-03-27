@@ -1,0 +1,1046 @@
+衡量网站性能指标：
+	响应时间：执行一个请求从开始到最后收到响应数据花费的总体时间
+	并发数：系统同时能处理的请求数量
+		并发连接数：客户端向服务器发起请求，建立TCP连接，每秒钟服务器连接的TCP数量
+		请求数：QPS，每秒请求的数量
+		并发用户数：单位时间内有多少用户
+	吞吐量：单位时间内系统能处理的请求数量
+		QPS：每秒请求数
+		TPS：每秒事务数		事务：客户机向服务器发送请求然后服务器做出反应的过程		QPS >= 并发连接数 >= TPS
+
+Spring Cloud Alibaba：
+Spring Cloud Alibaba主要中间件：
+	Sentinel	轻量级分布式系统熔断与限流
+	RabbitMQ	分布式消息中间件
+	Seata		分布式事务解决方案
+	Dubbo		高性能Java RPC框架(服务治理)
+	Zookeeper	Dubbo官方推荐注册中心
+	Redis		基于键值对内存储存的非关系型数据库	在Redis中介绍
+	Nacos		服务注册与发现			在Spring Cloud中介绍
+		
+Sentinel：		阿里巴巴开源微服务流量控制组件(Java库)
+	Sentinel功能:流量控制/熔断降级/系统负载保护/实时监控统计/热点参数限流	
+
+	Sentinel组成：
+		Sentinel核心库(Jar包)	不依赖任何框架/库，对Dubbo，Spring Cloud等框架提供很好的支持
+			
+		Sentinel控制台(Dashboard)Dashboard负责管理推送规则，监控接口调用情况，管理接口信息等
+
+	Sentinel相关基本概念：
+		响应时间(RT)：响应时间是系统服务器对请求做出响应的时间
+		吞吐量(Throughput)：系统在单位时间内处理请求的数量
+		并发用户数：系统可以同时承载的正常使用系统功能的用户数量
+		QPS(每秒查询率)：每秒的响应请求数量		
+
+		资源:Java应用程序应用程序提供的服务/服务里的方法/一段代码
+		规则：围绕资源设定的规则。Sentinel支持流量控制，熔断降级等多种规则，规则可以动态实时调整
+
+		专业术语：
+			扇出：A调用B和C，B和C调用其他微服务
+			服务雪崩：一个服务不可用，可能导致所有调用它的服务都不可用，造成整个系统不可用
+
+			服务雪崩产生原因：
+				硬件故障：服务器故障，机房断电
+				流量激增：流量激增
+				缓存穿透：应用重启，大量缓存失效，请求(大量)直接访问后端服务，服务超负荷运行，导致服务不可用
+				程序bug：程序逻辑死循环内存泄漏
+
+			防止服务雪崩方法：
+				超时机制：上游服务调用下游服务，设置超时时间(手动配置)，但是实际开发中例feign会有默认的超时时间
+				限流机制：限制系统的输入量和输出量。超过限制阈值，限制流量
+				熔断机制：下游服务因访问压力过大响应变慢，上游服务暂时切断对下游服务的调用
+				降级机制：根据当前业务情况对一些服务和页面有策略的降级
+				    降级：提供一个兜底方法，一旦服务无法正常调用，使用兜底方案
+
+
+	Sentinel-dashboard控制台安装：
+		Sentinel官网下载sentinel-dashboard-1.7.0.jar --> 打开jar包所在目录右键终端打开 --> 输入命令:java -jar sentinel-dashboard-1.7.0.jar
+			
+		jar包下载报错：APPLICATION FAILED TO STARTED.Port 8080 was already in use.	端口8080被占用
+		解决方案：输入命令：netstat -ano					查看8080占用进程PID
+			输入命令：taskkill /pid 48052 /f				根据8080PID停止进程
+			重新下载：java -jar sentinel-dashboard-1.7.0.jar		下载成功
+			访问首页：http://localhost:8080				访问首页成功
+
+		Sentinel-dashboard账号密码:	账号：sentinel		密码：sentinel
+
+	Sentinel-dashboard控制台：
+		实时监控		同服务下有多台机器(多个实例)，Sentinel汇总机器运行信息(QPS/RT/吞吐量)
+
+		簇点链路		页面展示拉取指定客户端资源运行情况
+			单机调用链路：程序(请求)在一台机器上从起始点到终止点的完整调用路径，具体指服务之间的调用关系，数据传递的顺序
+
+			调用链路展示：
+				树状结构展示		/patentinfo/page
+				不区分调用链路展示资源
+
+			链路配置规则：
+				流控规则：	监控应用流量的QPS或并发线程数等指标，达到指定阈值时对流量进行控制
+					资源名		默认请求路径
+					针对来源		流控针对的调用来源，default不区分调用来源
+					阈值类型		QPS		单机阈值 100		调用该接口的QPS达到阈值时进行限流					
+							并发线程数	单机阈值 50		调用该接口的线程数达到阈值时进行限流		线程数 = QPS * 并发线程数
+					是否集群		是否开启集群模式，不选择默认单机模式	
+					流控模式：
+					***	直接(默认链路)	接口达到限流条件时，开启限流
+						关联		关联的资源达到限流条件时，开启限流
+						链路		从接口来的资源达到限流时，开启限流
+					流控效果：
+					***	直接拒绝			默认流量控制方式，QPS超过任意规则阈值，请求不再被接受
+						Warm up(冷启动)		"冷启动"让请求流量缓慢增加，不至于暴增导致系统被压垮
+						排队等待(漏桶算法)		控制请求通过的间隔时间，让请求匀速通过
+
+					线程隔离：B服务出现阻塞或故障时，调用B服务的A服务因此被拖慢。限制A服务中调用B服务的可用线程数
+						server:	
+						    tomcat:			SpringBoot内置服务器		
+							threads：			
+							       max:50		设置线程最大数量
+							accept-count：50		线程占满之后，排队线程最大数量
+							max-connection：100	最大请求连接数
+					
+				熔断规则：
+					熔断：断路器统计请求异常比例，超出阈值熔断业务，拦截接口请求，走fallback逻辑；服务熔断非永久，一段时间后再次检测微服务是否正常，正常则恢复调用
+				
+					资源名		默认请求路径
+					熔断策略			
+						慢调用比例		判断服务调用是否变慢的指标，在统计时长内，响应时间超过设定阈值的请求占总请求数的比例
+						异常比例(异常率)		请求的异常比例异常超过设定阈值触发熔断
+						异常数			资源近1分钟的异常数目超过阈值进行熔断
+					熔断时长		熔断后一段时间(熔断时间)进入半开状态，允许部分流量通过检测服务是否恢复正常
+					冷却时间		熔断状态结束，经过一定时间才重新进行流量探测
+					最小请求数	统计异常比例/异常数的最小请求数	
+					统计时长		统计请求RT，异常比例的时间窗口长度
+
+				热点规则：			
+					统计某个热点数据访问频次最高的Top数据，并对其进行限制
+						热点：经常访问的数据
+						限制：商品ID为参数，统计一段时间内最常购买的商品ID进行限制
+
+					热点参数限流：
+						@RequestMapping("/patentinfo/getTePatent")
+						@SentinelResource("TePatent")
+						public String getTePatent(String name,Integer age){		参数：name / age
+							return "TePatent `name" + name + ",age=" +age;
+						}
+
+					配置热点规则：
+						资源名		默认请求路径
+						限流模式		QPS模式
+						参数索引		标识被限流资源方法中热点参数在方法参数列表中的位置索引	
+							第一个参数：name		索引：0
+							第二个参数：age		索引：1	
+						统计窗口时长	Sentinel统计信息的窗口时长，单位ms
+						单机阈值		指定统计窗口期间内，热点参数允许的最大QPS
+						
+						参数例外项：
+							参数类型		索引值对应的方法参数类型
+							参数值		方法参数值，只对该热点参数进行限流，其余放过		
+										id = 2限流，id !=  2不限流 
+							限流阈值		在统计时长内超过设定阈值被限流		
+							
+				授权规则：	根据调用方限制资源是否通过
+					资源名		默认请求路径
+					流控应用		需要流量控制的资源名称
+					授权类型		黑名单		来源在白名单内的调用者允许访问	
+							白名单		来源在黑名单内的调用者不允许访问
+			
+		机器列表		机器列表中看到自己的电脑设备，代表成功接入控制台
+			机器名		电脑设备名
+			IP地址		电脑IP地址
+			端口号		Sentinel端口号
+			健康状态
+			心跳时间
+			
+	Spring Cloud微服务整合Sentinel：
+		1.引入依赖					
+		<dependency>									SpringCloudAlibabaSentinel依赖，具备限流，熔断等功能
+            		<groupId>com.alibaba.cloud</groupId>
+            		<artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>			
+        	</dependency> 
+
+		2.配置控制台地址，微服务连接控制台
+		spring：
+		    application：
+			name：gain-service
+		    cloud:
+			sentinel:
+			    transport:
+				dashboard:localhost:8080		Sentinel-dashboard控制台地址
+			    http-method-specify：true			开启请求方式前缀
+
+	Sentine实现熔断保护：
+		定义资源(Java应用程序的任何内容)		@SentinelResource注解定义资源，提供可选异常处理和fallback选项
+			@SentinelResource("HelloWorld")
+			public void helloWorld() {
+    				System.out.println("hello world");			资源中的逻辑
+			}
+				补充：注解@SentinelResource不支持private方法
+
+			@SentinelResource
+				value			资源名称
+				resourceName		资源名，优先级高于value
+				entryType		流控模式，默认未EntryType.OUT()
+				blockHandler		流控触发时调用的方法
+				blockHandlerClass	流控触发时调用的类，与blockHandler配合实用
+				fallback		降级处理方法，资源调用失败或被流控时调用方法			fallback函数默认与原方法在同一个类
+				fallbackClass		指定对应的降级处理类
+				defaultFallback		默认降级处理方法						
+				maxQueueSize		最大线程数
+				statisticMaxRT		统计最大响应时间
+
+
+	基于远程调用实现线程隔离：
+		1.开启Feign中Sentinel簇点链路功能，将feign作为资源
+		feign:
+		    sentinel:
+			enabled:true	
+	
+
+		2.FeignClient编写Fallback逻辑	
+		2.1编写路由指定fallback逻辑类
+		@FeignClient(
+			value = LauncherConstant.APPLICATION_BASIC_NAME,		路由指向服务
+			fallback = ICommonFileClientFallBack.class，			fallbackClass兜底逻辑/hystrix配置类
+			fallbackFactory = CommonFileClientFallbackFactory.class)	fallbackFactory兜底逻辑		
+		public interface ICommonFileClient {}
+
+		2.2编写fallback兜底逻辑	
+		fallback处理方式：fallbackClass		实现路由接口	无法对远程调用的异常做处理
+		@Component
+		public class CommonFileClientFallBack implements ICommonFileClient{}	
+
+		fallback处理方式：fallbackFactory		实现fallback工厂	对远程调用的异常做处理
+		@Component
+		public class CommonFileClientFallbackFactory implements FallbackFactory<ICommonFileClient>{
+			@Override
+			public ICommonFileClient create(Throwable throwable){		
+				return new ICommonFileClient(){			new ICommonFileClient() <==> CommonFileClientFallback
+					@Override
+					重写路由接口熔断逻辑	
+				}
+			}	
+		}
+
+		config配置包中声明Factory为对象
+		public class DefaultFeignConfig{
+			@Bean
+			public CommonFileClientFallbackFactory commonFileClientFallbackFactory(){
+				return new CommonFileClientFallbackFactory();
+			}
+		}
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+分布式框架：Dubbo/SpringCloud Seata
+Seata官网:https://seata.apache.org/zh-cn/docs/dev/seata-mertics
+
+Dubbo与Spring Cloud区别:
+			Dubbo			Spring Cloud
+	通信方式		RPC			RestFul
+	注册中心		Zookeeper		nacos/eureka
+	组件		无消息总线		有消息总线，数据流，批量任务	
+
+RPC通信协议：Remote Procedure Call远程过程调用，通过网络从远程计算机程序上请求服务
+远程过程调用：计算机A上进程调用计算机B上进程方法，A调用进程被挂起，B被调用进程执行对应方法，并将结果返回给A，计算机A接收到返回值，调用进程继续执行
+
+RPC框架：基于RPC协议实现的框架统称RPC框架(Dubbo/gRPC)
+RPC框架组成：
+				    注册中心
+				↙	     ↖
+			服务发现			服务暴露
+
+			负载均衡			
+						处理程序	
+			容错
+						
+	Client		透明			线程池			Server
+
+			序列化			反序列化	|(RPC协议)
+
+			协议编码			协议解码	|(RPC协议)
+
+			网络传输			网络传输	|(RPC协议)
+
+	RPC与HTTP区别：
+		RPC：远程过程调用，调用协议通常包括序列化协议和传输协议。序列化协议(纯文本XML和JSON/二进制编码Protobuf)，传输协议(TCP和HTTP)
+		HTTP:HTTP是RPC传输协议的可选方案，gRPC网络传输协议HTTP
+	
+Dubbo：			Alibaba公司开源的高性能，轻量级的RPC框架，提供高性能RPC远程服务调用，以及SOA服务治理方案			补充：Dubbo是SOA时代的产物
+	
+	Dubbo三大核心功能：
+	***	面向接口的远程方法调用
+	***	容错机制
+	***	负载均衡
+	***	服务注册和发现
+		服务监控Dubbo Admin
+
+	Dubbo架构图：
+					
+					Registry(Zookeeper)	
+
+		      注册						Container
+									
+		Dubbo Provider		←        RPC	    →		Dubbo Consumer
+
+					Monitor(监控中心)
+									
+		
+		Dubbo Provider		服务生产者，服务提供方
+		Dubbo Consumer		服务消费者，服务调用方
+		Container		服务运行的容器
+		Registry		注册中心(服务注册与发现)(Zookeeper)
+
+	RPC远程调用(SpringBoot整合Dubbo实现)：
+		1.引入依赖
+		2.创建服务提供者Provider模块(单独微服务)，编写UserServiceImpl提供服务
+		3.配置服务提供者(将访问地址，ip，端口，路径注册到注册中心)
+
+		4.创建服务消费者Consumer模块(单独微服务)
+		5.配置服务消费者()
+		5.在服务消费者中的UserController使用RPC远程调用UserServiceImpl提供的服务
+
+			
+		1.服务提供者Provider/服务消费者Comsumer依赖
+		<dependency>							引入dubbo相关依赖
+			<groupId>org.apache.dubbo</groupId>
+			<artifactId>dubbo</artifactId>
+			<version>3.3.0</version>
+		</dependency>	
+		<dependency>
+    			<groupId>org.apache.dubbo</groupId>
+    			<artifactId>dubbo-spring-boot-starter</artifactId>
+    			<version>3.3.0</version>
+		</dependency>
+
+		<dependency>							引入Zookeeper相关依赖
+    			<groupId>org.apache.curator</groupId>
+    			<artifactId>curator-framework</artifactId>
+    			<version>5.2.0</version> 
+		</dependency>
+		<dependency>
+    			<groupId>org.apache.curator</groupId>
+    			<artifactId>curator-recipes</artifactId>
+    			<version>5.2.0</version> 
+		</dependency>
+			
+		2.创建服务提供者模块Provider
+		@DubboService
+		public class UserServiceImpl implements UserService{
+			public String sayHello(){
+				return "Hello World";
+			}
+		}
+
+		注意：	org.springframework.stereotype.Service			@Service	将该类对象创建出来，放到Spring容器中
+			org.apache.dubbo.config.annotation.DubboService		@DubboService	将类提供的方法(服务)对外发布。将访问的地址，ip，端口，路径注册到注册中心
+
+			@DubboService相关属性：		
+				interfaceClass		服务提供方实现的interface类
+				interfaceName		服务提供方实现的interface类名
+				group			指定组，将服务划分到不同组别中	
+				timeout			设置调用超时时间
+				retries			调用失败时的重试次数
+				loadbalance		指定负载均衡策略
+				mock			指定当前服务不可用时的降级策略
+				version			服务版本号
+				async			是否支持异步调用
+				
+
+		3.application.yaml配置服务提供者Provider
+		application.yaml:
+			dubbo:
+			    application:					配置服务提供者名称
+				name:provider					
+
+			    registry:						将服务注册到注册中心
+				address:zookeeper://127.0.0.1:2364		地址：协议://服务器号:端口号
+
+			    protocol:						配置服务之间通信方式
+				name:dubbo					指定使用Dubbo协议进行服务调用
+				port:16354					服务提供者端口号(服务消费者通过端口号与服务提供者进行通信)
+				
+			    scan：						配置包扫描
+				base-packages:服务提供者类所在路径(相对路径)
+		
+		-------------------------------------------------------------------------------------------------------------------------------------
+
+		4.创建服务消费者模块Comsumer
+		@Service							注意:这边@Service是创建类对象，放到Spring容器中
+		public class ComsumerService{
+
+			@DubboReference
+			private UserService userService；			
+
+			public void greet(String name){
+				return "Hello World Too";
+			}
+		}
+		
+		注意：	@DubboReference
+				从Zookeeper注册中心获取服务提供者实现，自动注入
+				RPC远程调用，封装结果为代理对象，给变量赋值
+
+			@DubboReference相关属性：
+				interfaceClass			指定服务消费者的interface类
+				version				指定服务版本号
+				group				指定服务分组
+				url				指定服务提供方的URL地址绕过注册中心发起调用
+				timeout				设置调用超时时间
+				retries				设置调用失败时重试次数
+				loadbalance			指定负载均衡策略
+				mock				指定当前服务不可用时的降级策略
+				cluster				指定集群容错策略
+
+		5.application.yaml配置服务消费者Comsumer
+		application.yaml:
+		    	dubbo:
+			    application:					配置服务消费者名称
+				name:comsumer
+			    
+			    registry:						将服务注册到注册中心
+				address:zookeepr://127.0.0.1:2364		地址：协议://服务器号:端口号
+
+			    scan：						配置包扫描
+				base-packages:服务消费者类所在路径(相对路径)		
+
+		6.Provider/Comsumer启动类添加@EnableDubbo
+		@EnableDubbo
+		@SpringBootApplication
+		public class UserServiceProviderApplication {
+ 
+    			public static void main(String[] args) {
+        			SpringApplication.run(生产者消费者字节类, args);
+    			}
+		}
+
+	SOA服务治理(高级特性)：
+		负载均衡：		@DubboService(loadbalance = 具体策略)
+			WeightedRandom		加权随机			按照权重设置随机概率
+
+			RoundRobin		加权轮询			按权重轮询
+			
+			LeastActive		加权最少活跃调用优先	活跃度越低，优先调用，相同活跃数加权随机
+
+			Shortest-Response	加权最短响应优先		最近一个滑动窗口中，响应时间越短，优先调用，相同响应时间加权随机
+		
+			ConsistentHash		一致性哈希		相同参数的请求总是发送同一提供者
+						
+			P2C 			P2C			略
+
+			Adaptive 		自适应负载均衡		总是将请求转发到负载最小的节点
+
+		超时与重试(容错机制)：		
+			超时机制：请求在指定时间内未能获得响应，Dubbo自动断开连接并返回错误信息，设置服务调用的最大等待时间		阻止雪崩
+
+			重试机制：服务调用失败时Dubbo自动重新尝试请求，设置重试次数和间隔时间					阻止线程的大量堆积
+
+			服务提供者：@DubboService(timeout = 超时时间ms,retries = 重试次数)		->	Comsumer也要设置
+			服务消费者：@DubboReference(timeout = 超时时间ms,retries = 重试次数)		-> 	Provider也要设置
+
+		多版本：			
+			在同一时间内运行多个服务版本，进行灰度发布，A/B测试
+			灰度发布：新版本的功能会对部分用户开放，用户反馈没有问题，再将所有用户迁移到新功能			
+			A/B测试：随机将用户分为两组(A组/B组)，分别使用不同的版本比较他们的表现
+
+			服务提供者：@DubboService(version = 版本号)		服务提供者有多个版本，指定版本号	
+			服务消费者：@DubboReference(version = 版本号)		服务消费者根据版本号调用指定版本服务
+
+		序列化：			
+			序列化：服务调用过程中将对象转换为字节流，在网络上传输			被依赖的工程改动要install代码才能生效
+			反序列化：服务调用过程中将字节流转换为对象
+
+			序列化：
+				public class 实体类 implements Serializable
+
+		地址缓存：
+			缓存服务提供者的地址，减少对注册中心的频繁请求
+			服务消费者第一次调用将服务提供者地址缓存到本地，注册中心暂时不可用，可以使用缓存中的地址进行服务调用
+		
+		服务降级(容错机制)：	
+			服务发生故障，超时，异常等原因无法正常响应时，系统采取的容错机制
+
+			服务消费者：@DubboReference(mock = mock属性值)			
+					属性值：
+						true		默认降级逻辑，自动使用Mock实现		mock = true
+						false		不启用Mcok实现，直接抛出异常		mock = false
+						Mock实现类	指定具体的Mock实现类			mock = Mock实现类相对路径
+						force		强制调用Mock实现，不管服务是否可用		mock = force
+						failover	调用失败，转到Mock实现			mock = failover
+
+		集群容错(容错机制)：
+			在分布式系统或集群环境中，系统在部分节点或服务出现故障时，仍然能继续正常运行
+		
+			Dubbo容错策略：	
+				Failover	调用失败，尝试连接其他服务
+				Failfast	调用失败，返回异常信息，不进行重试
+				Failsafe	调用失败不抛出异常；对请求负载均衡
+				Failback	调用失败自动恢复，后台记录失败请求，定时重发
+				Forking		同时调用多个相同的服务提供者，返回最快的结果
+				Broadcast	广播调用所有可用服务，任意服务出错则报错
+
+
+gRPC：			Google公司开发的高性能，开源和通用的RPC框架，基于HTTP/2和Protobuf实现
+	HTTP/2：支持多路复用，流量控制，头压缩和服务器推送等功能，极大提升性能
+	Protobuf：默认数据序列化格式，进行数据的序列化和反序列化
+
+	gRPC思想：
+		服务端：指定可以远程调用接口及其参数和返回类型，服务端实现接口并运行gRPC服务器处理客户端调用
+		客户端：Client提供与服务器相同的方法，客户端调用clint方法与服务端进行通信，获取响应结果
+
+	gRPC架构图：
+				(Proto Request)
+				     ←		gRPC Stub
+				     →		(Ruby Client)
+				(Proto Response)
+		gRPC Server	(Proto Request)
+		(C++ Service)	     ←		gRPC Stub
+				     →		(Android-Java Client)
+				(Proto response)	
+
+		请求流程：
+			客户端(gRPC Stub)调用方法，发起RPC调用
+			对请求信息(Rroto Request)使用Protobuf进行序列化压缩
+			服务端gRPC Server接收到请求后，解码请求体，进行业务逻辑处理并返回
+			对响应结果(Proto Reponse)使用Protobuf进行序列化压缩
+			客户端收到服务端响应，解码请求体，唤醒正在等待响应的客户端调用并返回响应结果
+
+	gRPC远程调用：
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Zookeeper(动物管理员)：		Zookeeper是Apache开源的分布式应用程序协调服务
+	主要功能：
+		集群管理：分布式系统中，通过分布式的方式对多个服务进行监控，配置(配置管理)，协调(注册中心)，负载均衡
+			配置管理(配置中心)：将相同的配置信息放在配置中心，需要的时候直接拉取		
+			负载均衡：根据服务(实例)信息和负载均衡策略选择合适服务进行请求
+			数据发布/订阅(注册中心)：Zookeeper作为注册中心，管理服务提供方(ip地址，端口号，url)，在服务消费方需要时发送给服务消费方
+
+		消息队列：
+		分布式锁(分布式同步)：控制在分布式系统中对共享资源访问机制。确保在同一时间内只有一个进程或线程访问特定的资源	
+
+		补充：不同主机(服务器)上相同的应用程序访问同一数据，在每一台主机(服务器)加锁synchronized不能保证数据一致性，需要添加分布式锁	
+
+	
+			
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+学习前提：安装RabbitMQ服务器
+MQ(Message Queue)：		消息队列，用于在不同组件或服务之间异步传递消息的通信机制	
+	基本概念：			
+		异步通信：发送方发送消息后，无需等待接收方响应，可以继续执行其他操作					消息队列；RabbitMQ；电子邮件；短信
+		同步通信：发送方和接收方在进行通信时需要同时处于活动状态。发送方发送消息，等待接收方处理并返回结果		Http请求/响应模式；电话通话
+
+	MQ消息代理作用：
+		异步通信:发送方发送消息后，无需等待接收方响应，可以继续执行其他操作					消息队列MQ <==> 异步调用Broker
+		消息持久化：将数据存入磁盘，系统故障时消息不会丢失
+		负载均衡(流量削峰填谷)：缓存消息，将消息分发给多个消费者，平衡系统负载
+		消息确认重试：提供消息处理确认机制
+		解耦组件：不同服务或应用之间解耦，下游服务故障不影响上游服务
+			
+	异步调用角色：
+	***	消息生产者(Publisher)：创建和发送消息(应用程序)到RabbitMQ应用程序					人
+	***	消息消费者(Consumer)：接收和处理RabbitMQ队列中消息(应用程序)						邮递员
+	***	消息队列(Queue)：RabbitMQ队列，消息代理Broker(接收数据，存储数据，直到消费者处理消息，发送数据)		邮箱
+	***	交换机(Exchange)：控制消息路由(交换机Exchange和队列Queue规则)将消息发送到目标队列
+		协议：消息生产者，消息消费者，消息队列之间进行通信的规则和消息格式
+		虚拟主机(Virtual Host):数据隔离的容器，组织管理消息队列和交换机
+		绑定(Binding):交换机与队列之间的连接关系，指定消息路由规则，每个绑定都有一个路由键(Routing Key)		绑定路由键
+		路由规则(Routing key):交换机使用路由规则确定将消息发送到哪些队列						Routing Key <==> Queue Name
+	
+
+	RabbitMQ架构图：	
+				|		Broker				|
+				|	Exchange	 	Queue		|
+				|		 路由绑定		消息队列		|  协议
+			   协议	|	交换机	    →				|  →	消息消费者
+		消息生产者     →	|		 路由绑定		消息队列		|  协议
+			   协议	|	交换机	    →				|  →	消息消费者
+				|		 路由绑定		消息队列		|  协议
+				|		VirtualHost			|
+
+	MQ消息队列技术选型：			
+			RabbitMQ		ActiveMQ(已淘汰)		RocketMQ		Kafka
+	开源社区		Rabbit			Apache			Alibaba			Apache
+	开发语言		Erlang(面向并发)		Java			Java			Scala&Java
+	可用性		  高			 一般			  高			  高
+	消息延迟		微秒级			毫秒级			毫秒级			毫秒以内
+	消息可靠性	  高			 一般			  高			 一般
+	吞吐能力		一般(10w/s)		 差			  高(10w/s)		非常高(100w/s)		双十一峰值并发:20w/s
+	使用协议		见补充			见补充			自定义协议		自定义协议	
+
+		补充：	
+			RabbitMQ协议		AMQP/MQTT/STOMP/HTTP[S]/WebSockets/XMPP	
+			ActiveMQ协议		AMQP/MQTT/STOMP/OpenWire/REST/XMPP
+
+
+RabbitMQ:
+	RabbitMQ主要消息模式：
+	1	简单队列(Point to Point)	基本生产者消费者模型
+	2	工作队列(Work Queues)	生产者将任务放入队列，多消费者从队列中获取并处理这些任务
+		交换机模式：
+	3		发布/订阅(Pub/Sub)	生产者将消息发布到Fanout交换机(广播)，将收到的消息路由到每个与其绑定的Queue，消费者接收相同的消息
+	4		路由(Routing)		生产者将消息发送到Direct交换机(定向)，将接收的消息根据规则路由到指定Queue
+	5		主题(Topic)		生产者将消息发送到Topic交换机(使用通配符匹配路由键)，消费者根据路由键接收消息
+	6	远程调用(RPC)		生产者发送请求消息，消费者处理后返回响应(特定队列匹配请求和响应)
+
+	RabbitMQ队列整合Java客户端：		根据消息模式使用Java代码实现RabbitMQ消息收发
+		1.引入spring-amqp依赖：			
+			<dependency>								Spring AMQP是基于AMQP协议定义的API规范，提供模板发送和接收消息
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-amqp</artifactId>		
+			</dependency>
+
+		2.application.yaml配置RabbitMQ消息生产者/消息消费者
+			spring:
+			    application:
+				name:rabbitmq-provider/rabbitmq-consumer
+			
+			    rabbitmq:
+			    	host:RabbitMQ服务器IP地址
+				port:RabbitMQ服务器端口号
+				virtual-host:RabbitMQ虚拟主机名
+				username:RabbitMQ登录用户名
+				password:RabbitMQ登录用户密码
+				
+		3.根据消息模式实现RabbitMQ消息收发
+		实现消息模式前提：在RabbitMQ控制台创建消息队列Queue
+
+		简单队列(Point to Point)：	一对一
+			模型：	消息生产者Provider  →	消息队列	  →	消息消费者Consumer
+
+			消息生产者Provider：
+				@Service
+				public class RabbitProvider{
+					private final RabbitTemplate rabbitTemplate；
+
+					public void sendMessage(String queueName,String message){
+						rabbitTemplate.convertAndSend(queueName,message);
+					}	
+				}
+				
+			消息消费者Consumer:
+				@Slf4j
+				@Component
+				public class RabbitConsumer{
+					@RabbitListener(queues = 监听消息队列名称)
+					public void listenMessage(消息类型 msg) throws InterruptedException{		自动转换消息类型
+						log.info("spring 消费者接收到消息:[" + msg + "]");
+					}
+				}
+				
+				注解：@RabbitListener	监听并接收来自指定RabbitMQ队列的消息
+		
+		------------------------------------------------------------------------------------------------------------------------------------			
+
+		工作队列(Work Queues):		一对多，加快消息处理速度
+			模型：	
+								  →	消息消费者Comsumer1
+				消息生产者Provider  →	消息队列	  →	消息消费者Consumer
+								  →	消息消费者Comsumer
+
+			消息生产者Provider：
+				@Service
+				public class RabbitProvider{									
+					private final RabbitTemplate rabbitTemplate；					生产者发送50次消息
+			
+					public void sendMessage(String queueName,String message){
+						for(int i= 1;i <= 50;i++){
+							rabbitTemplate.convertAndSend(queueName,message);		
+						}
+					}
+				}
+				
+			消息消费者Consumer：
+				@Slf4j
+				@Component
+				public class RabbitConsumer{								多个消费者轮询监听同一个队列(均衡分配)
+					@RabbitListener(queues = 监听消息队列名称)
+					public void listenMessage1(消息类型 msg){
+						log.info("spring 消费者接收到消息:[" + msg + "]");				消费者1：1，3，5...49(奇数)
+						Thread.sleep(1000);							
+					}
+
+					@RabbitListener(queues = 监听消息队列名称)
+					public void listenMessage(消息类型 msg) throws InterruptedException{		消费者2：2，4，6...50(偶数)
+						log.info("spring 消费者接收到消息:[" + msg + "]");
+						Thread.sleep(3000);
+					}
+				}	
+				实际开发：只会写一个消费者Consumer监听，但是会部署多个实例
+
+			补充：	
+				问题:消费者可能产生消息堆积
+				解决办法：
+					spring:
+					    rabbitmq:
+						listener:
+						    simple:
+							prefetch:1			每次只能获取一条消息，处理完成才能获取下一条消息
+				
+		------------------------------------------------------------------------------------------------------------------------------------	
+		
+		RabbitMQ核心思想：生产者生产消息不会直接发送到消息队列
+
+	*****	交换机模型(异步通信):		交换机：消息模式指定对应的交换机	一个生产者，多个消息队列，多个消费者			
+
+			模型：
+											  →	消息消费者Comsumer
+
+									→	消息队列	  →	消息消费者Consumer
+
+				消息生产者provider  → 	消息模式指定交换机	→	消息队列	  →	消息消费者Consumer
+
+									→	消息对垒	  →	消息消费者Comsumer
+										
+											  →	消息消费者Consumer
+
+			交换机模型前提：		声明交换机/队列/交换机与队列进行绑定			交换机类型：fanout/direct/topic
+				方式一：Bean方式注入
+					@Configuration
+					public class FanoutConifg{
+						@Bean
+						public FanoutExchange fanoutExchange{
+							return new FanoutExchange(交换机名称)；					声明交换机
+							return ExchangeBuilder.fanoutExchange(交换机名称).build()			声明交换机(二选一)
+						}
+
+						@Bean
+						public Queue fanoutQueue1(){
+							return new Queue(消息队列名称)；						声明消息队列
+							return QueueBuilder.durable(消息队列名称)					声明消息队列(二选一)
+						}
+
+						@Bean
+						public Binding bindingQueue(Queue fanoutQueue1,FanoutExchange fanoutExchange){
+							return BindingBuilder.build(fanoutQueue1).to(fanoutExchange);			将消息队列绑定到交换机
+						}
+					}
+
+				方式二：@RabbitListener注解声明队列和交换机
+					@RabbitListener(bindings = @QueueBinding(
+						value = @Queue(name = 消息队列名称)，
+						exchange = @Exchange(name = 交换机名称，type = ExchangeTypes.交换机类型)，
+						key = {绑定key}
+					))
+
+					@QueueBinding注解所有属性：
+						value		指定绑定队列，使用@Queue注解
+						exchange	指定绑定的交换机名称，使用@Exchange注解
+						key		指定路由键，用于消息路由
+						exchangeType	指定交换机类型，DIRECT/FANOUT/TOPIC
+					
+
+			发布/订阅模式(Pub/Sub)：			交换机类型：Fanout交换机(广播)
+				消息生产者Provider:
+					@Service
+					public class RabbitProvider{									
+						private final RabbitTemplate rabbitTemplate；					
+			
+						public void sendMessage(String exchangeName,String message，String routingKey){
+							rabbitTemplate.convertAndSend(exchange,null,message);			参数：交换机：exchange/队列名：null/消息：message
+						}
+					}
+					
+			
+				消息消费者Consumer:
+					@Slf4j
+					@Component
+					public class RabbitConsumer{								多消费者监听到同一消息
+						@RabbitListener(queues = fanout.queue1)
+						public void listenMessage1(消息类型 msg){						
+							log.info("消费者1 接收到fanout.queue1消息:[" + msg + "]");				
+														
+						}
+
+						@RabbitListener(queues = fanout.queue2)
+						public void listenMessage2(消息类型 msg){						
+							log.info("消费者2 接收到fanout.queue2消息:[" + msg + "]");
+						}
+					}
+			
+			------------------------------------------------------------------------------------------------------------------------------------
+			
+			路由(Routing)：				交换机类型：Direct交换机(定向)
+				消息生产者Provider:
+					@Service
+					public class RabbitProvider{									
+						private final RabbitTemplate rabbitTemplate；					
+			
+						public void sendMessage(String exchangeName,String message，String routingKey){
+							rabbitTemplate.convertAndSend(exchange,指定RoutingKey,message);		参数：交换机：exchange/队列名：null/消息：message
+						}
+					}
+			
+				消息消费者Consumer：
+					@Slf4j
+					@Component
+					public class RabbitConsumer{								发送路由键 == 消息队列路由键 ==> 被监听执行逻辑	
+						@RabbitListener(queues = direct.queue1)
+						public void listenMessage1(消息类型 msg){						
+							log.info("消费者1 接收到fanout.queue1消息:[" + msg + "]");				
+														
+						}
+
+						@RabbitListener(queues = direct.queue2)
+						public void listenMessage2(消息类型 msg){						
+							log.info("消费者2 接收到fanout.queue2消息:[" + msg + "]");
+						}
+					}
+
+			------------------------------------------------------------------------------------------------------------------------------------
+
+			路由键绑定规则：
+				*	匹配一个单词，不匹配多个单词	
+							
+				#	匹配零个活多个单词			
+					rabbit.# ->	包含rabbit.的所有路由键
+					#.rabbit ->	以.rabbit结尾的所有路由键				
+
+			主题(Topic)：				交换机类型：Topic交换机
+				消息生产者Provider：
+					@Service
+					public class RabbitProvider{									
+						private final RabbitTemplate rabbitTemplate；					
+			
+						public void sendMessage(String exchangeName,String message,String routingKey){
+							rabbitTemplate.convertAndSend(exchange,交换机RoutingKey,message);	参数：交换机：exchange/路由键：RoutingKey/消息：message
+						}
+					}
+					
+				消息消费者Consumer：
+					@Slf4j
+					@Component
+					public class RabbitConsumer{								发送路由键 == 消息队列路由键 ==> 被监听执行逻辑	
+						@RabbitListener(queues = topic.queue1)
+						public void listenMessage1(消息类型 msg){						
+							log.info("消费者1 接收到topic.queue1消息:[" + msg + "]");				
+														
+						}
+
+						@RabbitListener(queues = topic.queue2)
+						public void listenMessage2(消息类型 msg){						
+							log.info("消费者2 接收到topic.queue2消息:[" + msg + "]");
+						}
+					}
+
+			实际开发：避免消息收发对原有业务产生影响，将convertAndSend()放在try{}catch(){}代码块中
+				try{
+					rabbitTemplate.convertAndSend(exchange,routingKey,message);
+				}catch(Exception e){
+					log.error("发送支付状态通知失败")；
+				}
+		
+	RabbitMQ机制：	
+		消息可靠性：	处理消息时确认消息已被成功处理
+			发送者确认机制：
+				RabbitMQ消息生产者发送消息，RabbitMQ接收消息向Provider发送确认(ACK)
+					
+				Publisher Confirm	返回路由异常原因
+				Publisher Return	返回ACK确认信息
+
+				配置发送者确认机制：
+				spring:	
+				    rabbitmq:
+					publisher-confirm-type:correlated	确认消息已发送到交换机
+					publisher-returns:true			确认消息已发送到队列
+				
+			消费者确认机制：
+				RabbitMQ消息消费者成功处理消息，向RabbitMQ发送消息报告已成功处理消息,收到确认消息，RabbitMQ将消息从队列中删除
+
+				ack	成功处理消息，RabbitMQ从队列中删除该消息
+				nack	消息处理失败，RabbitMQ再次投递消息
+				reject	消息处理失败并拒绝该消息，RabbitMQ从队列中删除该消息
+			
+				配置消费者确认机制：
+				spring：
+				    rabbitmq：
+					listener：
+					    simple：
+						prefetch：1
+						acknowledge-mode：none/manual/auto
+			
+					补充：	none：不确认
+						manual：手动确认
+						auto：自动确认
+						
+			发送者重连机制：
+				消费者处理消息过程中与RabbitMQ连接终端，未发送确认的消息不会被删除。配置重连获取未确认的消息
+
+				配置重连机制：
+				spring:
+				    rabbitmq:
+					connection-timeout:1s			设置RabbitMQ连接超时时间
+					template：
+					    retry：	
+						enabled：true			开启消息重连机制
+						initial-interval：1000ms		开启后的初始等待时间
+						multiplier：1			失败下次开启等待时长倍数
+						max-attempts：3			最大重连次数
+					
+					补充：若对系统性能有要求，关闭RabbitMQ重连机制
+
+			消费者失败重试机制：	消费者在处理消息失败之后能重新被消费
+				配置失败重试机制：
+				spring：
+				    rabbitmq：
+					listener：
+					    simple：
+						prefetch：1
+						retry：
+						    enabled：true		开启消费者失败重试
+						    initial-interval：1000ms	初始 失败等待时长
+						    mutiplier：1			下次失败等待时长倍数
+						    max-attempts：3		最大重试次数
+						  	
+		消息持久化：	RabbitMQ将接收到的信息保存到磁盘		
+			非持久化：RabbitMQ如果重启或某种原因奔溃，队列和消息就会被删除
+			
+			交换机持久化：创建时指定Durable属性					Java	→	声明队列将durable参数设置为true
+			消息持久化：发布消息时将deliveryMode属性设置为2-Persistent		Java	→	发送消息添加MessageProperties.PERSISTENT_TEXT_PLAIN
+		
+			队列持久化：
+				1.创建时指定Durable属性
+				2.Lazy Queue(惰性队列)		接收到消息后直接存入磁盘，消费消息才从磁盘加载到内存	
+			
+					补充：3.12版本后所有创建队列都是Lazy Queue模式		
+
+		避免消息重复消费：
+			唯一消息ID：
+			幂等性设计：
+
+		死信队列：
+			死信交换机：
+			
+		消息优先级：
+			优先级队列：
+			
+		消息过期时间(TTL)：
+			过期时间：
+	
+		消息路由机制：
+			交换机：
+		
+							
+		
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Seata：			2019年1月份蚂蚁金服和阿里巴巴共同开源的分布式事务解决方案
+	分布式事务：分布式系统/微服务架构中，一个业务需要多个服务合作完成，每个服务都有事务。多个事务必须同时成功或失败
+
+	事务特性：ACID(原子性/一致性/隔离性/持久性)	
+
+		原子性		一个事务的所有操作，要么都执行完成，要么全部不执行
+		一致性		事务完成时，所有数据都保持一致
+		隔离性		数据库中事务一般都是并发的，两个并发的事务执行互补干扰
+		持久性		一个事务完成之后数据被持久化到数据库。之后其他操作不会对事务结果产生影响或回滚操作
+
+	全局事务：由一批分支事务组成的全局事务
+	分支事务：每个服务的事务(本地事务)
+					
+	A服务 	-->	B服务		B服务(独立数据库)事务正确				
+		--> 	C服务		C服务(独立数据库)事务出错		-->		A服务事务报错(原因:分支事务不一致性)
+
+	Seata三个重要角色：		
+		TC(事务协调者)：		全局事务状态/分支事务状态管理者					Server服务
+			Seata服务器追踪全局事务的总体状态(正在进行/提交/回滚)和了解分支事务的状态(成功/失败/提交)
+			根据所有分支事务状态一致(一致：提交;不一致：回滚)，决定全局事务提交或回滚
+			TC向TM和RM报告全局事务和分支事务状态，TM和RM做出适当响应和调整
+		
+		TM(事务管理器)：		全局事务管理者							Client客户端
+			向TC注册全局事务(提交全局事务的开始请求给TC)，所有分支事务注册到TC中
+			根据TC维护的全局事务状态(正在进行/提交/回滚)和分支事务状态(成功/失败/提交)，做出开始，提交，回滚事务的决定
+
+		RM(资源管理器)：		分支事务管理者							Client客户端
+			负责管理具体的数据资源(数据库，消息队列)，确保在全局事务中正确使用和管理
+			事务报告状态：
+				事务开始	RM向TC注册分支事务，报告分支事务初始状态
+				事务过程	RM通知TC本地事务执行状态(成功/失败/其他状态)		TC跟踪全局事务进展
+				事务完成	RM通知TC本地事务执行最终结果(成功/失败)		TC决定全局事务最终状态
+			TC决定回滚，RM将本地事务操作回滚到事务开始之前的状态
+	
+
+	微服务整合Seata：
+		1.引入依赖
+		<dependency>									引入Seata依赖，
+			<groupId>com.alibaba.cloud</groupId>
+			<artifactId>spring-cloud-starter-alibaba-seata</artifactId>
+		</dependency>
+		
+		
+	Seata四种事务模式：
+		AT模式：			适用绝大部分业务场景		
+		TCC模式
+		SAGA模式
+		XA模式
+
+	
+	
+
+
+		
+
+		
+
+
+	
+
+			
+			
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+		
+	

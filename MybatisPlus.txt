@@ -1,0 +1,426 @@
+MybatisPlus(MP)：
+	MybatisPlus是Mybatis的增强工具，在Mybatis的基础上只做增强不做改变，可以节省大量时间
+	功能：
+		内置分页插件
+		简化CRUD操作
+		代码生成器
+		
+	使用：
+		1.引入MybatisPlus依赖		继承mybatis功能，集成Mybatis和MybatisPlus的所有功能
+		<dependency>
+    			<groupId>com.baomidou</groupId>
+    			<artifactId>mybatis-plus-boot-starter</artifactId>
+    			<version>最新版本</version>
+		</dependency>
+		或者
+		<dependency>
+    			<groupId>com.baomidou</groupId>
+    			<artifactId>mybatis-plus</artifactId>
+    			<version>最新版本</version>
+		</dependency>
+	
+		测试依赖(补充):
+		<dependency>
+    			<groupId>com.baomidou</groupId>
+    			<artifactId>mybatis-plus-boot-starter-test</artifactId>
+    			<version>3.5.5</version>
+		</dependency>
+		
+		2.自定义Mapper接口继承MybatisPlus提供的BaseMapper泛型接口
+			注：BaseMapper<User> 这里的泛型是进行增删改查的实体
+
+			@Mapper
+			public interface PatentMapper extends BaseMapper<User>{
+				 List<PatentInfoExcel> selectPatentInfoExcel(String patentGuids);
+			}
+	
+		3.MybatisPlus通过扫描实体类，反射获取实体类信息作为数据库表信息
+				类名驼峰转下划线作为表名		
+				名为id的字段作为主键		id	主键
+				变量名驼峰转下划线作为表的字段名	patent_name --> patentName
+
+	常用注解：
+		@TableName	标识实体类对应的表			@TableName("tb_patent_detail")
+			属性：					public class User{
+				value		表名			@TableId(value = "id",type = IdType.AUTO)
+				schema		schema			private Long id;
+									@TableField("username")
+		@TableId	指定表中主键,雪花算法生成主键id		private String name;
+			属性：
+				value		主键名
+				type		AUTO		数据库自增长
+						INPUT		通过set方法自行输入
+						ASSIGN_ID	分配ID
+
+				IdType		AUTO		自增
+						NONE		未设置主键
+						INPUT		手动输入
+						ASSIGN_ID	默认全局唯一ID
+						UUID		全局唯一的uuid
+		@TableField	场景：成员变量名与数据库字段名不一致				@TableFiled能实现公共字段自动填充(create_time,update_time)
+			成员变量以is开头，且是布尔值						百度：@TableFiled公共字段自动填充
+			成员变量与数据库关键字冲突
+			属性：
+				value		字段名
+				exist		true		是否为数据库表字段
+		@TableLogic	逻辑删除注解
+			属性：
+				value		0		逻辑未删除值
+				delval		1		逻辑已删除值		
+		@version	乐观锁注解，在实体类中指定数据版本号的字段与数据库表中数据版本号字段映射
+		@TableLogic	指定逻辑删除字段与数据库表中的逻辑删除字段的映射	
+				
+	
+	MybatisPlus配置项：
+		application.yml全局配置：
+		mybatis-plus：
+			type-aliases-package： com.itheima.mp.domain.po	别名扫描包
+			mapper-locations: "classpath*:/mapper/**/*.xml"	扫描mapper文件夹下所有子目录含有Mapper.xml文件地址
+			configuration:
+			   map-underscore-to-camel-case: true	是否开启下划线和驼峰命名的映射
+			   cache-enabled: false		是否开启二级缓存
+			global-config:	
+			   db-config:
+			      id-type: assign_id	id为雪花算法生成，全局有效/注解配置Id类型优先级更高
+			      update-strategy: not_null		更新策略：只更新非空字段
+
+
+	核心功能：
+		IService批量插入处理：
+			1.for循环						速度极差，不推荐
+			2.MP批量新增						基于预编译的批处理，性能不错
+			3.配置JDBC参数，开启rewriteBatchedStatements=true		性能最好	
+			
+		代码生成器：
+			MybatisPlus官方提供思路：
+				1.引入依赖
+				mybatisplus依赖：
+					<dependency>
+            					<groupId>com.baomidou</groupId>
+            					<artifactId>mybatis-plus-boot-starter</artifactId>
+            					<version>3.4.3.4</version>
+        				</dependency>
+				MP代码生成器依赖：
+					<dependency>
+    						<groupId>com.baomidou</groupId>
+    						<artifactId>mybatis-plus-generator</artifactId>
+    						<version>3.5.1</version>
+					</dependency>
+				模板引擎依赖：
+					<dependency>
+            					<groupId>org.apache.velocity</groupId>
+            					<artifactId>velocity-engine-core</artifactId>
+            					<version>2.3</version>
+        				</dependency>
+
+				2.执行生成代码工具类	百度搜索代码生成工具类	
+
+			视频教学(推荐)：
+				代码生成：安装插件：MybatisPlus ->  顶部菜单Other -> Config Database ->
+					填写信息	dbUrl		jdbc:mysql://localhost:3306/数据库名字
+						jdbcDriver	mysql
+						user		数据库账号
+						password	数据库密码
+					-> 点击Code Generator按钮弹出窗口
+						Code Generator窗口操作：
+							Ctrl键多选表
+							module		子模块名称
+							package		与包名一致
+							over file	是否覆盖旧代码
+							ID策略		
+							Entity/Mapper/Controller/Service/ServiceImpl	指定包名生成类
+							TablePrefix	表前缀
+							lombok...	是否加注解
+
+
+		简化CURD：
+			MybatisPlus封装IService接口
+			1.自定义接口继承IService接口
+			Service接口：
+				复杂条件查询用LambdaQuery，简单CURD用save/update等等
+				public interface IUserService extends IService<Emp> {}
+				
+			2.自定义Service实现类，实现自定义接口并继承ServiceImpl<T extends BaseMapper<实体类>，实体类>类
+			Service实现类：
+				public class IUserServiceImpl extends ServiceImpl<EmpMapper,Emp> implements IUserService {
+					User user = getById(id);	
+					
+				}
+
+					注意：extends ServiceImpl<EmpMapper,Emp>中
+						第一个泛型	Mapper是Service需要使用的Mapper
+						第二个泛型	实体类是Service需要操作的实体
+
+		Service层：
+			IService基础业务接口开发：
+				对业务层自身实体操作			
+					Service层	this.selectone();
+					Mapper层		baseMapper就是Service层需要使用的Mapper	baseMapper.getOne();
+
+				循环依赖：bean A依赖于bean B时，bean B依赖于bean A
+					异常：BeanCurrentlyCreationException
+
+					使用@Autowired注入会出现Service相互调用造成循环依赖
+					解决办法：使用Db静态方法
+					
+				方法：
+				    新增：
+					boolean save(T entity)						新增一条数据
+					boolean saveBatch(Collection<T> entityList)			新增多条数据	
+					boolean saveBatch(Coolection<T> entityList,int batchSize)	新增多条数据
+				    删除：	
+					boolean remove(Wrapper<T> queryWrapper)				根据queryWarapper设置的条件删除记录
+					boolean removeById(Serializable id)				根据ID删除
+					boolean removeByIds(@RequestParam List<Long> idList/String ids)	根据ID批量删除
+					补充：单个删除与批量删除同时满足时，只需要写批量删除的接口即可
+				    更新：
+					boolean update(Wrapper<T> updateWrapper)			根据UpdateWrapper条件，
+					boolean updateById(T entity)					根据ID选择修改
+					boolean updateBatchById(Collection<T> entityList)		根据ID批量更新
+					boolean updateBatchById(Collection<T> netityLsit,int BatchSize)	根据ID批量更新
+
+					链式：
+						update().eq("column", value).remove();
+						lambdaUpdate().eq(Entity::getId, value).update(entity);
+
+				    查询：
+					单条数据：
+						T getById(Serializable id)						根据ID查询
+						T getOne(Wrapper<T> queryWrapper)					根据Wrapper，查询一条记录
+						T getOne(Wrapper<T> queryWrapper,boolean throwEx)			根据Wrapper，查询一条记录						
+
+					多条数据：
+						List<T> list()								查询所有
+						List<T> list(Wrapper<T> queryWrapper)					查询列表
+						Collection<T> listByIds(Collection<? extends Serializable> idList)	根据id批量查询
+
+						链式：
+							query().eq("column",value).one()/list()
+							lambdaQuery().eq(Entity::getId,value).one()/.list()
+						链式(实际开发)：
+							User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getId, vo.getUserId()));
+
+					分页查询：		分页查询结果用IPage对象
+						IPage<T> page(IPage<T> page)						无条件分页查询
+						IPage<T> page(IPage<T> page,Wrapper<T> queryWrapper)			条件分页查询
+						IPage<Map<String,Object>> pageMaps(IPage<T> page)			无条件分页查询
+						IPage<Map<String,Object>> pageMaps(Ipage<T> page)			条件分页查询
+						
+						int count()								查询记录总数
+						int count(Wrapper<T> queryWrapper)					根据Wrapper条件，查询总记录数
+
+		条件构造器(Wrapper)：
+			MybatisPlus支持各种复杂where条件，Wrapper是条件构造器，作用是单表的增删改查等所有操作，不需要自己写sql语句
+
+							       Wrapper
+							   AbstractWrapper
+				AbstractLambdaWrapper       UpdateWrapper	QueryWrapper
+			LambdaUpadateWrapper	LambdaQueryWrapper
+				补充：实际就四个(QueryWrapper/UpdateWrapper/LambdaQueryWrapper/LambdaUpdateWrapper)
+				
+			Wrapper:条件构造类，最顶层父端
+、			AbstractWrapper：用于查询条件封装，生成sql的where条件
+			QueryWrapper：Entity对象封装操作类
+			UpdateWrapper：Update条件封装，用于Entity对象更新操作
+			AbstractLambdaWrapper：Lambda语法使用Wrapper统一处理解析lambda获取column
+			LambdaQueryWrapper：Lambda语法使用的查询Wrapper
+			LambdaUpdateWrapper：Lambda更新封装Wrapper
+			
+			使用条件构造器进行查询：
+			1.Java传统写法
+			    条件构造器：		
+				第一种写法：
+				QueryWrapper<User> qw = new QueryWrapper();
+				qw.eq("t_user",User.getUserId);			//第一个变量是数据库表中字段，第二个变量是sql语句查询查找值
+				userMapper.selectOne(qw);			这里是Mapper调用简化CRUD
+
+				第二种写法：
+				QueryWrapper<User> wrapper = new QueryWrapper<User>()
+					.select("id","username","info","balance")
+					.like("username","o")
+					.ge("balance",1000);
+						
+				List<User> users = userMapper.selectList(wrapper);
+
+
+				LambdaQueryWrapper<T> wrapper = Wrappers.lambdaQuery();
+				实际开发：List<PersonalInfo> list = this.list(Wrappers.<PersonalInfo>query().lambda().orderByDesc(PersonalInfo::getCreateTime));
+						Wrappers.<T> lambdaQuery() 是 MyBatis-Plus 中用于创建 LambdaQueryWrapper 对象的方法
+					同理：this.list(new LambdaQueryWrapper<PersonalInfo>().orderByDesc(PersonalInfo::getCreateTime))
+
+
+				第三种写法(IService的静态Lambda方法)
+				List<User> users = lambdaQuery()
+					.like(name != null,User::getUsername,name)
+					.eq(status != null,User::getStatus,status)
+					.ge(minBalance != null,User::getBalance,minBalance)
+					.le(maxBalance != null,User::getBalance,maxBalance)
+					.list();
+			
+				int remainBalance = user.getBalance() - money;
+				lambdaUpdate()
+					.set(User::getBalance,remainBalance)
+					.set(condition:remainBalance == 0,User::getStatus,2)
+					.eq(User::getId,id);
+					.update();
+				
+			方法：
+				AbstractWrapper：
+				    eq(R column,Object val)			eq("name","老王") --> name = '老王'
+				    ne(R column,Object val)			ne("name","老王") --> name <> '老王'	
+				    gt(R column,Object val)			gt("age",18) --> age > 18
+				    ge(R column,Object val)			ge("age",18) --> age >= 18
+				    lt(R column,Object val)			lt("age",18) --> age < 18
+				    le(R column,Object val)			le("age",18) --> age <= 18
+				    between(R column,Object val1,Object val2)		between("age", 18, 30) --> age between 18 and 30
+				    notBetween(R column,Object val1,Object val2)	notBetween("age", 18, 30) --> age not between 18 and 30
+				    like(R column,Object val)			like("name", "王") --> name like '%王%'	
+					补充：like(condition,R column,Object val)	condition成立，执行后面Wrapper		
+				    notLike(R column,Object val)		notLike("name", "王") --> name not like '%王%'
+				    likeLeft(R column,Object val)		likeLeft("name", "王") --> name like '%王'
+				    likeRight(R column,Object val)		likeRight("name", "王") --> name like '王%'
+				    notLikeLeft(R column,Object val)		notLikeLeft("name", "王") --> name not like '%王'
+				    notLikeRight(R column,Object val)		notLikeRight("name", "王") --> name not like '王%'
+				    isNull(R column)				isNull("name") --> name is null		
+				    isNotNull(R column)				isNotNull("name") --> name is not null
+				    in(R column, Collection<?> value)		in("age",{1,2,3}) --> age in (1,2,3)
+				    notIn(R column, Object... values)		notIn("age", 1, 2, 3) --> age not in (1,2,3)
+				    inSql(R column, String inValue)		inSql("age", "1,2,3,4,5,6") --> age in (1,2,3,4,5,6)
+				    notInSql(R column, String inValue)		notInSql("id", "select id from table where id < 3") --> id not in (select id from table where id < 3)
+				    groupBy(R... columns)			groupBy("id", "name") --> group by id,name
+				    orderByAsc(R... columns)			orderByAsc("id", "name") --> order by id ASC,name ASC
+				    orderByDesc(R... columns)			orderByDesc("id", "name") --> order by id DESC,name DESC
+				    having(String sqlHaving, Object... params)	having("sum(age) > {0}", 11) --> having sum(age) > 11		
+				    orderBy(boolean condition, boolean isAsc, R... columns)		orderByDesc("id", "name") --> order by id DESC,name DESC
+				    or(Consumer<Param> consumer)		eq("id",1).or().eq("name","老王") --> id = 1 or name = '老王'
+				    and(Consumer<Param> consumer)		and(i->i.eq("name", "李白").ne("status", "活着"))--> and (name = '李白' and status <> '活着')
+				    last(String lastSql)			last("limit 1")			直接拼接到最后			
+				    set(String column, Object val)		set("name", null) --> 数据库字段值变为null
+				    setSql(String sql)				setSql("name = '老李头'")
+
+		自定义SQL：		
+			利用MybatisPlus(MP)和Wrapper构建复杂的where条件，自定义SQL语句剩下的部分
+
+			使用场景：在业务层写Sql不可取，使用自定义SQL
+
+				1.MP的Wrapper构造where条件，自定义更新方法(业务层)
+					LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>().in(User::getId,ids);
+					userMapper.updateBalanceByIds(wrapper,amount);
+
+				2.传入业务层参数，在mapper方法参数中用Param注解声明wrapper变量名称，必须是ew
+					void updateBalanceByIds(@Param("ew") LambdaQueryWrapper<User> wrapper,@Param(amount) int amount);
+						补充：@Param("ew") <==> @Param(Constants.WRAPPER)
+
+				3.xml定义sql，自定义SQL，并使用Wrapper条件
+					<update id = "updateBalanceByIds">
+						update tb_user set balance = balance -#{amount}
+						${ew.customSqlSegment}		业务层构造的where条件
+					</update>
+
+				补充：自定义SQL = 业务层where + xml剩余sql		
+
+	扩展功能：
+		逻辑删除：	基于代码逻辑模拟删除效果，不会真正删除数据	场景:查询未删除的数据
+			在表中添加一个字段标记数据是否被删除	
+				删除数据时标记置为1	
+				查询：标记为0的数据
+
+				表中字段isDeleted从0变为1表示逻辑删除，但是实际数据未被删除
+			
+			在application.yml文件中配置逻辑删除的字段名称和值
+			mybatis-plus：		
+			   global-config：			全局配置	
+			      db-config：			数据库配置
+				 logic-delete-field：flag	逻辑删除字段
+				 logic-delete-value：1		逻辑已删除值
+				  logic-not-delete-value：0	逻辑未删除值
+
+			逻辑删除产生问题：数据库表垃圾越来越多，影响查询效率
+				解决办法：数据不能删除，将逻辑删除数据迁移到其他表
+
+		枚举处理器：
+			例：	实体类		private Integer status			第一种写法
+						private	DeletedEnum status		第二种写法		
+					实际开发调用	TechnologyAssessmentDetail::getIsDeleted
+
+				枚举类		public enum DeletedEnum{
+							NORMAL(1,"正常")，		实际写的时候要注意标点符号
+							DELETED(2,"删除")；
+								
+							@EnumValue			第二种写法要加注解，第一种不需要
+							@JsonValue			第二种写法要加注解，第一种不需要
+							private final Integer value；
+							private final String desc；	
+
+							DeletedEnum(Integer value, String name) {
+        							this.value = value;
+        							this.name = name;
+    							}
+
+							get/set方法	或者	@Getter/@Setter注解
+						}
+					实际开发调用	DeletedEnum.NORMAL.getValue()	getValue()是定义在枚举类中方法
+
+				第二种写法在application.yml中配置全局枚举处理器：
+					mybatis-plus：
+					    configuration:
+						default-enum-type-handler:com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler
+
+
+		JSON处理器：
+			数据库：		字段：info		字段类型：JSON
+			Java实体类:	字段：info		字段类型：UserInfo		
+				Java当中没有接收JSON的数据结构 -->  所以需要自定义的JSON处理器
+					
+				数据库：		JSON
+					{
+						"age":"18",
+						"intro":"佛系青年",
+						"gender":"女"
+					}
+				
+				Java实体类：
+					private UserInfo info；
+					UserInfo --> 	public class UserInfo{
+							    private Integer age;
+							    private String intro;
+							    private String gender;
+							}
+
+			AbstractJsonHandler接口
+			实现：	GsonTypeHandler
+				JacksonTypeHandler
+				FastjsonTypeHandler
+
+			解决办法：		
+				Java实体类		
+				@TableName(value = "user",autoResultMap = true)
+				public class User{
+					@TableField(typeHandler = JacksonTypeHandler.class)
+					private UserInfo info;
+
+				1.开启自动映射	autoResultMap = true
+				2.配置处理器	@TableField(typeHandler = JacksonTypeHandler.class)
+
+	插件功能：
+		分页插件：
+			1.Java代码配置分页插件
+			@Configuration
+			public class MybatisConfig{
+				
+				@Bean
+				public MybatisPlusInterceptor mybatisPlusInterceptor() {
+					MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+					PaginationInnerInterceptor pageInterceptor = new PaginationInnerInterceptor(DbType.MYSQL);
+					pageInterceptor.setMaxLimit(1000L);
+					interceptor.addInnerInterceptor(pageInterceptor);		添加内置拦截器
+					return interceptor;
+				}
+			}
+			
+			2.使用分页IPageAPI
+			public R<IPage<TeAndRePaperVO>> page(TeAndRePaperDTO teAndRePaperDTO, Query query) {}
+			IPage<MonographVO> pages = monographDetailService.selectMonographPage(Condition.getPage(query), monographDTO);
+					
+				参数：	monographDTO		分页查询条件
+					Query.class		分页参数
