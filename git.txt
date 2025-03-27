@@ -1,0 +1,131 @@
+Git分布式版本控制工具
+	版本：每次修改都保存为一个版本
+	版本控制器的方式：
+		集中版本控制：	版本库架设在一台指定服务器上，所有开发设备连接该服务器，一旦服务器挂掉，所有设备代码全都gg
+			SVN/(微软)CVS
+		分布式版本控制：	每台计算机都可以作为版本库，本地计算机将修改完的代码提交到公共版本库，其他计算机同样可以提交拉取代码
+			Git	
+
+	Git：
+		下载安装：
+			Git GUI：  Git提供的图形界面工具
+			Git Bash：Git提供的命令行工具
+			
+			补充：
+				GitHub Desktop 	GitHub提供的免费Git可视化工具
+				GitKraken	简单易用的Git可视化工具
+				Sourcetree	Atlassian公司提供的免费Git可视化工具
+			
+			配置步骤：
+			(必须配置)
+			# 设置你所使用git时显示的用户的名字
+				git config ‐‐global user.name "zhouzhou"
+			# 设置你所使用git时显示的邮箱号
+				git config ‐‐global user.email "694256578@qq.com"
+	
+			为常用指令配置别名：
+			# 打开用户目录创建.bashrc文件
+				touch C:\Users\zhousir/.bashrc
+			# 在创建的.bashrc文件中输入命令
+				alias git-log='git log --pretty=online --all --graph --abbrev-commit'
+				alias ll='ls -al' 
+
+		获取本地仓库：
+			1.创建本地仓库：idea顶部菜单栏VCS -> Create Git Repository.. -> 选择本地仓库地址 
+			2.在该目录下右键打开Git Bash，执行命令
+				git init			结果：成功出现.git的隐藏文件夹
+				查看隐藏文件：
+					点击查看 -> 显示 -> 隐藏的项目
+
+		推送代码到远程仓库：
+			Gitee私人账号创建仓库 -> 复制Https仓库地址 -> idea中Push代码到远程仓库 -> 输入仓库地址 -> 第一次登录输入Gitee仓库账号密码
+
+	Git工作流程：
+		远程仓库				本地仓库			暂存区		 工作区
+		Remote				Reposity		index		 workspace
+		      -----fetch/clone--------->        -------------checkout----------->
+		      <--------push-------------        <---commit---        <---add-----	
+		      ----------------------------pull---------------------------------->
+		
+		1.git可以将远程库上的资源克隆到本地库上
+		2.从本地库检出文件到工作区(idea)	
+			本地库管理文件代码不会对远程库产生影响
+		3.工作区中的代码发生变化，将改动的代码放到暂存区
+		4.可以使用本地库的管理将暂存区的代码提交到本地库中
+		5.将本地库的管理信息推送到远程库
+		6.远程库的内容更新，同事可以拉取到最新的提交代码
+
+		工作区：可以创建编辑删除文件
+			
+		git常用指令：	*****
+			touch 文件名		创建文件
+			git status		查看本地库状态(工作区(未暂存unstaged/未跟踪untracked))
+			git add [.]		提交[所有]文件到暂存区(staged)
+			git commit -m ("add file01"/提交日志)	提交日志
+			git  revert		创建一个新提交，该提交会抵消先前的提交效果
+			git (-)log		查看历史提交记录日志
+				--all		显示所有分支
+				--pretty=online	将提交信息显示为一行
+				--abbrev-commit	输出的commitId更简短
+				--graph		以图的形式显示
+			clear			清楚日志
+			git reset --hard commitId	版本回退(撤销上次提交并返回到上次提交)
+			ctrl C			结束
+			git reflog		查看所有操作日志(提交/回退/修改)
+		    在开发过程中, 有些时候本地的某些文件不希望被版本控制器所管理
+			touch .gitignore	创建.gitignore文件
+			vi .gitignore		列出忽略的文件模式
+		
+		分支：	
+			概念：
+				将代码库中的代码分成不同版本，每个分支都是代码库的一个副本，可以在其中进行修改和提交，不会影响到其他分支的代码
+	
+			分支常用命令：	*****
+				branch/master		HEAD指向就是当前分支	
+				git branch		查看本地分支
+				git branch 分支名称	创建分支
+				git -log		查看分支
+				git checkout 分支名	切换分支
+				git checkout -b 分支名	创建并且切换分支
+				git branch -d 分支名	删除分支
+				合并分支：
+				git checkout master	切换到主分支
+				git merge dev01		合并分支
+			
+		分支冲突：	两个分支上的代码修改了统一部份，并且尝试将两个分支合并，会发生代码冲突
+			例：同时修改同一个文件的同一行
+			解决冲突步骤：
+				1.运行git status查看哪些文件包含冲突
+				2.编辑有冲突的文件，手动处理文件起冲突的地方
+				3.将解决完的文件加入暂存区(git add.)
+				4.提交到仓库(git commit -m)
+
+		分支：
+			master/main(生产主分支)	发布上线
+				develop(开发分支)		
+				test(测试)
+				......
+	
+	Git远程仓库：
+		远程仓库托管服务：GitHub，码云(Gitee),GitLab(企业用)
+
+		Git Bash生成/获取SSH公钥：
+			生成公钥：ssh-keygen -t rsa	之后一直回车生成成功
+			获取公钥：cat -/.ssh/id_rsa.pub	回车复制且配置公钥
+			ssh -T git@gitee.com		验证是否配置成功	
+		
+		本地仓库推到远程仓库：	*****
+			git remote				查看远程仓库
+			git remote add 远程仓库名	远程仓库地址	添加远程仓库
+			git push 远程仓库名 分支名称		将本地仓库代码提交到远程仓库
+			git push --set-upstream 远程仓库名 分支名	将代码推送到远程仓库同时，建立与远程仓库分支关联关系
+			git branch -vv				查看关联关系
+				当前分支与远端分支有关联关系，可以省略分支名和远端名
+				git push	推送代码
+			git clone 远程仓库地址			将远程仓库拉到本地
+			git pull 远程仓库名 远程仓库分支名		将远程仓库分支内容拉取到本地，合并
+		
+	在Idea中使用git时铁令：
+		切换分支前先提交本地代码，切换不提交代码丢失
+		
+				
