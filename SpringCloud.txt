@@ -1,0 +1,1325 @@
+微服务
+	微服务架构演变：
+		单体构架(单一应用)：将所有功能集中在一个项目中开发，打包成一个包部署			缺点：访问量超过一定值性能下降/团队协作默契低
+		垂直架构(垂直应用)：将项目拆分成多个小项目部署在多个独立运行的服务器上，提升响应速度	
+		分布式服务架构(RPC)：根据业务功能对系统进行拆分，每个业务模块作为独立项目开发，称为一个服务。
+			补充：RPC Remote Procedure Call 远程过程调用，所有服务全部使用url远程调用
+		流动计算架构(SOA)：
+			SOA：将应用的不同功能单元(服务进行拆分)，服务之间定义良好的接口和契约联系
+			ESB：服务总线，服务中介。提供服务于服务之间的交互，功能：负载均衡，流量控制，服务监控，异常处理
+		微服务架构：将应用程序拆分为多个小型，独立的服务。每个服务可独立部署和扩展
+		
+	分布式：完整的项目拆分成多个微服务，每个子项目运行在独立的服务器上，服务器之间实现数据交互。
+	集群：多台计算机服务器通过网络互联而成的相互独立的计算机系统，共同完成相同的任务
+
+	高性能：系统能够在短时间内正常处理大量请求
+	高可用：系统在任何时间内都能保持可访问状态
+
+	补充：Dubbo是SOA时代的产物，Spring Cloud是微服务时代的产物
+			
+	微服务：
+		概念：将一个完整的项目根据业务模块拆分成多个微服务，每个微服务都是小型项目，项目之间用Restful(HTTP)通信
+				
+		特征：
+			单一职责：微服务拆分粒度更小，每一个服务对应唯一的业务能力
+			面向服务：微服务对外暴露业务接口
+			自治：团队独立/技术独立/数据独立/部署独立
+
+		微服务框架：SpringCloud/(阿里巴巴)Dubbo/SpringCloudAlibaba
+		微服务技术对比：
+					Dubbo			SpringCloud			SpringCloudAlibaba
+		注册中心：	zookeeper/Redis		Eureka/Consul				Nacos/Eureka
+		服务远程调用：	Dubbo协议		Feign(http协议)				Dubbo/Feigin
+		配置中心：	   无			SpringCloudConfig			SpringCloudConfig/Nacos
+		服务网关：	   无			pringCloudGateway/Zuul			SpringCloudGateway/Zuul
+		服务监控保护：	dubbo-admin		Hystrix					Sentinel
+
+	SpringCloud常用五大组件：
+		Eureka			注册中心
+		Ribbon/Feign		负载均衡/服务调用
+		Hystrix			断路器
+		GateWay/Zuul		网关管理
+		Spring Cloud Config	分布式配置中心
+	    
+	其他组件：
+		Zookeeper		
+		Spring Cloud Stream	消息驱动微服务，支持消息中间件RabbitMQ和Kafka
+		Spring Cloud Sleuth	分布式追踪和日志记录	
+		
+
+SpringCloud：	目前国内使用最广泛的微服务框架	
+	提供者：一次业务中，被其他微服务调用的服务(提供接口给其他微服务)
+	消费者：一次业务中，调用其他微服务的服务(调用其他微服务提供的接口)			 注：任一服务都可以是服务提供者和服务消费者
+			
+	注册中心：	记录并监控微服务各实例状态，推送服务变更信息
+		Eureka：			Netflix公司开发主要用于实现微服务架构中的服务注册和发现		
+
+			eureka服务端：	eureka-server
+				提供者：提供注册功能。微服务启动时，将自己服务注册到Eureka Server中
+
+			Eureka客户端：	eureka-client		向Eureka服务器注册自身服务，从服务器获取其他实例(服务)的信息	
+				消费者：从Eureka服务器查询所需服务实例列表，基于负载均衡策略选择合适的服务实例进行调用
+
+				心跳监测：服务提供者每隔30秒向EurekaServer发送心跳请求，报告健康状态，
+					 eureka更新记录服务列表信息，心跳不正常会被删除，消费者拉取最新信息
+	
+			搭建EurekaServer服务：
+				1.引入依赖
+				<dependency>
+					<groupId>org.springframework.cloud</groupId>
+					<artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+				</dependency>
+
+				2.编写启动类，添加@EnableEurekaServer注解(判断一个项目是否创建成功，运行启动类不报错即可)
+				@EnableEurekaServer
+				@SpringBootApplication
+				public class EurekaserverApplication {
+
+					public static void main(String[] args) {
+						SpringApplication.run(EurekaserverApplication.class, args);
+					}
+				}
+
+				3.编写application.yml文件
+				server：
+					port：10086	/服务端口	
+				spring：
+				  	application：
+				    		name：eurekaserver	/服务名称
+				eureka：			eureka-Server注册到eureka上，eureka集群进行数据交互
+				    	client：
+				    		service-url：  /eureka的地址信息	
+				      			dafaultZone：http://127.0.0.1:10086/eureka		Status状态是UP是正常状态
+
+			服务注册：	将user-service服务注册到EurekaServer
+				1.引入依赖
+				<dependency>
+					<groupId>org.springframework.cloud</groupId>
+					<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+				</dependency>
+
+				2.编写appliation.yml文件
+				spring：
+				  	application：
+				    		name：userservice		服务名称
+				eureka：			eureka-Server注册到eureka上，eureka集群进行数据交互
+				    	client：
+				    		service-url：  			eureka的地址信息	
+				      			dafaultZone：http://127.0.0.1:10086/eureka/
+			
+			服务发现：
+				1.引入依赖
+				<dependency>
+					<groupId>org.springframework.cloud</groupId>
+					<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+				</dependency>
+
+				2.在application.yml中配置eureka地址
+				spring：
+				  	application：
+				    		name：userservice		服务名称
+				eureka：			eureka-Server注册到eureka上，eureka集群进行数据交互
+				    	client：
+				    		service-url：  			eureka的地址信息	
+				      			dafaultZone：http://127.0.0.1:10086/eureka/
+
+				基于服务名称获取服务列表，对服务列表做负载均衡
+				3.利用RestTemplate发起http请求	
+				String url = "http://userservice/user/" + order.getUserId();
+				发送http请求，实现远程调用
+				User user = restTemplate.getForObject(url,User.class);
+			
+				4.对列表服务做负载均衡
+				@Bean
+				@LoadBalanced
+				public RestTemplate restTemplate(){
+					return new RestTemplate();
+				}
+			
+
+		Nacos：Nacos是阿里巴巴的产品，现在是SpringCloud的一个组件
+			作用：服务注册与发现/配置管理
+			
+			配置中心：
+				1.统一配置管理
+				nacos创建配置：
+					Nacos控制台 -> "┼" -> 新建配置信息 -> 发布
+					新建配置信息：
+						DataID：服务名称 + 环境名称.yaml
+						Group:默认
+						描述：对文件的简单介绍
+						配置格式：配置文件形式
+
+					微服务获取配置：
+						项目启动 -> 读取bootstrap.yml文件获取nacos地址和配置信息 -> 读取nacos中配置文件初始化 -> 读取本地配置文件 -> 创建spring容器 -> 加载bean
+						补充:bootstrap.yml是引导配置文件
+							bootstrap.yml引导文件优先级比application.yml文件优先级高
+
+				配置中心读取变量：
+					nacos配置文件：
+						${hm.swagger.title}		从本地服务配置文件读取变量
+					本地配置文件：
+						hm:
+						    swagger:
+							title:风光机一体化
+				2.统一配置管理：
+					1.引入Nacos配置管理依赖
+					<dependency>
+						<groupId>com.alibaba.cloud</groupId>
+						<artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+					</dependency>
+
+					2.bootstrap.yml文件拉取nacos配置
+					spring:
+					  	application:			DataID:服务名称 + 环境名称 + 后缀名
+					    		name:userservice
+					  	profiles:
+					    		active:dev
+					  	cloud:
+					    		nacos:
+					      			server-addr:
+					 			config:
+						  			file-extension:yaml
+					
+				3.配置热更新
+					Nacos中的配置文件变更之后，微服务无需重启就可感知。
+					两种配置实现：
+						1.@Value获取配置文件信息，在@Value注入的变量所在类上添加注解@RefreshScope(属性刷新功能)
+						2.@ConfigurationProperties注入，自动刷新
+						
+				4.配置共享
+					微服务启动时会从nacos读取多个配置文件
+						userservice-dev.yaml	开发环境配置
+						userservice.yaml	多环境共享配置
+					
+					配置文件优先级：	
+						服务名-profile.yaml -> 服务名称.yaml -> 本地配置
+
+				5.搭建Nacos集群
+
+			注册中心：	服务注册与发现
+				服务注册：
+					1.添加客户端依赖
+					<dependency>
+						<groupId>com.alibaba.cloud</groupId>
+						<artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>					
+					</dependency>
+
+					2.编写application.yml文件
+					spring：
+				    	    application：
+						name：item-service			服务名称
+				    	    cloud：
+				        	nacos：
+				            	    server-addr：localhost：8848		nacos部署地址
+				
+				服务注册流程：服务名相同，端口号不同 -->  一个服务有多个不同实例在线 --> 业务代码只需要一份，配置多个启动项
+						配置多个启动项：
+							启动服务 -> 控制台右键选择Copy Configuration -> 点击启动服务按钮旁边︙ -> 选择Edit... 
+							   -> 弹出窗口选择复制的服务 -> 选择Modify options -> 选择Add VM options -> 出现窗口填写-Dserver.port = 端口号
+				
+				服务发现：
+					1.添加客户端依赖
+						<dependency>
+							<groupId>com.alibaba.cloud</groupId>
+							<artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>					
+						</dependency>
+
+					2.编写application.yml文件
+					spring：
+				    	    application：
+						name：item-service			服务名称
+				    	    cloud：
+				        	nacos：
+				            	    server-addr：localhost：8848		nacos部署地址			
+
+					3.服务发现		
+						private final DiscoveryClient discoveryClient;
+
+						private void handleCartItems(List<CartVO> vos){
+							根据服务名称，获取服务实例列表
+							List<ServiceInstance> instances = discoveryClient.getInstance("item-service");
+							负载均衡，挑选一个实例
+							ServiceInstance instance = instances.get(RandomUtil.randomInt(instance.size()));
+							获取实例IP和端口
+							URI uri = instance.getUri();
+						}
+		Nacos集群化部署：		
+			搭建NacosServer服务：
+				1.引入依赖
+				<dependency>
+					<groupId>org.alibaba.cloud</groupId>
+					<artifactId>spring-cloud-alibaba-dependencies</artifactId>
+					<version>2.2.5.RELEASE</version>
+					<type>pom</type>
+					<scope>import</scope>						
+				</dependency>
+
+			Nacos服务分级存储模型：
+							服务(例：用户订单服务)
+
+						集群		 集群
+				
+				 	实例	      实例  实例		 实例
+				实例：临时实例	采用心跳检测
+				     非临时实例	nacos主动询问检测
+				Nacos集群采用AP方式，集群中存在非临时实例时，采用CP模式；Eureka采用AP模式
+
+				服务跨集群调用问题：
+					服务尽可能选择本地集群的服务，跨集群调用延迟较高
+					本地集群不可访问时，再去访问其它集群,IDea提示警告，采用随机负载挑选实例
+
+			application.yml：
+				spring：
+				  cloud：
+				    nacos：
+				      server-addr：localhost：8848
+				      discovery：
+					cluster-name：HZ		配置集群名称
+					
+				在消费者的application.yml中设置负载策略为IRule的NacosRule(同集群预先)
+				userservice：
+			           ribbon：
+				      NFLoadBalancerRuleClassName:com.alibaba.cloud.nacos.ribbon.NacosRule
+				
+				根据权重负载均衡：
+					实际部署问题：服务器性能有差异，希望性能好的及其承担更多的用户请求
+					解决方案：
+						Nacos提供了权重配置控制访问效率，权重越大访问频率越高，权重为0完全不会被访问
+						Nacos图形化界面 -> 服务管理 -> 服务列表 -> 具体服务详情 -> 编辑 -> 权重
+							注：权重值：0-1
+
+			环境隔离：	namespace
+				group	一般不会配group，放在DEFAULT_GROUP里面
+				命名空间 -> namespace
+				在Nacos控制台创建namespace：
+					命名空间 -> 新建命名空间 -> 填写空间名/描述 -> 自动生成空间ID -> 保存
+						dev 	开发环境
+						prod	生产环境
+						test	测试环境
+
+				Namespace：代表不同环境，如开发、测试、生产环境；
+				Group：代表某项目，如XX医疗项目、XX电商项目；
+				DataId：每个项目下往往有若干个工程，每个配置集(DataId)是一个工程的主配置文件
+				
+				application.xml配置命名空间：
+				消费者服务：
+					spring：
+				  	  cloud：
+				    	    nacos：
+				      	      server-addr：localhost：8848
+				              discovery：
+					        cluster-name：HZ		配置集群名称
+						namespce：命名空间ID	设置命名空间
+						ephemeral：false		设置非临时实例
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	OpenFeign	远程调用：				RPC
+		作用：实现http请求的发送，写http请求更简单
+		补充：实际发送请求是由Feign中的client接口实现类处理，该类使用HttpURLConnection		
+
+		远程调用原因：每个服务之间的数据/代码在数据库/开发环境中都是相互隔离的
+		远程调用：通过网络发起请求获取数据实现不同服务数据的调用(OpenFeign)
+
+
+		OpenFeign使用：
+			1.引入依赖
+			<dependency>									openFeign依赖
+				<groupId>org.springframework.cloud</groupId>	
+				<artifactId>spring-cloud-starter-openfeign</artifactId>
+			</dependency>
+
+			<dependency>									负载均衡算法依赖，实际开发中不需要详细写算法
+				<groupId>org.springframework.cloud</groupId>	
+				<artifactId>spring-cloud-starter-loadbalancer</artifactId>
+			</dependency>
+			
+			2.在启动类上添加注解开启Feign功能
+			@EnableFeignClients
+			@SpringBootApplication
+			public class GainApplication {
+				public static void main(String[] args) {
+					BladeApplication.run(LauncherConstant.GAIN_NAME, GainApplication.class, args);
+				}
+			}
+
+				补充：FeignClient接口不在SpringBootApplication扫描包范围内，FeignClient无法使用
+					解决办法：
+						1.@EnableFeignClients(basePackages = "com.hmall.api.clients")		指定FeignClient所在包
+						2.@EnableFeignClients(clients = {UserClient.class})			指定FeignClient字节码
+
+			3.编写Feign接口
+			@FeignClient(value = "服务名")
+			public interface IPersonalInfoClient{
+						
+				String API_PREFIX = "/client";
+				String GET_PATENT_INFO = API_PREFIX + "/getPatentInfo";				编写请求路径
+
+				@GetMapping(GET_PATENT_INFO)							请求方式
+				List<ItemDTO> getPersonalInfo(@RequestParam("ids") List<Long> ids);		请求方法(这边举例)
+			}
+				
+			4.编写Feign接口实现类
+			@NonDS
+			@RestController
+			@AllArgsConstructor
+			public class PersonalInfoClient implements IPersonalInfoClient{
+				private IPersonalInfoService personalInfoService;			注入Service
+				
+				@Override
+				public R getPersonalInfo(@RequestParam(value = "name") String name,@RequestParam(value = "code") Integer code){
+					return R.data(personalInfoService.getPersonalInfo(name,code))
+				}
+			}
+
+			5.调用OpenFeign获取接口数据
+				@Resource							@RequiredArgsConstructor
+				private IPersonalInfoClient personalInfoClient；		<==> 	private final IPersonalInfoClient personalInfoClient;
+
+				personalInfoClient.getPersonalInfo(name,code);				在需要调用其他服务功能的服务里面调Feign接口
+		
+		连接池：
+			采用连接池原因：
+				HTTP通信过程中，建立连接非常复杂，消耗时间，且HTTP连接需要3次握手和4次握手，开销很大
+				采用HTTP连接池，节约大量3次握手4次握手时间，提升吞吐量，提升系统性能
+			
+				补充：默认JDK自带HttpURLConnection，不支持连接池
+
+			OpenFeign整合OKHttp：				底层改变HttpURLConnection为OKHttp连接池
+				1.引入依赖
+					<dependency>
+            					<groupId>io.github.openfeign</groupId>
+            					<artifactId>feign-okhttp</artifactId>
+        				</dependency>
+					
+				2.添加连接池开启配置，默认连接池关闭
+					feign：
+						okhttp：
+							enabled：true
+			
+		企业采用模块存放Feign客户端：
+			gain-server-api：							微服务
+				feign/dto/vo							包
+					IPersonalInfoClient					OpenFeign客户端接口			
+
+		引用feign报错：
+			在引用feign的微服务pom.xml文件中添加Feign接口所在模块
+			<dependency>
+				<groupId>com.heima</groupId>
+				<artifactId>gain-server-api</artifactId>
+				<version>1.0.0</version>
+			</dependency>
+
+		OpenFeign日志输出：				FeignClient所在包的日志级别为DEBUG时，才输出日志
+			logging：
+				level：
+					com.hmall：debug		com.hmall是FeignClient所在包父级
+
+			日志级别：
+				NONE		不记录任何日志信息(默认)
+				BASIC		仅记录请求的方法，URL以及响应状态码和执行时间
+				HEADERS		BASIC基础上，记录请求和相应头信息
+				FULL			记录所有请求和响应的信息
+
+			自定义日志级别:				调试配置日志级别
+				1.编写配置类
+				@Configuration			
+				public class DefaultFeignConfig{
+					@Bean
+					public Logger.Level feignLogLevel(){
+						return Logger.Level.FULL
+					}
+				}
+			
+				局部配置FeignClient日志
+				@FeignClient(value = "item-service",configuration = DefaultFeignConfig.class）		在Feign接口上配置
+
+				全局配置FeignClient日志
+				@EnableFeignClients(defaultConfiguration = DefaultFeignConfig.class)			在启动类上配置defaultConfiguration
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	负载均衡：Ribbon		目的：将用户请求平摊分配到多个服务器上运行
+		服务端负载均衡：	
+			建立独立负载均衡器，维护可用服务端清单，通过心跳机制删除故障服务端结点
+
+			服务端负载均衡流程：
+				客户端	→    请求	→	独立负载均衡器(硬件F5/软件Nginx)	     →		服务端
+				
+				负载均衡器：维护一份可用服务端清单，通过心跳机制删除故障服务端结点，保证清单所有服务结点可正常访问
+					
+		客户端负载均衡：
+			将负载均衡逻辑以代码形式(负载均衡器)封装到客户端。客户端通过注册中心获取可用服务端清单，通过负载均衡算法选择服务实例访问
+				
+			客户端负载均衡流程：
+				消费者发起请求 	→	Ribbon根据服务名称拉取服务列表	→	选择服务
+				
+		负载均衡策略：
+			懒加载(默认)：第一次访问会去创建LoadBalanceClient，请求时间会很长
+			饥饿加载：会在项目启动时创建，降低第一次访问的耗时
+
+			饥饿加载配置：
+				ribbon：
+				    eager-load：
+				    enabled：true		开启饥饿加载
+				    clients：userservice		指定对userservice这个服务饥饿加载
+				
+			RandomRule(随机)：		从服务提供列表中随机选择一个服务实例
+					
+			WeightedReponseTimeRule(带权随机)：
+				例：有三个服务器
+					p1 权重 3
+					p2 权重 2
+					p3 权重 1
+				在分配请求的时候，会生成一个 1~6的随机数 6就是所有服务器权重的和
+				如果随机数在1~3之间，就分配给p1，在4~5之间，就分配给p2，如果是6，就分配p3
+
+			RoundRobinRule(轮询/默认)：	
+				按照一定的顺序在多个服务器上轮流分配服务
+
+				例：有三个服务器p1、p2、p3
+				先设置一个轮询的顺序，p1、p2、p3请求到达的时候就按照这个顺序进行依次访问
+				在这个过程中也可以添加一个权重
+					p1 权重 3
+					p2 权重 2
+					p3 权重 1
+				每一个请求分配一个序号，请求的序号按照达到顺序逐个+1
+					第1~3序号的请求都交给p1处理
+					第4~5序号的请求都交给p2处理
+					第6序号的请求交给p3处理
+				到达7号之后，回归1号的逻辑重新再来一轮
+
+			最少活跃：
+				在最少活跃这个模型下，服务器会记录一个活跃度值，每当服务器处理了一个请求后，这个服务器的活跃度就会增加。
+				每次分配请求的时候，总是趋向于将请求分配给活跃度最低的服务器，达到动态平均分配的效果。	
+	
+				例：有三个服务器p1、p2、p3	
+					p1 权重 10
+					p2 权重 50
+					p3 权重 100
+				当首次访问到达的时候，由于服务器都没有接收过请求，所以活跃度都是0。不考虑首次访问，直接从第四次开始
+				经过前三次默认每个服务器都被访问过一次了，此时的活跃度不是1-1-1而是1/10 - 1/50 - 1/100
+				1/100是最小的，请求就会更趋向于分配给它。
+
+			一致性哈希分配：
+				相同的请求总是会分配给同一个服务器
+				当请求到达的时候，寻找处理过类似请求的服务器，分配给它处理，目的就是总是让一类服务器处理一类请求。
+
+		切换负载均衡策略：
+			1.代码实现方式：	全局修改负载均衡策略
+				配置类：
+					@Bean
+					public IRule randomRule(){
+						return new RandomRule();
+					}
+
+			2.配置文件方式：	单个微服务修改策略
+				消费者的application.yml文件中
+				userservice：
+				    ribbon：
+					NFLoadBalancerRuleClassName:com.netflix.loadbalancer.RandomRule
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	Zuul：		Spring Cloud中的微服务网关，可以和Eureka，Ribbon，Hystrix配合使用
+		网关：网络整体系统中的前置入口服务。请求首先通过网关，根据请求路径匹配路由，转发到具体的服务实例处理逻辑
+			补充：在微服务多于10个的时候推荐使用，且网关是一个服务
+
+		Zuul功能：
+			路由转发	Zuul根据请求URL路径将请求路由转发到不同的后端服务		客户端请求 -> 网关 ->路由 -> 微服务实例
+			过滤器	在请求到达后端服务之前或者后端服务返回客户端之前执行额外逻辑
+			负载均衡	Zuul集成Ribbon，提供客户端负载均衡的功能
+		
+		Zuul网关组件构成：
+			Filter		过滤器，拦截和修改请求和相应的内容，实现各种功能
+			Route		路由，将请求路由到不同的后端服务上	
+			Ribbon		负载均衡器，Zuul集成Ribbon进行负载均衡
+			Hystrix		熔断器，可以实现限流和熔断机制
+
+		Zuul路由：
+			传统路由：配置文件中指定路由表达式与服务实例的映射关系
+			面向服务路由：Spring Cloud Zuul与Eureka整合，路由path映射到具体服务，由Eureka服务发现机制自动维护
+
+			由通配符含义：
+				？	匹配任意单个字符
+				*	匹配任意数量字符不包括子路径
+				**	匹配任意数量字符包括所有下级路径
+
+	Zuul网关使用：
+		1.引入依赖
+		<dependency>
+            		<groupId>org.springframework.cloud</groupId>
+            		<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        	</dependency>
+        	<dependency>
+            		<groupId>org.springframework.cloud</groupId>
+            		<artifactId>spring-cloud-starter-netflix-zuul</artifactId>
+        	</dependency>
+
+
+		2.添加application.yml配置
+		eureka:
+  		    client:
+    			service-url:
+      			    defaultZone: http://euk-server1:7001/eureka/		注册中心服务器地址		
+
+		zuul:
+	路由前缀	    prefix:/api						携带/api的请求才会进入Zuul路由中
+	路由排除	    ignored-patterns:/**/test/**			排除URL地址中包含/test/的路径进入路由
+		    ignored-services:order-service			配置的服务不被zuul代理，多个服务使用','分隔
+
+  	路由转发	    routes:
+    			gain-service:					路由ID(请求到达微服务名)
+      			    path:/gain-service/**			匹配路由，筛选路径。所有/gain-service开头的路径都会被匹配到
+
+		实际开发	    serviceId:gain-service			根据serviceId自动从注册中心获取服务地址，满足path的请求转发
+			    url：http://	10.10.1.134:8810/		请求转发的目标URL。所有匹配的path都会转发目标url服务
+				补充：url/serviceId的作用一致，将请求转发到对应微服务
+
+			路由简化配置：
+				路由id和微服务名称一致，path默认：微服务名称/**  -->  path:/gain-service/** 匹配路由，筛选路径不用写
+				    		
+
+		3.启动类添加注解@EnableZuulProxy
+		@SpringBootApplication
+		@EnableZuulProxy					@EnableZuulProxy -- 开启Zuul网关
+		public class EurekaZuulApplication {
+    			public static void main(String[] args) {
+       	 			SpringApplication.run(EurekaZuulApplication.class, args);
+    			}
+		}
+
+
+		4.Postman测试网关：http://localhost/9000/eureka-provider/patentinfo/page
+					网关服务端口：9000		根据网关访问eureka-provider服务下的分页接口
+
+	Zuul网关过滤器：			进入zuul的请求都会经过一系列的过滤器链得到响应返回给客户端
+		过滤器种类：									功能
+		↓	前置过滤		Pre		请求进入Zuul后，立刻执行的过滤逻辑		身份认证/选路由/请求日志
+		↓	路由后过滤	Routing		将客户端请求根据路由规则路由到微服务		
+		↓	后置过滤		Post		远程服务调用结束后执行的过滤逻辑		对响应添加http头/将响应以流形式发送客户端
+			异常过滤		Error		其他过滤器出现异常，走此过滤器
+
+			执行顺序：同类型过滤器先后执行，再往下同类型过滤器先后执行。返回值越小，优先执行
+
+		实现Zuul过滤器：		继承ZuulFilter，重写ZuulFilter四个抽象方法
+			重写抽象方法：
+				filterType	方法返回字符串，代表当前过滤器类型(pre/route/post/error)
+				filterOrder	返回int数据，为多个过滤器定制执行顺序，返回值越小，优先执行
+				shouldFilter	返回boolean数据，代表当前filter是否生效(true开启，false关闭)
+				run		具体的过滤执行业务逻辑
+
+		自定义过滤器：
+			public class CustomFilter extends ZuulFilter{
+				@Override
+				public String filterType(){return "pre";}
+
+				@Override
+				public int filterOrder(){return 1;}	
+
+				@Override
+				public boolean shouldFilter(){return true;}
+
+				@Override
+				public Object run() thorws ZuulException{
+					RequestContext rc = RequestContext.getCurrentContext();			获取上下文
+        				HttpServletRequest request = rc.getRequest();				从上下文中获取请求
+					String token = request.getParameter("token");				获取token
+					正常业务逻辑
+				}			
+			}
+
+		网关过滤器异常统一处理：
+			1.配置异常过滤器
+			public class CustomFilter extends ZuulFilter{
+				@Override
+				public String filterType(){return "error";}
+
+				@Override
+				public int filterOrder(){return 0;}	
+
+				@Override
+				public boolean shouldFilter(){return true;}
+
+				@Override
+				public Object run() thorws ZuulException{
+					RequestContext rc = RequestContext.getCurrentContext();			获取上下文
+        				Throwable throwable = rc.getThrowable();				从上下文中获取请求
+					正常业务逻辑
+				}			
+			}
+				
+			2.禁用默认异常处理Filter
+			applcation.yml:
+			zuul:
+			    SendErrorFilter:
+				error:
+				    disable:true			禁用Zuul默认的异常处理filter
+
+	Zuul与Hystrix结合使用：		
+		1.引入依赖
+		<dependency>						Zuul包含Hystrix相关依赖，添加开启数据监控dashboard依赖
+            		<groupId>org.springframework.cloud</groupId>
+            		<artifactId>spring-cloud-starter-netflix-hystrix-dashboard</artifactId>
+        	</dependency>
+		
+		
+		2.配置文件application.yml：		
+		management：				
+		    endpoints：
+			web：
+			    exposure：
+				include：hystrix.stream			度量指标监控与健康检查
+
+
+	Zuul网关服务降级处理：
+		熔断机制：服务有返回(包括异常)，都不会触发Zuul的fallback熔断机制，Zuul的fallback容错机制只针对timeout(超时)异常
+		
+		容错与回退：
+		使用：	1.注入Spring实现FallbackProvider接口
+			@Component
+			public class TestFallBackProvider implements FallBackProvider{
+				@Override
+    				public String getRoute() {			指定fallback兜底逻辑处理哪个业务，返回服务名称
+        				return "gain-service"; 			
+    				}
+				
+
+				@Override
+				public ClientHttpResponse fallbackResponse(){
+					return new ClientHttpResponse(){
+						@Override
+						public HttpHeaders getHeaders(){			设置响应头信息
+							
+						}
+
+						@Override
+            					public InputStream getBody() throws IOException {	设置响应体信息
+                				
+            					}
+						
+						@Override
+            					public String getStatusText() throws IOException {	设置fallback文本
+                
+            					}
+
+						@Override
+            					public HttpStatus getStatusCode() throws IOException {	设置fallback状态码
+                
+            					}		
+
+						@Override
+            					public int getRawStatusCode() throws IOException {	设置fallback状态码的整数值
+                
+            					}				
+
+						
+						@Override
+            					public void close() {					回收资源方法
+			
+            					}	
+					}
+				}
+			}
+			
+
+	Zuul网关限流：			请求并发到达阈值，自动触发限流保护，返回错误结果
+		限流算法：
+			计数器算法	内部是计数器counter，统计用户请求，超过阈值/请求之间时间超过1分钟，触发限流
+			漏桶算法		通过固定容量的桶限制请求的处理速率。请求以过快的速度到达，超过桶容量，请求舍弃或排队处理，正常以恒定速率漏水
+		实际开发	令牌桶算法	系统按固定速率往桶中放令牌，请求到达从令牌桶中获取令牌，当令牌桶中有足够的令牌时，请求被处理；没有足够的令牌，请求被延迟处理或拒绝
+			
+		局部限流：
+		使用：	1.引入依赖		
+			<dependency>
+    				<groupId>com.marcosbarbero.cloud</groupId>
+    				<artifactId>spring-cloud-zuul-ratelimit</artifactId>
+			</dependency>
+
+			2.配置局部限流配置：
+			zuul：
+			    ratelimit：					服务限流	
+				enabled：true				开启限流保护
+				repository：REDIS			限流数据存储方式，使用时引入redis相关依赖
+				
+				policy-list：
+				    gain-service：			限流服务名称
+				      - limit：1000
+					refresh-interval：60		60s内请求超过1000次服务抛异常
+					type：				限流类型。针对请求类型进行限流
+					  - origin				请求类型：origin(IP限流)/url(url限流)/user
+					  - url
+					  - user
+
+		自定义限流策略：		热点数据限流处理，非热点数据正常展示
+			实现方式：编写配置类实现ratelimitKeyGenerator接口
+
+			@Component
+			public class RateLimitKeyGenetor extends DefaultRateLimitKeyGenerator{
+				public RateLimitKeyGenerator(RateLimitProperties properties,RateLimitUtils rateLimitUtils){
+					super(properties，rateLimitUtils)
+				}
+
+				@Override
+				public String key(HttpServletRequest request,Route route,RateLimitProperties,Policy policy){
+					return super.key(request,route,policy) + ":" + request.getMethod();
+				}
+			}
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	Gateway：			网络关口，为所有服务提供统一入口，负责请求的身份校验，路由转发，限流
+		客户端先将请求发送到API网关，根据请求标识信息将请求转发到微服务实例
+
+		网关优点：
+			客户端知道API网关地址，不需要维护大量微服务地址
+			客户端与网关通信，减少与各个微服务交互次数
+
+		网关组件：	Spring Cloud Gateway		Spring官方		目前主流网关组件
+				Zuul				Netflix公司提供
+				Nginx + Lua	
+				Kong
+
+		Gateway网关流程：
+			客户端请求 -> Gateway网关服务 -> Gateway Handler Mapping找到请求匹配路由发送 -> Gateway Web Handler -> 通过指定过滤器链(Pre/Post) -> 校验 -> 请求转发到实际服务节点
+
+		网关功能：
+			路由转发：根据请求的URL，参数，头部等信息将请求转发到相应服务器(微服务具体端口实例)进行处理		
+			身份校验：对请求的身份进行校验，确认请求者的合法性和权限	
+				方法：验证Jwt令牌，API密钥
+
+		路由转发核心概念：		
+			Route(路由)		网关最基本模块。由一个ID，一份目标URI，一组断言，一组过滤器实现
+			Predicate(断言)		路由转发的判断条件，请求满足Predicate条件，才转发到指定服务上处理
+			Filter(过滤器)		对请求进行拦截和修改，对请求和响应做精细化的工具(Interceptor)
+
+				补充：路由和断言必须同时声明
+					Gateway集成Hystrix熔断器和Spring Cloud DiscoveryClient服务发现客户端
+													
+				请求		网关		路由		断言
+										Predicate			一个路由可以包含多个不同断言
+				客户端A  -->  			Route1   -->			微服务			
+						Gateway				Predicate			请求转发到指定微服务，需要同时匹配路由上的所有断言
+										Predicate
+				客户端B  -->  			Route2   -->			微服务		请求同时满足多个路由断言条件，只有首个被转发
+						Gateway				Predicate
+										Predicate
+				客户端C  -->  			Route3   -->			微服务
+										Predicate
+					网关路由Java类型：RouteDefinition
+			
+		常用Predicate断言规则：
+			假设目标uri微服务地址：http://10.10.1.104:8810
+			Path		- Path = /dept/list/**			
+								请求路径与Path路径匹配时，才会转发到目标微服务实例地址		
+
+			before		- Before = 2021-10-20T11:47:34.255+08:00[Asia/Shanghai]				
+								在规定时间之前的请求，才会转发到目标微服务实例地址
+
+			after		- After = 2021-10-20T11:47:34.255+08:00[Asia/Shanghai]
+								在规定时间之后的请求，才会转发到目标微服务实例地址
+
+			Between		- Between = 2021-10-20T15:18:33.226+08:00[Asia/Shanghai],2021-10-20T15:23:33.226+08:00[Asia/Shanghai]
+								在规定时间之间的请求，才会转发到目标微服务实例地址	
+				
+			Method		- Method = GET		
+								GET请求才会转发到目标微服务实例地址
+				
+			Header		- Header = X-Request-Id,\d+	
+								请求头上携带属性 X-Request-Id且属性值为整数的请求，才会被转发到目标微服务实例地址
+
+			Cookie		- Cookie = name,c.biancheng.net
+								携带Cookie，且Cookie内容为 name = c.biancheng.net的请求才会转发到目标微服务实例地址
+
+		Filter过滤器：	
+			作用：所有微服务需要校验用户登录状态校验(Jwt校验)，签名校验，权限校验，日志输出，流量监控。Filter实现校验逻辑
+
+			Filter类型分类(与Interceptor类似)：		
+				Pre类型		请求被转发到微服务处理之前			对请求进行拦截和修改
+				Post类型		微服务对请求响应之后			对响应进行拦截和再处理
+					请求通过过滤器链时，在转发请求之前(Pre)或之后(Post)执行业务逻辑
+					
+			Filter作用范围分类：
+				GatewayFilter	应用在单个路由或一组路由上的过滤器
+				GloabalFilter	应用在所有路由上的过滤器
+
+			常用网关过滤器：
+				AddRequestHeader		- AddRequestHeader=my-request-header,1024
+											给当前请求添加一个请求头
+		
+				AddRequestParameter		- AddRequestParameter=my-request-param,c.biancheng.net
+											给当前请求添加一个请求参数
+				
+				AddResponseHeader		- AddResponseHeader=my-response-header,c.biancheng.net	
+											给响应结果添加一个响应头
+
+				PrefixPath			- PrefixPath=/Api
+											在请求路径增加一个指定前缀
+
+				PreserveHostHeader		- PreserveHostHeader
+											转发请求时，保持客户端的Host信息不变，传递到具体微服务实例
+				
+				RemoveRequestHeader		- RemoveRequestHeader=my-request-header
+											移除请求中的一个请求头
+				
+				RemoveReponseHeader		- RemoveResponseHeader=my-response-header
+											移除响应结果中的一个响应头
+
+				RemoveRequestParameter		- RemoveRequestParameter=my-request-param
+											移除指定的请求参数
+
+				StripPrefix			- StripPrefix=1
+											去除请求路径中的N段前缀，路径/a/b转发只保留/b		
+	Spring Cloud Gateway使用：
+		1.引用依赖
+			<dependency>
+  				<groupId>org.springframework.cloud</groupId>
+  				<artifactId>spring‐cloud‐starter‐gateway</artifactId>
+			</dependency>
+
+		2.编写yml配置文件
+			server：
+			    port：8088						服务端口
+			spring：
+			    application：
+				name：blade-gateway(网关服务名)			
+			    cloud：
+				gateway：	
+				    discovery：
+					locator：
+					    enabled：true			开启从注册中心动态创建路由功能，利用微服务名进行路由
+
+				    routes：					路由定义：由一个ID，一份目标URI，一组断言，一组过滤器实现
+				      - id：gian-server				一个ID，路由唯一标识(请求到达微服务名)
+					uri：http://10.10.1.104:8800  			URI:路由到达目标，微服务地址信息
+					lb://gain-server				lb(loadBalancer）负载均衡，从微服务中挑选一实例
+					predicates：					一组断言(路由规则)			路由:断言 <==> 一对多
+					  - Path = /dept/list/**,/patentInfo/**
+					  - Method = GET				详情看断言规则
+				      - id：xx							
+					uri：								
+					predicates：
+
+				    filters：							局部过滤器/GatewayFilter
+				      - AddRequestParameter = X-Request-Id,1024			给当前请求添加请求参数X-Request-Id = 1024		
+				      - PrefixPath  = /dept					在请求路径上增加前缀/dept
+						
+				default-filters：						全局过滤器/GlobalFilter
+				      - AddRequestParameter = X-Request-Id,1024			给当前请求添加请求参数X-Request-Id = 1024	
+					
+		Postman测试网关:	http://localhost/8088/patentinfo/page		根据网关端口8088能查询到8800端口微服务实例patentinfo的分页信息	
+			
+	网关登录校验：		
+		逻辑：JWT校验/自定义过滤器在请求转发(Pre)之前做用户身份校验(登录校验) -> 得到用户信息保存到请求头 -> 微服务从请求头获取用户信息
+
+		网关过滤器：	GatewayFilter		应用在单个路由或一组路由上的过滤器
+				GlobalFilter		作用在所有路由上的过滤器
+				
+	自定义全局过滤器GlobalFilter(实际开发常用)：
+	1.放行Api集合
+		@Data
+		@Component
+		@ConfigurationProperties("blade.secure")
+		public class AuthProperties{
+			private List<String> includePaths;
+			private List<String> excludePaths;	放行API集合(白名单)
+		}
+
+	2.自定义全局过滤器
+		@Slf4j
+		@Component
+		@RequiredArgsConstructor			
+		public class AuthFilter implements GlobalFilter，Ordered{			自定义过滤器实现GlobalFilter/Ordered接口	
+
+			private final AuthProperties authProperties;
+
+			@Override
+			public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+			拦截校验Token
+				String originalRequestUrl = RequestProvider.getOriginalRequestUrl(exchange);
+				String path = exchange.getRequest().getURI().getPath();					请求路径
+				if(isSkip(path) || isSkip(originalRequestUrl)){						
+					return chain.filter(exchange);							有些微服务不需要登录校验，直接放行
+				}	
+			获取token提取用户信息
+				List<String> headers = exchange.getRequest().getHeaders();				获取Header
+				if(StringUtils.isNotBlank(headers) && StringUtils.isNotEmpty(headers)){		
+					String token = headers.getFirst();						获取token
+				}	
+				try{
+					Claims claims = JwtUtil.parseJWT(token);					解析token
+				}catch(Exception e){
+					ServerhttpReponse response = exchange.getReponse()				获取响应
+					reponse.setStatusCode(HttpStatus.UNAUTHORIZED)					解析失败，设置响应状态码401
+					return reponse.setComplete();							请求转发终止
+				}
+				ServerWebExchange we = exchange.mutate()						用户信息写入请求头，传递用户信息
+					.request(builder -> builder.header("user-info",claims))				
+					.build();
+				return chain.filter(es)
+			}
+
+				exchange.mutate()作用：
+					修改请求的元数据，方便添加/修改/删除请求头，满足特定需求		
+			
+			参数属性：
+				ServerWebExchange exchange	请求上下文，包含整个过滤器连共享数据(Request/Reponse)
+				GatewayFilterChain chain	过滤器链，当前过滤器执行完后，调用过滤器链中下一个过滤器
+				Mono<Void>			回调函数(Post之后)
+
+			@Override
+			public int getOrder(){return 数字}		
+				重写Ordered接口getOrder方法，返回数字越小，过滤器优先级越高	
+
+				
+	3.	common包编写SpringMVC拦截器获取用户信息，微服务引依赖获取登录用户		
+			public class UserInfoInterceptor implements HandlerInterceptor {
+
+				请求处理之前调用，预处理操作(获取用户信息)
+				@Override
+    				public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        				String userInfo = request.getHeader("user-info");		获取请求头中的用户
+        				if(StrUtil.isNotBlank(userInfo)){
+            					UserContext.setUser(Long.valueOf(userInfo));		判断是否为空，不为空，存入ThreadLocal
+        				}
+        				return true;
+				}
+				
+				请求处理完之后，资源清理操作
+				 @Override
+    				public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        				//清除用户
+        				UserContext.removeUser();
+   				}
+
+	4.	配置Interceptor配置类，微服务获取用户
+			详情见Interceptor配置类/UserContext.getUser();
+
+	
+	微服务与微服务登录信息传递：		在微服务发起调用Openfeign时携带token信息
+		public class FeignRequestInterceptor implements RequestInterceptor {
+    			@Override
+    			public void apply(RequestTemplate requestTemplate) {
+        			requestTemplate.header(GET_TOKEN, TokenContext.getToken());
+    			}
+		}
+
+		@FeignClient(name = "test-gateway", configuration = FeignRequestInterceptor.class)
+		public interface ExampleClient {
+ 		
+			@GetMapping("/api/example")
+    			String getExampleData(@RequestHeader("token") String token);
+		}
+
+			补充：RequestInterceptor拦截器接口，OpenFeign请求都会先调用拦截器处理请求
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	分布式配置中心：
+		作用：对配置进行统一管理，将各个微服务配置文件集中存储在外部仓库，为各个微服务架构提供集中化外部配置支持
+			Spring Cloud Config配置中心将配置以REST接口形式提交给微服务
+		
+		配置中心种类：
+			百度		Disconf
+			淘宝		diamond
+			360		QConf
+			Spring Cloud	Spring Cloud Config
+		
+		配置
+			重复配置		
+			业务配置经常变动，无需重启
+			网关路由配置
+	
+	Spring Cloud Config：
+		Config Server		服务端
+			分布式配置中心，独立运行的微服务应用，连接配置仓库，为客户端提供配置信息，为客户端提供配置信息，加密信息，解密信息访问接口
+
+		Config Client		客户端
+			客户端就是各个微服务，通过Config Server对配置进行管理，从Config Server中获取加载配置信息
+
+		拉取共享配置：
+		1.	引入依赖
+			<dependency>						nacos配置管理
+				<groupId>com.alibaba.cloud</groupId>
+				<artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+			</dependency>
+			<dependency>						读取bootstrap文件
+				<groupId>com.springframework.cloud</groupId>
+				<artifactId>spring-cloud-starter-bootstrap</artifactId>
+			</dependency>
+
+		2.	新建bootstrap.yaml文件			读取nacos配置文件
+			spring：
+			    application：
+				name：gain-service		服务名称
+			    profiles：
+				active：dev			环境
+			    cloud：
+				nacos：
+				    server-addr：192.168.150.101		nacos地址
+				    config：
+					file-extension：yaml		文件后缀名
+					shared-configs：			共享配置(集合)
+					  - dataId:shared-jdbc.yaml		共享mybatis配置
+					  - dataId:shared-log.yaml		共享日志配置
+					  - dataid:shared-swagger.yaml		共享日志配置
+
+		配置热更新：	本地启动微服务需要重启才能使修改配置生效。线上开发时，微服务无需重启即使配置生效
+			两种配置实现：
+				1.@Value获取配置文件信息，在@Value注入的变量所在类上添加注解@RefreshScope
+				@RefreashScope				
+				public class CartProperties{
+					@Value("${hm.cart.maxItems}")
+					private int maxItems;
+
+				2.@ConfigurationProperties注入		实际开发推荐使用
+					@RefreshScope
+					@ConfigurationProperties("hm.cart")		hm:cart下的所有属性热更新
+					public class Properties{
+						private int maxItems；
+					}
+
+				注解：
+					@RefreshScope			用于标记Spring应用程序中的Bean，运行时动态刷新配置信息(热更新)
+					@ConfigurationProperties	将外部配置文件属性映射到Bean
+
+		动态路由热更新：
+			Nacos保存路由配置，Nacos路由配置变更，推送最新配置到网关，实时更新网关中的路由信息
+
+			逻辑：	1.监听Nacos配置更新的消息
+				2.配置变更时，将更新的路由信息更新到网关路由表
+				
+			1.监听Nacos配置变更/事件监听
+			1.1 初始化Nacos Config Service
+				String dataId = NacosConstant.dataId(bladeProperties.getName());
+				String group = nacosConfigProperties.getGroup();					
+
+				Properties properties = new Properties();
+				properties.setProperty(PropertyKeyConst.SERVER_ADDR, nacosDiscoveryProperties.getServerAddr());		设置Nacos服务器地址
+				properties.setProperty(PropertyKeyConst.NAMESPACE, nacosDiscoveryProperties.getNamespace());		设置Nacos命名空间
+				
+				ConfigService configService = NacosFactory.createConfigService(properties);				初始化Nacos Config Service
+				
+			    监听Nacos下发动态路由配置
+				configService.addListener(dataId, group, new Listener() {						调用Api添加监听器
+					@Override
+					public void receiveConfigInfo(String configInfo) {						接受最新配置信息	
+						List<RouteDefinition> routeDefinitions = JSON.parseArray(configInfo, RouteDefinition.class);
+						dynamicRouteService.updateList(routeDefinitions);
+					}
+
+					@Override
+					public Executor getExecutor() {									返回线程池
+						return null;
+					}
+				});
+				String configInfo = configService.getConfig(dataId, group, 5000);					读取配置信息	
+				if (configInfo != null) {
+					List<RouteDefinition> routeDefinitions = JSON.parseArray(configInfo, RouteDefinition.class);	解析JSON配置文件转为RouteDefinition
+					dynamicRouteService.updateList(routeDefinitions);						第一次读取配置，也需要更新到路由表
+				}
+
+				补充：@PostConstruct		Bean注入完成之后，立即调用初始化方法
+					将路由配置信息更新到路由表之前，建议删除原有路由表
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------	
+微服务保护：
+	雪崩：微服务调用链路中的某个服务故障，引起整个链路中所有微服务都不可用
+	
+	雪崩产生原因：
+		服务提供者出现故障或阻塞
+		服务调用者没有做好处理异常，导致自身故障
+
+	解决方案：
+		请求限流(限流器)	限制访问微服务请求的并发量，避免服务因流量激增出现故障(流量整形)
+		
+		线程隔离		限定每个业务的线程数量将故障业务隔离(请求线程调用服务，占满线程不给请求分发线程)
+
+		服务熔断		断路器统计请求异常比例，超出阈值熔断业务，拦截接口请求，走fallback逻辑，服务熔断非永久，一段时间再次检测微服务是否正常，正常则恢复调用
+				5次请求，4次挂       	异常比例：4/5	阈值：2/5
+
+			补充：fallback逻辑(兜底逻辑)：用于处理方案无法正常执行的情况，通常指操作失败时所采用的备用方案		
+
+	断路器：	Spring Cloud Hystrix			Netflix公司开发
+		Sentinel
+		resilience
+
+				Sentinel			Hystrix
+	线程隔离			信号量隔离			线程池隔离/信号量隔离
+	熔断策略			基于慢调用比例/异常比例		异常比例
+	限流			基于Qps，支持流量整形		有限支持
+	FallBack		支持				支持
+	控制台			开箱即用				完善
+	配置方式			基于控制台，重启失效		基于注解或配置文件，永久生效
+	
+
+Hystrix(豪猪)：		功能：服务降级/服务熔断/线程隔离/请求缓存/请求合并/实时故障监控
+	补充：服务熔断Hystrix在一般业务中使用不到，只有访问请求Qps达到几十万/几百万(618,双11，春节抢火车票)才会用到Hystrix熔断器
+
+	使用:		
+	服务端(provider)服务降级：
+		1.引入依赖
+		<dependency>
+			<groupId>org.springframework<groupId>
+			<artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+		</dependency>	
+
+
+		2.注解配置启动类
+		@SpringCloudApplication
+		public class GainApplication {
+			public static void main(String[] args) {
+				BladeApplication.run(LauncherConstant.GAIN_NAME, GainApplication.class, args);
+			}
+		}
+
+			注解：	@EnableCircuitBreaker		启动断路器
+				@SpringCloudApplication		SpringCloud启动注解，包含断路器
+
+
+		3.实现方法上添加@HystrixCommand注解
+		@GetMapping("/exportTable")
+		@HystrixCommand(fallbackMethod = "errorCallBack",commandProperties = 
+            		{@HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "5000")})
+
+
+		服务降级方法
+    		public Object errorCallBack(  @PathVariable("id") long id   ){
+        		return id+"不存在,error";
+    		}
+               
+		属性：  	fallbackMethod		指定调用降级方法
+		     	execution.isolation.thread.timeoutInMilliseconds	设置自身调用超时时间峰值，超过峰值执行降级方法
+
+
+	客户端(consumer)服务降级：
+		1.引入依赖
+		<dependency>
+			<groupId>org.springframework<groupId>
+			<artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+		</dependency>	
+
+
+		2.feign接口配置中启用hystrix		
+		feign.hystrix.enabled：true			开启hystrix		
+		feign.hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds=mmm	为方法设置请求超时时间，请求超时执行回退方法
+
+			补充：feign自带hystrix，但是没有开启	
+		
+
+		3.Feign接口添加fallbackFactory属性指定异常处理类(实际开发)
+		@FeignClient(value = LauncherConstant.GAIN-NAME,fallback = ProjectProgressClientBack.class)
+		public interface IProjectProgressClient {}
+
+
+		4.定义异常处理类实现Feign接口，重写Feign接口实现异常处理机制
+		@Component		
+		public class ProjectProgressClientBack implements IProjectProgressClient {
+			@Override
+    			public R updateReAndTe(TeAndReVO teAndReVO) {
+        			return R.status(false);					例：这边是重写更新接口返回错误信息
+    			}
+		}	
+			补充：这边异常处理类必须加@Component注解，异常处理类被Spring托管
+			
+		
+		5.在调用feign接口的启动类上，开启客户端Hystrix功能
+		@EnabledFeignClients
+		@SpringCloudApplication
+		public class TechnologicalProjectApplication {
+    			public static void main(String[] args) {
+        			BladeApplication.run(LauncherConstant.APPLICATION_TECHNOLOGICAL_PROJECT_NAME, TechnologicalProjectApplication.class, args);
+    			}
+		}
+	
+	全局服务降级：		
+		@Slf4j
+		@RestController
+		@DefaultProperties(defaultFallback = "errorCallBack")				调用方Controller类名添加@DefaultProperties注解，defaultFallback指定全局降级方法
+		public class PaperController extends ZxhcController{
+			@PostMapping("/save")
+    			@ApiOperationSupport(order = 2)
+    			@ApiOperation(value = "新增", notes = "传入teAndRePaperVO")
+			@HystrixCommand								在所有业务方法上添加注解@HystrixCommand
+    			public R save(@Valid @RequestBody TeAndRePaperVO teAndRePaperVO) {
+        			return paperDetailService.saveTeAndRePaperVO(teAndRePaperVO);
+    			}
+		}
+		
+		补充：降级方法与对应业务必须在同一个类，否则无法生效
+
+	熔断状态：
+		熔断打开		熔断打开后，此时间内不会对该服务进行调用，直接访问降级方法
+		熔断关闭		服务正常，请求打到微服务，正常处理逻辑
+		熔断半开		请求可以访问服务，请求正常访问，熔断会关闭；请求不正常，熔断调用降级方法
+
+Hystrix故障监控:
+	Hystrix Dashboard是实时监控Hystrix断路器各项指标信息的可视化工具，需要结合spring-boot-actuator一起使用
+
+	使用：	
+		1.引入依赖			actuator + Hystrix Dashboard
+		<dependency>								HystrixDashboard监控依赖
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-hystrix-dashboard</artifactId>
+			<version>2.0.2.RELEASE</version>
+		</dependency>
+		<dependency>								SpringBoot监控依赖
+            		<groupId>org.springframework.boot</groupId>
+            		<artifactId>spring-boot-starter-actuator</artifactId>
+        	</dependency>
+	
+	
+		2.启动类添加@EnableHystrixDashboard
+		@SpringCloudApplication					@SpringCloudApplication		开启Hystrix功能
+		@EnableHystrixDashboard					@EnableHystrixDashboard		开启Hystrix监控功能		
+		public class GainApplication {
+			public static void main(String[] args) {
+				BladeApplication.run(LauncherConstant.GAIN_NAME, GainApplication.class, args);
+			}
+		}
+
+
+		3.编写配置文件application.yml
+		server:
+  		    port: 9000				http://localhost:9000/hystrix访问Hystrix Dashboard首页
+
+		zuul：
+		    management：
+			endpoints：
+			    web：
+				exposure：
+				    include：'*'		暴露所有端点，允许网关/代理服务(zuul)访问端点
+				 
+
+		4.Hystrix Dashboard输入请求服务地址 --> 跳转到具体监控页面 -->多次请求，监控页面数据也在更新
+	
+		补充：
+			Dashboard页面上面的局部参数：
+				输入框：三种监控方式的地址，用于访问具体监控信息
+				Delay：控制服务器上轮询监控信息的延迟时间，默认：2000
+				Title：对应头部标题Hystrix Stream后的内容，默认使用具体监控实例Url
+
+			监控方式：
+				http://hystrix-app:port/hystrix.stream					对具体某个服务实例监控
+				http://tubine-hostname:port/turbine.stream				对默认集群监控
+				http://turbine-hostname:port/turbine.stream?cluster=[clusterName] 	实现对clusterName集群的监控
+
+
+			
+	
+
+		
+		
+							
+		
+		
+				
+		
+	
+
+		
+			
+			
+
+
+
+
+
+
+		
