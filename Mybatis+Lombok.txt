@@ -1,0 +1,580 @@
+Mybatis：		Apache的开源项目iBatis，2010年此项目由apache迁移到了google code，并且改名Mybatis。2013年迁移到Github
+	是一款优秀的持久层(dao层)框架，用于简化JDBC的开发(免除所有JDBC代码/设置参数/获取结果集)，支持自定义SQL，存储过程以及高级映射
+	Mybatis功能：通过简单XML，注解配置映射原始类型，接口，Java POJO
+		JDBC补充：
+			硬编码：配置文件中的信息/SQL语句使用Java语言编写出来		->	Mybatis使用mybatis-config.XML配置文件(配置数据库连接信息/插件/缓存等)
+			手动封装：JDBC中手动设置参数/封装结果集			-> 	Mybatis使用XML映射文件设置参数，封装结果集
+
+	JavaEE三层架构：
+		表现层
+		业务层
+		持久层		负责将数据保存到数据库的一层代码
+
+	准备工作：
+	Springboot整合Mybatis：
+		创建springboot工程，数据库表，实体类		
+			Java编写SQL语句，SQL语句执行完之后将结果返回给Java程序，java程序需要将结果封装起来
+	1.引入依赖
+		Mybatis相关依赖：
+			<dependency>
+				<groupId>org.mybatis</groupId>
+				<artifactId>mybatis</artifactId>
+				<version>3.5.10</version>
+			</dependency>
+			<dependency>
+    				<groupId>mysql</groupId>
+    				<artifactId>mysql-connector-java</artifactId>
+    				<version>8.0.30</version>
+			</dependency>
+
+	2.配置文件
+		Mybatis-config.xml方式配置文件：
+			<?xml version="1.0" encoding="UTF-8" ?>
+			<!DOCTYPE configuration
+  			  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+   			  "https://mybatis.org/dtd/mybatis-3-config.dtd">
+			<configuration>
+  				<environments default="development">
+    					<environment id="development">
+      						<transactionManager type="JDBC"/>
+      						<dataSource type="POOLED">						数据库连接信息
+        						<property name="driver" value="${driver}"/>
+        						<property name="url" value="${url}"/>
+        						<property name="username" value="${username}"/>
+        						<property name="password" value="${password}"/>
+      						</dataSource>
+    					</environment>
+  				</environments>
+  				<mappers>
+    					<mapper resource="org/mybatis/example/BlogMapper.xml"/>				加载sql映射文件
+  				</mappers>
+			</configuration>
+
+			Mybatis配置解析：
+				properties				属性				
+				settings				设置					
+				typeAliases				类型别名
+				typeHandlers				类型处理器
+				objectFactory				对象工厂				
+				plugins					插件
+				environments				环境配置
+				    environment		
+					transactionManager		事务管理器
+					dataSource			数据源
+				mappers
+				
+		application.properties方式配置文件：
+			spring.datasource.driver-class-name = com.mysql.cj.jdbc.Driver	数据库驱动全类名
+			spring.datasource.url = jdbc:mysql://localhost:3306/mybatis	数据库url
+			spring.datasource.username = root				数据库用户名
+			spring.datasource.password = root				数据库密码
+			mybatis.configuration.log-impl = .......			配置日志，输出到控制台
+				注意:打印日志需要具体到需要打印的类
+			mybatis.configuration.map-underscore-to-camel-case = true	开启mybatis驼峰命名自动映射开关
+		
+	3.编写SQL XML映射文件	
+		XML文件需要与Mapper接口名称一致，将XML映射文件放在与Mapper接口相同包下
+		XML的映射文件的namespace是mapper接口的相对路径
+		sql语句的id与Mapper接口方法名一致，返回类型一致
+		
+		创建XML文件：resoureces目录 -> 创建接口Mapper同路径 -> 最底层包右键New -> File -> xxx.xml(创建成功)
+			
+		XML文件格式：
+			<?xml version="1.0" encoding="UTF-8"?>
+		约束：	<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+			  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">		
+			<mapper namespace="全限定名">							全限定名:接口完整类名	
+				<select id = "selelcBolg" resultType = "Blog">				
+					select * from Blog where id = #{id}				增删改查sql语句
+				</selelct>
+			</mapper>
+
+			Mybatis作用域以及相关属性：	
+				namespace <=> 命名空间					绑定映射接口(值:接口完整类名)/指定映射文件作用范围
+				id							SQL语句唯一标识符，同一namespace下识别和调用特定SQL语句或映射方法
+				property						映射结果的字段或属性
+				column							数据库中的列名
+				javaType						映射Java对象类型
+				ofType							集合中元素的类型
+				useCache 						设置为true，语句调用，结果被二级缓存缓存起来
+				flushCache						设置为true，语句调用，本地缓存和二级缓存被清空
+			主键：	useGeneratedKeys(insert/update；默认：false)		Mybatis使用JDBC的getDeneratedKeys方法自动获取数据库生成的主键值(返回给Java对象)
+			主键：	keyProperty(insert/update)				指定Java对象属性接收数据库生成的主键值
+			主键：	keyColumn						指定数据库表中主键列的名称
+					补充：Myabtis中useGeneratedKeys，keyProperty，keyColumn一起使用
+			
+				parameterType <=> 参数类完整路径				SQL语句参数类型
+				resultType <=> 返回结果类完整路径				SQL语句结果类型，查询结果映射Java对象	
+				resultMap <=> 外部resultMap命名引用			自定义复杂SQL结果映射(嵌套映射/字段转换)
+				使用：
+					普通映射：
+					结果集	<resultMap id="userResultMap" type="User">
+  							<id property="id" column="user_id" />
+  							<result property="username" column="user_name"/>
+  							<result property="password" column="hashed_password"/>
+							<result property="guid" column="user_guid">			
+						</resultMap>
+
+						补充：resultMap中定义的属性必须与Java对象中的属性匹配；resultMap中的属性在Java对象中不存在，Mybatis不会处理这些额外的属性
+						     resultMap可以接收Java对象中的额外数据(不做处理)
+						     
+					sql	<select id="selectUsers" resultMap="userResultMap">
+  							select user_id, user_name, hashed_password,user_guid from some_table where id = #{id}
+						</select>
+
+
+					一对一(一个对象中包含另一个对象)：		关键字：association
+					结果集	<resultMap id="orderResultMap" type="com.example.Order">			Order：
+  							<id property="id" column="order_id"/>						private String id;
+  							<result property="amount" column="amount"/>					private String amount;
+  																	private User user;
+  							<!-- 一对一关系映射 -->
+  							<association property="user" javaType="com.example.User">		User:	
+    								<id property="id" column="user_id"/>					private String id;
+    								<result property="username" column="username"/>				private String username;
+  								</association>
+							</resultMap>
+
+					sql	<select id="selectOrders" resultMap="orderResultMap">
+  							select order_id, amount,user_id,username from order_table a left join user_table b where a.id = b.id
+						</select>
+
+
+					一对多(一个对象中包含另一个对象的集合)：	关键字：collection
+					结果集	<resultMap id="userWithOrdersResultMap" type="com.example.User">		User：
+  							<id property="id" column="user_id"/>						private String id;
+  							<result property="username" column="username"/>					private String username;
+  							<result property="email" column="email"/>					private String email;
+  																	private List<Order> orderList;
+  							<!-- 一对多关系映射 -->
+  							<collection property="orders" ofType="com.example.Order">		Order:
+    								<id property="id" column="order_id"/>					private String id;
+    								<result property="amount" column="amount"/>				private String amount;
+    								<result property="description" column="description"/>			private String description;
+  							</collection>
+						</resultMap>		
+					
+				statementType						指定SQL语句的执行方式{	PREPARED:预编译；			默认
+														STATEMENT:直接SQL，不进行预编译
+														CAllABLE:调用存储过程
+													  }
+				<sql>							被其他语句引用的语句块		
+				<select> <insert> <update> <delete>			定义查询，插入，更新，删除操作
+				typeAlias						为Java类定义别名
+					使用：typeAlias必须配置在Mybatis的配置文件(mybatis-config.xml)中，不能直接使用在mapper.xml文件中
+						mybatis-config.xml:
+							<typeAliases>
+								<typeAlias alias = "User" type = "com.example.User">
+							</typeAliases>
+
+						mapper.xml:
+							<select id = "selectUser" resultType = "User">
+								select * from users where id = #{id}
+							</select>
+
+	
+		使用注解编写SQL语句：		
+			@Select("SQL语句")	默认mybatis中编写SQL语句是不识别的
+			例：
+				@Mapper
+				public interface EmployeeMapper{
+					@Select("select * from employee where username =#{username}");			Java注解方式只适用于简单的SQL语句
+					Employee getByUserName(String username);
+				}
+				
+			配置SQL提示：
+				右键SQL语句 -> Show Context Actions -> inject language or reference -> SQL
+				在Idea中配置MySQL连接		
+
+	Mybatis缓存：		Mybatis内置事务性查询缓存机制优化查询性能
+		缓存作用：缓解数据库压力，提高数据库性能。
+		缓存：将数据库查询出来的对象使用完不销毁，储存在本地硬盘(内存)中，再次获取该对象时候，直接从内存获取，不再执行select语句	
+		
+		一级缓存：本地会话缓存(默认，自动启用)		缓存只在当前会话的生命周期(SqlSession)内有效，一旦会话结束，缓存数据清除
+
+		二级缓存：全局缓存(查询每次都会从缓存区域查找，找不到数据从数据库查询，并将查到的数据写入缓存)
+			mybatis-config.xml中启用全局配置：
+				<configuration>
+    					<settings>
+        					<setting name="cacheEnabled" value="true"/>			启用二级缓存，固定写法
+    					</settings>
+				</configuration>
+
+			mapper.xml文件启用二级缓存：
+				<mapper namespace = "Mapper接口路径">
+					<cache/>								启用二级缓存
+
+					增删改查sql
+				</mapper>
+
+			补充：	二级缓存生命周期：sqlSessionFactory
+				二级缓存区域：基于mapper.xml文件的namespace(命名空间)，每个namespace都有自己独立的缓存空间，不会相互干扰
+			
+	Mybatis基础操作：
+		删除	delete
+		新增	insert		接口中增删改返回值代表影响数据的记录数
+		更新修改	update
+		查询	select		
+
+		模板下载：	
+			public void downloadTemplate(ModelMap modelMap, HttpServletRequest request,HttpServletResponse response) throws IOException {
+        			Map<String, Object> map = new HashMap<String, Object>(1);
+        			TemplateExportParams params = new TemplateExportParams("docTemplate/中心授权专利管理-导入格式.xlsx");
+        			modelMap.put(TemplateExcelConstants.FILE_NAME, "中心授权专利管理-导入格式");
+        			modelMap.put(TemplateExcelConstants.PARAMS, params);
+        			modelMap.put(TemplateExcelConstants.MAP_DATA, map);
+        			PoiBaseView.render(modelMap, request, response, TemplateExcelConstants.EASYPOI_TEMPLATE_EXCEL_VIEW);
+    			}
+			ModelMap						用于存储模板数据的HashMap对象，使用HashMap接收数据
+											模板数据：文件名/文件参数/map
+			request							用于获取请求信息		
+			response						将模板数据转换为Excel文件并发送给客户端
+			TemplateExcelConstants.EASYPOI_TEMPLATE_EXCEL_VIEW	表示使用的Excel模板文件		
+
+
+		导出Excel表格：
+		实现逻辑：
+			1.将Excel模板文件存入idea本地resources/docTemplate(文件模板；自创文件夹)		文件地址：docTemplate/文件模板.xls
+			2.查询Excel模板所需数据，将数据填充至Excel模板
+			3.输出流将Excel文件下载到客户端浏览器
+
+		实现方式1：
+			public R<BladeFile> exportTable(String ruleGuids) {
+        			List<Map<String, Object>> sheetsList = new ArrayList<>();
+        			List<RuleInfoExcel> demandExportList = ruleDetailMapper.selectRuleInfoExcel(ruleGuids);
+
+				//1.创建HashMap对象，存储模板数据
+        			Map<String, Object> demandExportMap = new HashMap<>(5);
+				
+				//2.填充数据
+       		 		demandExportMap.put("title", DownExcelUtil.exportParam("中心标准制度"));
+        			demandExportMap.put("entity", RuleInfoExcel.class);
+        			demandExportMap.put("data", demandExportList);
+        			sheetsList.add(demandExportMap);
+
+				//3.将Excel文件输出流发送到客户端响应
+        			return R.data(DownExcelUtil.downLoad(minioTemplateUav,sheetsList,"中心标准制度管理.xlsx"));
+    			}	
+		
+		实现方式2(Apache POI)：
+			public void exportExcel(HttpServletResponse response){
+				//读取文件模板
+				InputStream in = this.getClass().getClassLoader().getResourceAsStream("docTemplate/文件模板.xls")
+
+				try{
+					XSSFWorkbook excel = new XSSDWorkbook(in);			根据文件模板创建Excel工作簿	
+					XSSFSheet sheet = excel.getSheet(0);				获取第一个Sheet页/表
+		
+					//填充数据
+					sheet.getRow(行数).getCell(单元格数).setCellValue();		为Excel设置值
+					Excel表数据填充逻辑
+				
+					//将Excel文件输出流发送到客户端响应
+					ServletOutputStream out = response.getOutputStream();		
+					excel.write(out);
+
+					//关闭资源
+					out.close();
+					excel.close();
+
+				}catch(IOException e){
+					e.printSatckTrace();
+				}
+			}
+		
+		删除(delete)：
+			单个删除：		根据主键id动态删除
+				Controller接口方法：
+					@DeleteMapping("/{id}")
+					public Result delete(@PathVariable Integer id)
+		
+				Mapper接口方法：public void delete(Integer id)	
+	
+				映射xml：<delete id = "delete" parameterType = "int">
+						delete from emp where id = #{id}
+					</delete>
+					
+				   #{}一般用于参数传递，生成预编译SQL，自动生成参数值
+				   如果mapper接口形参只有一个普通类型的参数，#{}的值可以随便写，实际开发中一般写一致，增强可读性
+
+			批量删除：
+				接口方法:public void deleteById(@Param("ids")List<Integer> ids)
+					在Springboot1.x版本需要添加@Param
+
+				映射XML：<delete id = "deleteById" parameterType = Integer>
+						delete from t_user where u_id in	
+						<foreach collection = "list" open = "(" close = ")" separator = "," item = "id">
+							#{ids}
+						</foreach>
+					</delete>	
+					
+			预编译SQL：	控制台日志输出
+				Preparing：delete from emp where id = ？
+				Parameters: 16(Integer)
+				Updates:1		SQL语句影响的数据记录数
+				
+				优势：
+					性能更高
+					更安全(防止SQL注入)
+						SQL注入：通过操作输入的数据来修改实现定义好的SQL语句，从而代码对服务器进行攻击
+	
+		新增(insert)：
+			多个参数新增：
+				接口方法：public void insert(@RequestBody User user)	将多个参数封装为对象
+		
+				映射XML：<insert id = "insert" parameterType = "实体类路径/别名">
+						insert into 
+							user(id,name,age,sex)
+        					values 
+							(#{id},#{name},#{age},#{sex})
+					</insert>
+				  
+				  实体类路径可以起别名：
+					<typeAliases>
+						<typeAlias type = "实体类路径" alias = "别名">
+					</typeAliases>
+			
+			主键返回(插入特殊用法)：
+				在数据添加成功后，需要获取插入数据库数据的主键
+				<insert id = "insert" parameterType = "实体类路径/别名" userGeneratedkeys = "true" keyColumn = "b_id" keyProperty = "id"></insert>
+				@Options(userGeneratedkeys = "true" keyColumn = "b_id" keyProperty = "id")
+					userGeneratedkeys = "true"	生成主键值
+					keyColumn = "b_id"		设置主键列
+					keyProperty = "id"		将主键值封装到表的id属性
+		
+		更新修改(update)：	根据主键id修改信息
+			接口方法：public void updateNameById(User user);		将多个参数封装为对象
+				
+			映射XML：<update id = "updateNameById" parameterType = "map">
+					update t_user set u_name = #{name} where u_id = #{id};
+				</update>	
+				
+		查询(select)：
+			单个查询：	根据主键id查询
+				接口方法：public User selectUserById(Integer id)
+				
+				映射XML：<select id = "selectUserById" parameterType = "int" resultMap = "userMap">
+						select * from t_user where u_id = #{id} 				
+					</select>
+					
+					resultMap:返回值结果类型		实体类属性名和数据库表查询字段名一致，mybatis自动封装，不一致，不能自动封装
+
+				映射XML作用：
+					创建预编译SQL：select * from t_user where u_id = ？		将Java当中的参数传入？当中
+					
+			全表查询/条件查询：
+				接口方法：
+					全表查询：List<User> selectAllUsers();
+					条件查询：List<Emp> list(String name,short gender,LocalDate begin); 
+				
+				映射XML：select id = "selectAllUsers" resultMap = "userMap">
+						select * from t_user 
+						select * from emp where name like '%${name}%' and gender = 1 and entrydate between '2010-01-01' order by update_time desc;
+					</select>
+
+					占位符：
+						#{}采用预编译SQL处理，传递参数到SQL语句中		防止XSS攻击		
+						${}直接插入传入的参数值，不进行预编译SQL处理		传递参数在业务中写死，不阻止XSS攻击
+
+					模糊查询：   like '%${name}%'(不是预编译SQL) -> like concat('%',#{name},'%')	转换为预编译SQL处理
+
+			分页查询:		重点在查询	
+				请求：	当前页码，每页展示记录数(page,pageSize)
+				响应：	数据列表(list)，总记录数	用实体类/Map集合封装
+					
+			   1.查询全部员工分页展示
+				Controller方法：
+					public Result page(@RequestParam(defaultValue = "1") Integer page,
+                       					   @RequestParam(defaultValue = "10") Integer pageSize){
+        					PageBean pageBean = empService.page(page,pageSize);
+        					return Result.success(pageBean);
+    					}
+
+				Service实现：
+					public PageBean page(Integer page, Integer pageSize) {
+        					Integer count = empMapper.count();		//获取总记录数
+       						Integer start = (page - 1) * pageSize;		//获取数据列表
+        					List<Emp> empList = empMapper.page(start, pageSize);
+						//因为返回结果只能返回一个，需要将查出来的数据封装为一个PageBean对象
+        					PageBean pageBean = new PageBean(count,empList);
+        					return pageBean;
+    					}
+
+				Mapper接口方法：
+					List<Emp> page(@Param("start")Integer start, @Param("pageSize")Integer pageSize);
+						注意：mapper接口方法参数只有一个，不使用@Param注解
+						     mapper接口方法参数有多个，使用@Param注解
+
+				XML映射：
+					<select id="page" resultType="com.example.springmybatis.entity.Emp">
+        					select * from emp limit #{start},#{pageSize};
+    					</select>
+					
+				
+				PageHelper插件：	(分页查询实际开发)
+					引入依赖:
+						<dependency>
+							<groupId>com.github.pagehelper</groupId>
+							<artifactId>pagehelper-spring-boot-starter</artifactId>
+							<version>1.4.6</version>
+						</dependency>
+					Service实现：
+						public PageBean page(Integer page,Integer pageSize){
+							PageHelper.startPage(page,pageSize);	//设置分页参数
+							List<Emp> empList = empMapper.list();	//获取查询结果
+							Page<Emp> p = (Page<Emp>)empList;
+							PageBean pageBean = new PageBean(p.getTotal(),p.getResult());
+							return PageBean;
+						}
+					
+					Mapper接口：
+						List<Emp> list();
+				
+					XML映射：
+						<select id="list" resultType="com.example.springmybatis.entity.Emp">
+        						select * from emp；	
+    						</select>
+					
+			   2.条件查询员工信息分页展示		动态SQL-XML隐射文件
+					Controller方法：
+    						public Result page(@RequestParam(defaultValue = "1") Integer page,
+                       						@RequestParam(defaultValue = "10") Integer pageSize,
+                       						String name, Short gender,
+                       						@DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate begin,
+                       						@DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end){
+        							PageBean pageBean = empService.page(page,pageSize,name,gender,begin,end);
+        							return Result.success(pageBean);
+    						}
+
+					Service实现：
+						public PageBean page(Integer page, Integer pageSize, String name, Short gender, LocalDate begin, LocalDate end) {
+							PageHelper.startPage(page,pageSize);				//设置分页参数
+        						List<Emp> empList = empMapper.list(name,gender,begin,end);	//获取查询结果
+        						Page<Emp> p = (Page<Emp>)empList;
+        						//因为返回结果只能返回一个，需要将查出来的数据封装为一个PageBean对象
+        						PageBean pageBean = new PageBean(p.getTotal(),p.getResult());
+        						return pageBean;
+    						}
+
+					Mapper接口方法：
+						List<Emp> list(@Param("name") String name,@Param("gender")Short gender, @Param("begin")LocalDate begin, @Param("end")LocalDate end);
+
+					XML映射：
+						<select id="list" resultType="com.example.springmybatis.entity.Emp">
+        						select * from emp
+        						<where>
+            							<if test="name != null">
+                							name like concat ('%',#{name},'%')
+            							</if>
+            							<if test="gender != null">
+                							and gender = #{gender}
+            							</if>
+            							<if test="begin != null and end != null">
+                							and entrydate between #{begin} and #{end}
+            							</if>
+        						</where>
+        						order by update_time desc
+    						</select>
+									
+	Mybatis动态SQL：
+		动态SQL随着用户的输入或外部条件的化而变化的SQL语句，称为动态SQL
+		
+		动态SQL标签：
+			<if>
+			<where>
+			<set>
+			<foreach>
+			<sql>
+			<include>
+			<choose>		(switch)		
+				<when>		(case)	按顺序判断when中的条件是否成立，如果成立choose结束，条件都不满足，执行otherwise中的sql
+				<otherwise>	(default)
+		
+		<if>	用于判断条件是否成立。使用test属性进行条件判断，如果条件为true，拼接SQL
+		<where>	动态生成where关键字，自动去除条件前面的and/or				
+		    例：
+			select * 
+			from emp
+			<where>
+				<if test = "name != null">
+					name like concat ('%',#{name},'%')
+				</if>
+				<if test = "gender != null">
+					and gender = #{gender}
+				</if>
+				<if test = "begin != null and end != null">
+					and entrydate between #{begin} and #{end}
+				</if>
+			</where>
+			order by update_time desc
+
+		<set>	对更新字段包裹，自动去除字段之后多余的逗号，
+		    例：
+			update 
+				t_user		
+			<set>
+				<if test = "name != null and name != ''">
+					u_name = #{name},
+				</if>
+				<if test = "sex != null and sex != -1">
+					u_sex = #{sex},
+				</if>
+			</set>
+			where 
+				u_id = #{id}
+			
+		<sql id = "">	定义可以重复使用的SQL片段
+		<include refid = "id名称">	include调用可重复使用的SQL片段
+
+		<foreach collection = "" open = "" close = "" separator = "" item = "">	
+			collection	集合名称
+			item		遍历得到的元素
+			separator	分隔符
+			open		遍历开始前拼接的SQL片段
+			close		遍历结束后拼接的SQL片段
+		    例：
+			<foreach collection = "list" open = "(" close = ")" separator = "," item = "id">
+				#{id}
+			</foreach>
+							
+	
+
+	数据库连接池：	标准接口DataSource
+		数据库连接池就是一个容器，在开启项目的时候批量获取连接对象Connection，将它们存储起来。
+		没有数据库连接池，数据库会创建连接对象，用完关闭。
+		有数据库连接池就可以不用临时获取连接，从池中直接取出一个已经开启的连接直接访问数据库
+			
+		获取连接:getConnection()
+		
+		常用产品：
+			C3P0
+			DBCP		
+			Druid		阿里开源的数据库连接池项目
+			Hikari		SpringBoot默认
+		
+		切换连接池：
+			引入依赖：druid-spring-boot-starter
+
+	
+Lombok：		实用的Java类库，能通过注解的形式自动生成构造器
+	添加依赖：
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifectId>
+		</dependency>	
+	注解：
+		@NonNull			增加不为空判断
+		@Slf4j				在类上注解，可直接调用log		log.info("参数1:{},参数2:{}", param1, param2);	
+		@Getter/@Setter			自动生成get/set方法
+		@ToString			自动生成toString方法
+		@EqualsAndHashCode		生成equals，hashCode方法
+		@Data				自动生成get，set，equals，hashCode方法
+		@NoArgsConstructor		为实体类生成无参构造函数
+		@AllArgsConstructor		为实体类生成全参构造函数
+		@Accessors(chain = true)	开启链式编程
+		@Builder			开启链式编程，生成构建器			Student student = Student.builder().id(1).name("张三").age(20).build();
+		@Cleanup			自动化关闭流		
+		@SneakyThrows(Exception.class) 	当我们需要抛出异常，在当前方法上调用，不用显示的在方法名后面写throw
+		@RequiredArgsConstructor(onConstructor = @__(@Lazy))	
+			在类上可以替代@Autowired注解，在注入的时候用final定义
+				加上参数加载的时候会快一些
