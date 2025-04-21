@@ -1,7 +1,7 @@
 Apache POI和EasyExcel：	主要用于Excel表格的导入导出
 
-	Apache POI：	Aaache软件基金会开放源码函式库，POI提供API给Java程序支持读写(导入导出)Microsoft Office格式的文件(主要用于处理Excel文件，格式：.xls和.xlsx)
-	EasyExcel：	高性能的Java库(不会出现内存溢出)，主要用于读写(导入导出)Excel文件(主要用于处理大数据量Excel文件，格式：.xlsx)
+	Apache POI：Aaache软件基金会开放源码函式库，POI提供API给Java程序支持读写(导入导出)Microsoft Office格式的文件(主要用于处理Excel文件，格式：.xls和.xlsx)
+	EasyExcel：高性能的Java库(不会出现内存溢出)，主要用于读写(导入导出)Excel文件(主要用于处理大数据量Excel文件，格式：.xlsx)
 	
 	Aapche POI官网：https://poi.apache.org/download.html
 	Easyexcel官网：https://easyexcel.opensource.alibaba.com/
@@ -66,14 +66,14 @@ SpringBoot整合Apache POI：
 		HSSFWorkbook xslExcel = new HSSFWorkbook(new FileInputStream("D:\\工作\\info.xls")) ;		使用Apache POI读取D磁盘上info.xlsExcel文件
 		XSSFWorkbook xslxExcel = new XSSFWorkbook(new FileInputStream("D:\\工作\\info.xlsx"));		使用Apache POI读取D磁盘上info.xlsxExcel文件
 
-		HSSFSheet xlsSheet = xlsExcel.getSheetAt(0);							获取Excel中第一个Sheet页，Sheet页：参数 + 1，参数：0 -> Sheet页：1
-		XSSFSheet xlsxSheet = xlsxExcel.getSheetAt(0);							获取Excel中第一个Sheet页，Sheet页：参数 + 1，参数：0 -> Sheet页：1
+		HSSFSheet xlsSheet = xlsExcel.getSheetAt(0);			获取Excel中第一个Sheet页，Sheet页：参数 + 1，参数：0 -> Sheet页：1
+		XSSFSheet xlsxSheet = xlsxExcel.getSheetAt(0);			获取Excel中第一个Sheet页，Sheet页：参数 + 1，参数：0 -> Sheet页：1
 
-		HSSFRow xlsRow = xlsSheet.getRow(0);								获取Sheet页中第一行，Row行：参数 + 1，参数：0 -> Row行：1
-		XSSFRow xlsxRow = xlsxSheet.getRow(0);								获取Sheet页中第一行，Row行：参数 + 1，参数：0 -> Row行：1
+		HSSFRow xlsRow = xlsSheet.getRow(0);				获取Sheet页中第一行，Row行：参数 + 1，参数：0 -> Row行：1
+		XSSFRow xlsxRow = xlsxSheet.getRow(0);				获取Sheet页中第一行，Row行：参数 + 1，参数：0 -> Row行：1
 
-		HSSFCell xlsCell = xlsRow.getCell(0);								获取Row行中第一个单元格，Cell单元格：参数 + 1，参数：0 -> Cell单元格：1
-		XSSFCell xlsxCell = xlsxRow.getCell(0);								获取Row行中第一个单元格，Cell单元格：参数 + 1，参数：0 -> Cell单元格：1	
+		HSSFCell xlsCell = xlsRow.getCell(0);				获取Row行中第一个单元格，Cell单元格：参数 + 1，参数：0 -> Cell单元格：1
+		XSSFCell xlsxCell = xlsxRow.getCell(0);				获取Row行中第一个单元格，Cell单元格：参数 + 1，参数：0 -> Cell单元格：1	
 
 		xlsCell.getStringCellValue();									获取单元格内容
 		xlsxCell.getStringCellValue();									获取单元格内容
