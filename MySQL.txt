@@ -173,7 +173,7 @@ MySQL(关系型数据库):		关系型数据库：在关系模型基础上，由�
 				delete/truncate区别：
 					delete			truncate
 					条件删除			删除整张表
-					不影响自增		重新设置自增
+					不影响自增			重新设置自增
 					DML语言，支持回滚		DDL语言，不支持回滚
 						
 
@@ -227,8 +227,7 @@ MySQL(关系型数据库):		关系型数据库：在关系模型基础上，由�
 			分组查询 + 聚合函数：
 				聚合函数一般和查询字段一起使用		
 				聚合函数：	将一列数据作为一个整体，进行纵向运算，不计算null
-					count	统计数量	
-						count(字段/*/常量)
+					count	统计数量		count(字段/*/常量)
 					max	最大值
 					min	最小值
 					avg	平均值
@@ -255,7 +254,8 @@ MySQL(关系型数据库):		关系型数据库：在关系模型基础上，由�
 					order by 表达式 排序方式；	
 					
 				根据入职时间对公司的员工进行升序排序，入职时间相同，再按照更新时间进行降序排序
-				select * from tb_emp order by entrydate asc,update_time desc;			多字段排序，第一个字段值相同时，才会根据第二个字段进行排序
+				select * from tb_emp order by entrydate asc,update_time desc;			
+					注意：多字段排序，第一个字段值相同时，才会根据第二个字段进行排序
 					
 				补充：NULLS LAST/NULLS FIRST		NULL值排在最后/最前
 					例：order by price desc nulls last	
@@ -365,7 +365,7 @@ MySQL(关系型数据库):		关系型数据库：在关系模型基础上，由�
 				XML映射文件： 
 					<resultMap id = "patentMap" type = "com.zxhc.technologicalproject.vo.TeAndRePatentVO">
         						<id column="id" property="id"/>
-        						<result column="project_guid" property="projectGuid"/>				这里column是表查出来的字段名(注：可以是别名)
+        						<result column="project_guid" property="projectGuid"/>				column：表字段
         						<result column="personalPatentGuid" property="personalPatentGuid"/>
        						 	<result column="distinguish" property="distinguish"/>
         						<result column="documentCategory" property="documentCategory"/>
@@ -376,8 +376,8 @@ MySQL(关系型数据库):		关系型数据库：在关系模型基础上，由�
             							<result column="file_extension" property="fileExtension"/>
         						</collection>
     					</resultMap>		
-					<select id = "selectByPid" reaultType = "User">						注意：这里resultType的类型是上面resultMap的别名
-						select * from User where uid = #{id}		自关联查询
+					<select id = "selectByPid" reaultType = "User">			注意：这里resultType的类型是上面resultMap的别名
+						select * from User where uid = #{id}			自关联查询
 					</select>
 					注:
 					    property --> Java属性字段
@@ -471,9 +471,11 @@ MySQL(关系型数据库):		关系型数据库：在关系模型基础上，由�
 						常用操作符：= <> IN/NOT IN
 	
 						select entrydate,job from tb_emp where name = "韦一笑"
-						select * from tb_emp where entrydate = '2007-01-01' and job = 2; 	优化：select * from tb_emp where(entrydate,job) = ('2007-01-01',2); 
+						select * from tb_emp where entrydate = '2007-01-01' and job = 2; 	
+							优化：select * from tb_emp where(entrydate,job) = ('2007-01-01',2); 
 						
-						行子查询：select * from tb_emp where (entrydate,job) = (select entrydate,job from tb_emp where name = "韦一笑")；
+						行子查询：
+						select * from tb_emp where (entrydate,job) = (select entrydate,job from tb_emp where name = "韦一笑")；
 						
  					表子查询		子查询返回的结果为多行多列(多行多列)
 						常用操作符：IN
