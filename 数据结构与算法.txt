@@ -3851,7 +3851,7 @@
             							arr[max] = temp;
             							maxHeap(arr, size, max);
         						}
-        						System.out.println(Arrays.toString(arr));				打印每次排序后的结果 
+        						System.out.println(Arrays.toString(arr));			打印每次排序后的结果 
     						}
 
 				算法分析：
