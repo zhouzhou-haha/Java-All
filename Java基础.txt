@@ -201,8 +201,8 @@ long类型定义的时候，防止整数过大，在定义的时候需要添加L
 	逻辑非：     !	  相反
 
 短路逻辑运算符 ：
-	短路与：	  &&	   只要左边是false不管右边表达式是true还是false都不执行
-	短路或：   ||       只要左边是true 右边不执行
+	短路与：	&&	 只要左边是false不管右边表达式是true还是false都不执行
+	短路或：   	||       只要左边是true 右边不执行
 
 三元运算符(三目运算符)：关系表达式 ？表达式1 ： 表达式2；  int  max = a > b ? a : b; 			
 
@@ -373,7 +373,7 @@ ctrl + win + →				     下一个桌面
 alt + 8					     打开控制台
 Ctrl + shift + F			     查找代码
 Ctrl + shift + I			     快捷打开开发者工具
-alt + tab					在两个应用之间来回切换	
+alt + tab				     在两个应用之间来回切换	
 
 樱桃键盘：
 Ctrl + FN					f1~f12切换
@@ -462,31 +462,31 @@ Idea底层控制台看不见显示信息点击控制台右上角的设置选择M
 		2.1类名作为形参和返回值：
 			public void useCat(Cat c){}
 			CatOperator co = new CatOperator();   Operator方法中Cat时入参
-			Cat c = new Cat();      创建Cat对象
+			Cat c = new Cat();      		创建Cat对象
 			co.useCat(c);
 
 			public Cat gteCat(){
 				Cat c =new Cat();
-				return c;        方法的返回值时类名，返回的是该类的对象
+				return c;        		方法的返回值时类名，返回的是该类的对象
 			}
 		2.2抽象类作为形参和返回值
 			AnimalOperator ao = new AnimalOperator();   Operator方法中Cat时入参
-			Animal a = new Cat();      多态创建Cat对象
+			Animal a = new Cat();      		多态创建Cat对象
 			ao.useCat(a);
 			
 			public Animal gteAnimal(){
 				Animal a =new Cat();
-				return a;        方法的返回值时类名，返回的是该类的对象
+				return a;       	 	方法的返回值时类名，返回的是该类的对象
 			}
 		2.3接口作为形参和返回值
-			public void useJumpping(Jupping j){  Jumpping是接口
+			public void useJumpping(Jupping j){  	Jumpping是接口
 				j.jump;
 			}
-			Jumpping j = new Cat();      Cat接口实现类，这里是接口多态
+			Jumpping j = new Cat();      		Cat接口实现类，这里是接口多态
 
 			public Jumpping gteJumpping(){
 				Jumpping j = new Cat();
-				return j;        方法的返回值是接口，返回的是该接口的实现类对象
+				return j;        		方法的返回值是接口，返回的是该接口的实现类对象
 			}
 实参：方法调用的中的参数（常量/变量）       
 
@@ -560,9 +560,9 @@ package：
 	2.导包     例：import java.util.Scanner;
 
 类和对象：
-	类：类是对现实生活中一类具有共同属性和行为的事务的抽象        人类
+	类：类是对现实生活中一类具有共同属性和行为的事务的抽象       	 人类
 		1.类是对象的数据类型
-	对象(POJO)：是能够看得到摸得着的真实存在的实体                     人
+	对象(POJO)：是能够看得到摸得着的真实存在的实体                    人
 
 		只要是对象，在进行操作之前必须进行不为null的判断，在实际开发中，否则会报NullException异常错误
 		
@@ -731,8 +731,8 @@ package：
 
 	案例：我们现在又乒乓球运动员和篮球运动员，乒乓球教练和篮球教练。为了出国交流，跟乒乓球相关的人	员都需要学习英语。请分析这个案例中又哪些具体类，那些抽象类，哪些接口，用代码实现
 		分析：从具体到抽象                人（抽象类）             
-			乒乓球运动员         抽象类       抽象类           接口
-			篮球运动员	   运动员	教练          学习英语
+			乒乓球运动员        抽象类       抽象类           接口
+			篮球运动员	    运动员	 教练           学习英语
 			乒乓球教练	    学习		教
 			篮球教练
 		实现：从抽象到具体
@@ -798,9 +798,9 @@ API与Swagger:
 	API文档：	
 		API文档用于前后端交互，后端提交一个json格式的api接口用于前端访问，后端提供最新接口需要实时更新最新的消息和改动
 
-		文档结构: Field Summary    成员变量/属性
-		        Constructor Summary    构造方法
-			Method Summary     类中方法介绍
+		文档结构: 	Field Summary    	成员变量/属性
+		        	Constructor Summary    	构造方法
+				Method Summary    	类中方法介绍
 		
 	Swagger：	世界上最流行的Api框架，生成API文档
 		Swagger就是一个用来定义接口标准,接口规范,同时能根据你的代码自动生成接口说明文档的一个工具
@@ -921,10 +921,10 @@ StringBuffer	     创建的对象是一个空白可变字符串对象，线程�
 
 	添加元素：add("hello")/add(1,"hello")
 	删除元素：remove（”hello“）     删除指定元素，返回删除成功
-		  remove("1")       删除索引位置元素，返回被删除的元素
-	修改元素：set(1,"hello")     修改指定索引处的元素，返回被修改的元素
-	查询元素：get(0);            返回指定索引处的元素
-	查询元素个数： size()         返回集合中元素的个数
+		  remove("1")       	删除索引位置元素，返回被删除的元素
+	修改元素：set(1,"hello")     	修改指定索引处的元素，返回被修改的元素
+	查询元素：get(0);            	返回指定索引处的元素
+	查询元素个数： size()         	返回集合中元素的个数
 
 	遍历集合：
 		for (int i = 0; i < array.size(); i++) {
