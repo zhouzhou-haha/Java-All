@@ -40,7 +40,7 @@ MybatisPlus(MP)：
 				变量名驼峰转下划线作为表的字段名	patent_name --> patentName
 
 	常用注解：
-		@TableName	标识实体类对应的表			@TableName("tb_patent_detail")
+		@TableName	标识实体类对应的表		@TableName("tb_patent_detail")
 			属性：					public class User{
 				value		表名			@TableId(value = "id",type = IdType.AUTO)
 				schema		schema			private Long id;
@@ -78,17 +78,17 @@ MybatisPlus(MP)：
 			mapper-locations: "classpath*:/mapper/**/*.xml"	扫描mapper文件夹下所有子目录含有Mapper.xml文件地址
 			configuration:
 			   map-underscore-to-camel-case: true	是否开启下划线和驼峰命名的映射
-			   cache-enabled: false		是否开启二级缓存
+			   cache-enabled: false			是否开启二级缓存
 			global-config:	
 			   db-config:
-			      id-type: assign_id	id为雪花算法生成，全局有效/注解配置Id类型优先级更高
+			      id-type: assign_id		id为雪花算法生成，全局有效/注解配置Id类型优先级更高
 			      update-strategy: not_null		更新策略：只更新非空字段
 
 
 	核心功能：
 		IService批量插入处理：
-			1.for循环						速度极差，不推荐
-			2.MP批量新增						基于预编译的批处理，性能不错
+			1.for循环							速度极差，不推荐
+			2.MP批量新增							基于预编译的批处理，性能不错
 			3.配置JDBC参数，开启rewriteBatchedStatements=true		性能最好	
 			
 		代码生成器：
@@ -154,7 +154,7 @@ MybatisPlus(MP)：
 		Service层：
 			IService基础业务接口开发：
 				对业务层自身实体操作			
-					Service层	this.selectone();
+					Service层		this.selectone();
 					Mapper层		baseMapper就是Service层需要使用的Mapper	baseMapper.getOne();
 
 				循环依赖：bean A依赖于bean B时，bean B依赖于bean A
@@ -244,7 +244,8 @@ MybatisPlus(MP)：
 
 
 				LambdaQueryWrapper<T> wrapper = Wrappers.lambdaQuery();
-				实际开发：List<PersonalInfo> list = this.list(Wrappers.<PersonalInfo>query().lambda().orderByDesc(PersonalInfo::getCreateTime));
+				实际开发：List<PersonalInfo> list = this.list(Wrappers.				 
+ 							<PersonalInfo>query().lambda().orderByDesc(PersonalInfo::getCreateTime));
 						Wrappers.<T> lambdaQuery() 是 MyBatis-Plus 中用于创建 LambdaQueryWrapper 对象的方法
 					同理：this.list(new LambdaQueryWrapper<PersonalInfo>().orderByDesc(PersonalInfo::getCreateTime))
 
@@ -266,37 +267,37 @@ MybatisPlus(MP)：
 				
 			方法：
 				AbstractWrapper：
-				    eq(R column,Object val)			eq("name","老王") --> name = '老王'
-				    ne(R column,Object val)			ne("name","老王") --> name <> '老王'	
-				    gt(R column,Object val)			gt("age",18) --> age > 18
-				    ge(R column,Object val)			ge("age",18) --> age >= 18
-				    lt(R column,Object val)			lt("age",18) --> age < 18
-				    le(R column,Object val)			le("age",18) --> age <= 18
+				    eq(R column,Object val)				eq("name","老王") --> name = '老王'
+				    ne(R column,Object val)				ne("name","老王") --> name <> '老王'	
+				    gt(R column,Object val)				gt("age",18) --> age > 18
+				    ge(R column,Object val)				ge("age",18) --> age >= 18
+				    lt(R column,Object val)				lt("age",18) --> age < 18
+				    le(R column,Object val)				le("age",18) --> age <= 18
 				    between(R column,Object val1,Object val2)		between("age", 18, 30) --> age between 18 and 30
 				    notBetween(R column,Object val1,Object val2)	notBetween("age", 18, 30) --> age not between 18 and 30
-				    like(R column,Object val)			like("name", "王") --> name like '%王%'	
+				    like(R column,Object val)				like("name", "王") --> name like '%王%'	
 					补充：like(condition,R column,Object val)	condition成立，执行后面Wrapper		
-				    notLike(R column,Object val)		notLike("name", "王") --> name not like '%王%'
-				    likeLeft(R column,Object val)		likeLeft("name", "王") --> name like '%王'
-				    likeRight(R column,Object val)		likeRight("name", "王") --> name like '王%'
-				    notLikeLeft(R column,Object val)		notLikeLeft("name", "王") --> name not like '%王'
-				    notLikeRight(R column,Object val)		notLikeRight("name", "王") --> name not like '王%'
-				    isNull(R column)				isNull("name") --> name is null		
-				    isNotNull(R column)				isNotNull("name") --> name is not null
-				    in(R column, Collection<?> value)		in("age",{1,2,3}) --> age in (1,2,3)
-				    notIn(R column, Object... values)		notIn("age", 1, 2, 3) --> age not in (1,2,3)
-				    inSql(R column, String inValue)		inSql("age", "1,2,3,4,5,6") --> age in (1,2,3,4,5,6)
-				    notInSql(R column, String inValue)		notInSql("id", "select id from table where id < 3") --> id not in (select id from table where id < 3)
-				    groupBy(R... columns)			groupBy("id", "name") --> group by id,name
-				    orderByAsc(R... columns)			orderByAsc("id", "name") --> order by id ASC,name ASC
-				    orderByDesc(R... columns)			orderByDesc("id", "name") --> order by id DESC,name DESC
-				    having(String sqlHaving, Object... params)	having("sum(age) > {0}", 11) --> having sum(age) > 11		
+				    notLike(R column,Object val)			notLike("name", "王") --> name not like '%王%'
+				    likeLeft(R column,Object val)			likeLeft("name", "王") --> name like '%王'
+				    likeRight(R column,Object val)			likeRight("name", "王") --> name like '王%'
+				    notLikeLeft(R column,Object val)			notLikeLeft("name", "王") --> name not like '%王'
+				    notLikeRight(R column,Object val)			notLikeRight("name", "王") --> name not like '王%'
+				    isNull(R column)					isNull("name") --> name is null		
+				    isNotNull(R column)					isNotNull("name") --> name is not null
+				    in(R column, Collection<?> value)			in("age",{1,2,3}) --> age in (1,2,3)
+				    notIn(R column, Object... values)			notIn("age", 1, 2, 3) --> age not in (1,2,3)
+				    inSql(R column, String inValue)			inSql("age", "1,2,3,4,5,6") --> age in (1,2,3,4,5,6)
+				    notInSql(R column, String inValue)			notInSql("id", "select id from table where id < 3") --> id not in (select id from table where id < 3)
+				    groupBy(R... columns)				groupBy("id", "name") --> group by id,name
+				    orderByAsc(R... columns)				orderByAsc("id", "name") --> order by id ASC,name ASC
+				    orderByDesc(R... columns)				orderByDesc("id", "name") --> order by id DESC,name DESC
+				    having(String sqlHaving, Object... params)		having("sum(age) > {0}", 11) --> having sum(age) > 11		
 				    orderBy(boolean condition, boolean isAsc, R... columns)		orderByDesc("id", "name") --> order by id DESC,name DESC
-				    or(Consumer<Param> consumer)		eq("id",1).or().eq("name","老王") --> id = 1 or name = '老王'
-				    and(Consumer<Param> consumer)		and(i->i.eq("name", "李白").ne("status", "活着"))--> and (name = '李白' and status <> '活着')
-				    last(String lastSql)			last("limit 1")			直接拼接到最后			
-				    set(String column, Object val)		set("name", null) --> 数据库字段值变为null
-				    setSql(String sql)				setSql("name = '老李头'")
+				    or(Consumer<Param> consumer)			eq("id",1).or().eq("name","老王") --> id = 1 or name = '老王'
+				    and(Consumer<Param> consumer)			and(i->i.eq("name", "李白").ne("status", "活着"))--> and (name = '李白' and status <> '活着')
+				    last(String lastSql)				last("limit 1")			直接拼接到最后			
+				    set(String column, Object val)			set("name", null) --> 数据库字段值变为null
+				    setSql(String sql)					setSql("name = '老李头'")
 
 		自定义SQL：		
 			利用MybatisPlus(MP)和Wrapper构建复杂的where条件，自定义SQL语句剩下的部分
@@ -333,7 +334,7 @@ MybatisPlus(MP)：
 			      db-config：			数据库配置
 				 logic-delete-field：flag	逻辑删除字段
 				 logic-delete-value：1		逻辑已删除值
-				  logic-not-delete-value：0	逻辑未删除值
+				 logic-not-delete-value：0	逻辑未删除值
 
 			逻辑删除产生问题：数据库表垃圾越来越多，影响查询效率
 				解决办法：数据不能删除，将逻辑删除数据迁移到其他表
