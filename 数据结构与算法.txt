@@ -1226,8 +1226,8 @@
 
 		广义表基本运算：
 			SL = (E,F) = ((a,(b,c)),F)						
-			获得表头:	GetHead(SL) = E			GetHead(E) = a			GetHead((b,c)) = b		GetHead(((b,c))) = (b,c)
-			获得表尾:	GetTail(SL) = (F)		GetTail(E) = ((b,c))		GetTail((b,c)) = c		GetTail(((b,c))) = ()
+			获得表头:	GetHead(SL) = E		GetHead(E) = a			GetHead((b,c)) = b		GetHead(((b,c))) = (b,c)
+			获得表尾:	GetTail(SL) = (F)	GetTail(E) = ((b,c))		GetTail((b,c)) = c		GetTail(((b,c))) = ()
 		
 				注意：表尾一定是广义表
 
