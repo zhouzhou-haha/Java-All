@@ -1026,7 +1026,7 @@ Java8常用类API：
 		random	返回double的正值[0.0,1.0)
 	
 	System类：
-		exit	终止当前运行的Java虚拟机
+		exit			终止当前运行的Java虚拟机
 		currentTimeMillis	返回当前时间（当前时间ms）  通常跟日期类连用
 	
 	Arrays类：
@@ -1184,7 +1184,7 @@ HttpClient：			Java标准库，主要用于执行HTTP请求和处理响应。Ht
 	2	Java程序使用HttpClient：
 		发送Get请求：
 			CloseableHttpClient httpClient = HttpClient.newHttpClient();					创建HttpClient对象
-			HttpGet httpGet = new HttpGet("http://localhost:8080/patentinfo/getPatentinfo");			创建HTTP GET请求实例，指向指定URL					
+			HttpGet httpGet = new HttpGet("http://localhost:8080/patentinfo/getPatentinfo");		创建HTTP GET请求实例，指向指定URL					
 			CloseableHttpReponse reponse = httpClient.execute(httpGet);					执行HTTP GET请求并获取响应对象										
 			int statusCode = reponse.getStatusLine().getStatusCode();					返回响应状态码
 			HttpEntity entity = reponse.getEntity();							获取响应体
@@ -1211,7 +1211,7 @@ HttpClient：			Java标准库，主要用于执行HTTP请求和处理响应。Ht
 			CloseabkeHttpClient response = httpClient.execute(httpPost);					执行HTTP POST请求并获取响应对象
 			int statusCode = response.getStatusLine().getStatusCode();					获取响应状态码
 			HttpEntity body = response.getEntity();								获取响应体
-			String s = EntityUtils.toString(body);								解析响应体															解析响应体		
+			String s = EntityUtils.toString(body);								解析响应体																	
 							
 
 RestTemplate默认依赖JDK提供http连接的能力(底层实现默认：HttpURLConnection)
@@ -1225,7 +1225,7 @@ RestTemplate:
 		get请求		getForEntity			返回ReponseEntity，包含：HTTP响应体，HTTP状态码，contentType，contentLength，Header		
 				getForObject			HTTP协议响应体
 
-		post请求		postforEntity
+		post请求	postforEntity
 				postForObject
 				postForLocation
 
@@ -1268,10 +1268,10 @@ RestTemplate:
 
 		利用RestTemplate发起http请求，得到http响应
 		restTemplate.exchange(
-			"http://localhost:8081/items?ids={ids}",		请求URL
-			HttpMethod.GET,						请求方法
-			null,							请求头和请求体的实体
-			new ParameterizedTypeReference<List<ItemDTO>>() {}，	返回结果类型(字节码/参数类型引用)
+			"http://localhost:8081/items?ids={ids}",			请求URL
+			HttpMethod.GET,							请求方法
+			null,								请求头和请求体的实体
+			new ParameterizedTypeReference<List<ItemDTO>>() {}，		返回结果类型(字节码/参数类型引用)
 			Map.of("ids"，CollUtil.join(idList,","))			请求参数(集合参数类型用工具类拼接为字符串)
 		);
 			
