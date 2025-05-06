@@ -1,0 +1,745 @@
+
+虚拟机JVM(Java Virtual Machine)：
+	基本概念：
+		定义：Java程序执行的核心组成部分(Java跨平台关键)，JVM负责将编译后的字节码(.clas文件)解释编译成可以在特定平台上运行的机器代码并执行
+
+		功能：
+			解析class文件：JVM加载.class文件解析字节码转换为机器码(Linux机器码/Windows机器码)令并执行
+			内存管理：堆内存、栈内存分配管理，自动回收不再使用的对象内存(垃圾回收)
+			即使编译(JIT)：对热点代码进行优化提升效率			
+				
+				即时编译原理：HelloWorld.class(热点代码)	->(解释并优化)->	机器码保存在内存(直接从内存中调用)		热点代码：短时间内被多次调用的代码
+				
+				补充：Java语言需要JVM实时解释虚拟机指令，不做优化不如直接运行机器码C、C++语言
+
+		Java虚拟机规范：Oracle制定，主要包含Java虚拟机在设计和实现时的规范(class字节码文件定义、类和接口加载和初始化、指令集等)
+
+		常见JVM分类： 
+			名称				作者		社区活跃度	使用场景		
+			HotSpot(Oracle JDK版)		Oracle		高		默认				默认：java -version查看			
+			HotSpot(Open JDK版)		Oracle		中		默认	
+			GraalVM				Oracle		高		微服务、云原生架构
+			Drangonwell JDK(龙井)		Alibaba		低		电商、物流对性能要求比较高
+			Eclipse OpenJ9(原 IBM J9)	IBM		低		微服务、云原生架构
+
+	JVM架构(内存结构/组成部分)：
+			Java Class(字节码文件)	Java字节码文件				
+				↓
+		————————————————————————————————————————————————————————————————————————————————————————————————————————--------------
+	JVM：	|	ClassLoader(类加载器)	作用：加载class文件到内存中								
+		|		↓												
+		|	内存(JVM管理内存)：
+		|		Method Area	Heap	JVM Stacks	PC Register	Native Method Stacks		←
+		|		方法区		堆	虚拟机栈		程序计数器	本地方法栈			   ↑
+		|		↓											本地接口
+		|	执行引擎：											   ↓
+		|		Interpreter	JIT Compiler	GC							←
+		|		解释器		即时编译器	垃圾回收
+		|———————————————————————————————————————————————————————————————————————————————————————————————————————--------------
+
+		Java Class(字节码文件)：			
+			查看字节码文件：
+				方式一(jclasslib):
+					IDEA -> Settings -> Plugins -> jclasslib -> installed(安装) -> 重启使用
+					选中对应class文件 -> 顶部菜单栏 -> View -> Show Bytecode With Jclasslib -> 查看对应.class字节码文件
+					
+				方式二(javap -v服务器查看字节码文件内容)：
+					命令：
+						javap					查看javap所有参数
+						javap -version				查看JDK版本信息
+						javap -v/-verbose 字节码文件		查看字节码文件所有信息
+
+					示例：javap -v /opt/jvm/BOOT-INF/classes/com/itheima/springbootclassfile/pojo/vo/UserVO.class > /opt/jvm/UserVO.txt					
+					解析：
+						/opt/jvm/BOOT-INF/classes/com/itheima/springbootclassfile/pojo/vo/UserVO.class		字节码文件全路径
+						> /opt/jvm/UserVO.txt									将字节码信息输出到文件
+
+				方式三(arthas):
+					前提：下载arthas-boot.jar
+					win + R -> cmd控制台jar包目录：jave -jar arthas-boot.jar	 →	选中对应进程编号进入程序内部启动arthas查看信息
+						
+					arthas功能：
+						监控面板：
+							命令：dashboard -i 2000 -n 1			-i：刷新实时数据时间间隔	-n：刷新实时数据次数	
+							结果：
+								线程信息：
+									ID: 线程ID
+									NAME: 线程名
+									GROUP: 线程组名
+									PRIORITY: 线程优先级(1-10)，数字越大优先级越高
+									STATE: 线程状态
+									CPU%: 线程的cpu使用率							 	
+									DELTA_TIME: 上次采样之后线程运行增量 CPU 时间
+									TIME: 线程运行总CPU时间
+									INTERRUPTED: 线程当前的中断位状态
+									DAEMON: 是否是daemon线程
+
+								内存信息：
+									Memory：内存区域信息
+									used：内存区域使用内存量
+									total：内存区域总内存容量
+									max：内存区域最大可分配最大内存量
+									usage：内存与总内存比例
+									GC：垃圾回收信息(垃圾回收次数/时间)
+
+								内存配置信息Runtime：
+									os.name：操作系统名
+									os.version：操作系统版本
+									java.version：JavaJDK版本
+									java.home：JDK安装路径
+									systemload.average：系统负载指标(系统平均有多少进程在等待CPU时间)
+									processors：系统可用于Java处理器核心数
+									timestamp/uptime：当前监控信息更新时间戳
+
+						查看字节码信息：
+							命令：dump -d F:/AllSoftwarePackage/data arthas.Demo	->	在对应文件目录查看.class字节码文件
+							命令：dump arthas.Demo					->	查看指定类字节码
+
+						类热部署：在不重启整个应用程序情况下，动态更新字节码文件到内存中			注意：热部署应急情况使用，正常情况重新编译 -> 打包 -> 发布	
+								
+						内存监控-解决内存泄漏：
+							命令：memory						->	查看内存和非堆内存使用情况
+							命令：jvm						->	显示JVM一些运行时信息
+							命令：heapdump --live 文件路径和文件名			->	导出内存快照
+							命令：top						->	Linux查看系统资源：执行进程、线程和系统参数等
+
+						垃圾回收监控：
+							命令：gc							->	查看垃圾回收详细信息(垃圾回收次数/垃圾回收时间/垃圾回收器使用情况)	
+							命令：gc -d						->	显示垃圾回收详细过程(每次gc时间戳/内存使用情况/gc原因)
+							命令：-Xlog:gc*:file=日志文件				->	将垃圾回收相关日志输出到具体文件
+							命令：monitor -c 10 -n 5 -t 5 "GC"			->	每10秒显示有GC统计信息，总共显示5次
+				
+			字节码文件信息：
+				魔数(magic Number)：字节码文件头，标识文件类型
+				版本号：编译字节码文件JDK版本号判断当前字节码版本与运行时JDK是否兼容
+				常量池：包含所有常量/类/接口/字段/方法引用，避免内容重复定义
+					字符串常量：字符串字面量
+					数字常量：例如整数、浮动小数等
+					类和接口的引用：引用其他类或接口
+					字段和方法的引用：方法、字段和接口方法的符号引用
+				字段：类或接口声明的字段信息
+				方法：类或接口声明的方法信息字节码指令
+				属性：类属性
+					源文件：记录源文件的名称
+					调试信息：包含调试符号，帮助调试器定位源代码
+					Code属性：每个方法都会有一个属性，包含该方法的字节码指令
+					Exceptions属性：列出方法可能抛出的异常
+					LineNumberTable和 LocalVariableTable：用于调试记录源代码行号和局部变量的表格
+
+		Class Loader(类加载器)：		
+			类加载器：负责加载类文件并转换为JVM可以使用的格式，动态加载和卸载类
+
+			Arthas类加载器相关命令：
+				classloader				查看所有类加载器
+				sc -d java.lang.String			查看当前类的详细信息(原始文件来源/类声明/ClassLoader)
+				classloader -l				查看所有类加载器哈希码
+				classloader -c 哈希码			查看当前类加载器加载字节码文件
+				classloader -t				查看类加载器父子关系
+	
+			类生命周期：
+				类加载：将类.class字节码文件从磁盘、网络等其他来源加载到内存(方法区)中并在堆中生成java.lang.Class对象
+			
+				连接：将类.class字节码文件与JVM运行环境进行整合的过程
+					验证：检查类的字节码是否符合JVM规范(文件格式/源数据/字节码/符号引用验证)，确保类文件不包含非法代码
+					准备：为类的静态变量分配内存并初始化默认值
+					解析：将常量池中符号引用(方法/字段/类等)解析成实际内存地址，使用内存地址访问具体数据
+			
+			*****	初始化：执行类的初始化代码(JVM执行类静态初始化块及静态变量分配内存并设初值)
+				
+				使用：类被初始化，实例可被创建，静态方法可被调用，静态变量可被访问
+				
+				卸载：通过垃圾回收机制完成，类加载器不再引用指向该类，JVM适当时机进行卸载
+
+			类加载器分类：	
+				启动类加载器(Bootstrap ClassLoader)：加载Java标准库中的核心类(Java安装目录/jre/lib下类文件)				C++编写,没有父类加载器
+				扩展类加载器(Extension ClassLoader)：加载Java扩展库(Java安装目录/jre/lib/ext下类文件)					Java编写
+				应用程序类加载器(Application ClassLoader)：加载用户自己编写的第三方jar包中的类(系统环境变量classPath定义类路径)
+				自定义类加载器(Custom ClassLoader)：Java开发者自定义类加载器，继承ClassLoader类重写findClass方法自定义类加载行为
+				
+			双亲委派机制(类加载器体系)：
+				作用：描述类加载器查找和加载类过程，避免类加载冲突(一个类已经被类加载，没必要再加载一次)保证及类加载按照特定顺序进行
+
+				双亲委派机制：
+					类加载器接收加载类任务，自下而上检查该类是否已加载(已加载直接返回)
+					再自上而下进行加载(将加载请求委派给父类加载器，父类无法完成加载任务，子类才去尝试加载任务)
+	
+					查找顺序		启动类加载器(Bootstrap ClassLoader)		加载顺序
+					↑			↓		010			↓
+					↑		扩展类加载器(Extension ClassLoader)		↓
+					↑			↓					↓
+					↑		应用程序类加载器(Application ClassLoader)		↓
+					↑		↙		↘				↓
+					↑	自定义加载器		自定义加载器			↓
+
+					Java当中使用代码方式主动加载类：
+						1.Class.forName()使用当前类类加载器加载指定类
+							ClassLoader classLoader = Demo.class.getClassLoader();
+							Class<?> clazz = Class.forName("com.example.Person",true,classLoader);		
+
+						2.获取类加载器，通过加载器loadClass()指定加载某个类加载器
+							ClassLoader classLoader = Demo.class.getClassLoader();
+							Class<?> stringClassz = classLoader.loaderClass("java.lang.String");
+						
+						Class.forName和ClassLoader.loadClass区别：
+							Class.forName()加载并初始化类
+							ClassLoader.loadClass()加载类但不初始化类
+
+				打破双亲委派机制：
+				1	自定义类加载器打破双亲委派机制：
+						实现：继承ClassLoader类重写loadClass/findClass方法				loadClass类加载入口，提供双亲委派机制，内部调用findClass		
+						
+						自定义类加载器：
+							public class CustomClassLoader extends ClassLoader{
+							
+								@Override
+								public Class<?> laodClass(String name) throws ClassNotFoundException{
+									Class<?> c = findLoadedClass(name);				检查请求类是否已经被加载
+									if(c == null){
+										try{
+											c = findClass(name);				尝试加载类字节码到内存
+										}catch(ClassNotFoundException e){
+											c = super.loadClass(name);			若没有找到类，使用正常双亲委派机制	
+										}
+									}		
+								}
+
+								@Override
+								public Class<?> findClass(String name) throws ClassNotFoundException{
+									byte[] classBytes = loadClassBytes(name);
+									if(classBytes == null){		
+										throws new ClassNotFoundException("Class" + name + "not found");
+									}
+									return defineClass(name,classBytes,0,classBytes.length);	做类名校验，将字节码信息加载到虚拟机内存
+								}
+
+								private byte[] loadClassBytes(){
+									//获取类字节码
+								}
+							}
+						
+				2	Java机制-线程上下文类加载器(ContextClassLoader)：			Java应用线程上下文默认类加载器：AppClassLoader
+						Java类加载机制(双亲委派机制)缺陷：
+							Java服务提供者接口由BootstrapClassLoader加载
+							第三方Java实现类由AppClassLoader加载，BootstrapClassLoader无法找到SPI接口实现类且AppClassLoader是最顶层类加载器
+
+							SPI机制：为某个接口寻找服务实现实例
+
+						Java应用默认线程上下文类加载器：AppClassLoader
+							核心库使用SPI接口时传递类加载器使用线程上下文类加载器，可以成功加载到SPI实现类
+
+							获取线程上下文类加载器：	
+								Thread.currentThread().getClassLoader();
+								Thread.currentThread().getContextClassLoader();
+					
+				3	Tomcat类加载机制：
+						实现方式：WebAppClassLoader覆盖父类加载器loadClass()方法，使得Web应用中类优先加载
+					
+						Tomcat类加载器：
+							Bootstrap ClassLoader：负责加载JVM核心库
+							Extension ClassLoader：加载Java扩展库
+							Application ClassLoader：加载用户自己编写的第三方jar包中的类
+							Common ClassLoader：加载Tomcat共享库
+							Share ClassLoader：Web应用程序共享的类
+							WebAppClassLoader：每个Web应用都有独立类加载器，负责加载Web应用中独享类
+
+						Tomcat双亲委派机制：
+							WebAppClassLoader请求父类加载器(Share ClassLoader)加载类，父类加载器尝试加载类，失败返回WebAppClassLoader进行尝试
+
+						Tomcat正常类加载流程：
+							1.启动时加载Bootstrap ClassLoader，加载JVM核心库和Tomcat核心类
+							2.加载System ClassLoader和 Common ClassLoader，加载Tomcat共享库
+							3.Tomcat为每个Web应用创建独立WebAppClassLoader，先加载Web应用汇总WEB-INF/classes目录中类，再加载WEB-INF/lib目录下.jar文件
+
+						Tomcat打破双亲委派机制流程：
+							1.启动时加载Bootstrap ClassLoader，加载JVM核心库和Tomcat核心类
+							2.Tomcat为每个Web应用创建独立WebAppClassLoader，先加载Web应用汇总WEB-INF/classes目录中类，再加载WEB-INF/lib目录下.jar文件
+							3.加载System ClassLoader和 Common ClassLoader，加载Tomcat共享库
+								
+						
+				4	OSGI框架类加载机制(了解现在已不适用)：
+						OSGI：用于Java平台的模块化框架，允许动态加载、卸载和管理Java类模块(Bundle)，为每个模块提供独立类加载空间，不同模块可以加载不同版本类
+					
+						OSGI中类加载器：
+							Bootstrap ClassLoader：加载Java核心库，实现热部署
+							System ClassLoader：加载OSGI系统核心类库
+							Bundle ClassLoader：每个模块(Bundle)都有独立类加载器，负责加载当前Bundle中类和资源
+
+							热部署：在不重启整个应用程序情况下，动态更新字节码文件到内存中				
+								注意：热部署应急情况使用，正常情况重新编译 -> 打包 -> 发布
+							
+						OSGI类加载流程：
+							1.检查Bundle类加载器是否已经加载该类，类已加载直接返回
+							2.若当前Bundle类加载器无法找到该类，将加载请求委托给上层类加载
+							3.若当前Bundle需要导入其他Bundle的类，OSGI指定Import-Package和Export-Package机制查找依赖类
+							
+						OSGI打破双亲委派机制的机制：
+							Bundle ClassLoader类加载器仅能访问和加载当前Bundle(模块)中类和资源
+							当类在Bundle中被请求时，通过该Bundle类加载器加载类，不会通过父类加载器(系统类加载器/启动类加载器)，避免Bundle之间类冲突
+
+							委托-委托机制：
+								Bundle类加载器无法找到某类，尝试委托父类加载器(System ClassLoader)加载类，但不直接委托给启动类加载器加载	
+
+
+		JVM内存区域：
+			相关概念：
+				运行时数据区：Java虚拟机再运行Java程序过程中管理的内存区域
+				线程私有区：线程私有区数据生命周期与线程相同，依赖用户线程启动/结束而创建/销毁
+				线程共享区：线程共享区随虚拟机启动/关闭而创建/销毁
+						
+		*****	内存区域分类：
+				线程共享区：
+					Method Area(方法区)：存储类的结构信息(类定义、运行时常量池、字符串常量池、静态变量、编译后代码等)，在类加载阶段完成存储
+						特点：
+							1.方法区是JVM中线程共享区域
+							2.垃圾回收器(GC)回收不再使用的类和方法信息，有自己内存管理系统(Direct Memory)
+							3.JDK8之前，方法区称为永久代；JDK8之后，方法区称为元空间，存放在直接内存中
+
+						方法区/元空间(JDK8之后)组成：
+							类信息：类名称、方法名、访问修饰符、字段描述、方法、实现接口等
+							静态变量：类静态变量
+							JIT编译后代码：JIT将某些热点代码从字节码转换为机器码并将机器码存储在方法区
+							常量池：静态常量池 + 运行时常量池 + 字符串常量池
+								静态常量池：编译时就已经确定并存储在字节码中的常量(字符串常量/数值常量/符号引用等)
+								运行时常量池：运行时，JVM将字节码文件中常量池加载内存中，存放在运行时常量池中
+								字符串常量池(堆)：存储字节码文件读取到静态常量池中的字符串常量。多个字符串内容相同，JVM指向同一内存地址
+
+							补充：	启动参数设置方法区大小：-XX:MaxPermSize = 值
+								
+						内存管理系统/直接内存:
+							Dirct Memory(直接内存)：Java NIO提供的内存管理方式，不经过JVM堆内存，由操作系统直接分配的内存区域
+										
+							创建直接内存：ByteBuffer directBuffer = ByteBuffer.allocateDirect(1024);
+							
+								
+						内存溢出：程序适用某一块内存区域时，存放数据占用内存大小超过虚拟机提供内存上限
+						补充：Method Area会出现内存溢出OutOfMemoryError						
+
+
+					Heap(堆)：JVM内存中最大的存储区域，存储所有对象和数组，垃圾回收的主要对象
+						Java语法查看堆内存：
+							Runtime.getRuntime().maxMemory();				查看堆中最大可用内存，默认系统内存1/4
+							Runtime.getRuntime().freeMemory();				查看堆中空闲内存
+							Runtime.getRuntime().totalMemory();				查看堆中总内存数，默认系统内存1/64
+							Runtime.getRuntime().usedMemory();				查看堆中已使用内存
+						
+						启动参数设置堆大小：
+							设置maxMemory最大内存：-Xmx值
+							设置totalMemory总内存：-Xms值			启动参数示例：-Xmx4g -Xms4g		
+
+						特点：
+							1.所有Java对象和数组都在堆上分配内存
+							2.堆是内存共享的，所有线程都可以访问堆中对象
+							3.垃圾回收器(GC)负责清理堆中不再使用的对象
+
+						堆内存分类：
+							年轻代：存储新创建对象和生命周期较短的对象，一般占据堆1/3内存空间
+								Eden区：创建一个新对象，首先被分配到Eden区，Eden区内存不够触发MinorGC,
+								From Survivor区：对象在Eden区垃圾回收后存活使用标记-复制算法复制到From Survivor
+								To Survivor区：对象在From Survivor区垃圾回收后存活使用标记-复制算法复制到To Survivor
+
+								补充:To Survivor区存活对象复制到From Survivor，To Survivor区与From Survivor区互换
+								
+							老年代：存储程序中生命周期长的对象(新生代中经过多次GC仍然存活的对象/新生代中大对象)
+								
+						内存溢出：程序适用某一块内存区域时，存放数据占用内存大小超过虚拟机提供内存上限
+						补充：Heap会出现内存溢出OutOfMemoryError
+
+				线程私有区：
+					程序计数器(PC Register)：PC寄存器，当前线程执行Java方法时，记录当前线程所执行的字节码指令的地址
+						特点：
+							1.每个线程都有一独立程序计数器
+							2.PC Register帮助JVM在多线程环境中进行线程切换，每个线程都能独立执行
+							3.若当前线程执行本地方法(Native修饰的C++方法),程序计数器值未定义
+
+						内存溢出：程序适用某一块内存区域时，存放数据占用内存大小超过虚拟机提供内存上限
+						补充：PC Register不会出现内存溢出(程序计数器只存储一固定长度内存地址)	
+					
+
+					虚拟机栈(JVM Stacks)：存储Java方法局部变量，方法调用信息，方法执行时中间数据等
+						栈：先进后出
+
+						特点：
+							1.每个线程方法调用时创建虚拟机栈生成栈帧,栈帧包含(局部变量表/操作数栈/动态链接/方法返回地址信息)
+							2.每个栈由多个栈帧组成，对应每次方法调用时所占用内存
+							3.每个线程只能有一个活动栈帧，对应当前正在执行方法
+							4.线程方法执行完毕，栈帧弹出，占用内存释放
+
+						栈帧组成：
+							局部变量表：存储方法参数/方法内部定义局部变量/实例方法this对象
+							操作数栈：虚拟机执行指令过程中存放临时数据区域，存储操作指令输入和输出参数
+							帧数据：存储动态链接(编号到运行时常量池内存地址映射)、方法出口地址、异常表(代码中异常处理信息)
+
+						内存溢出：程序适用某一块内存区域时，存放数据占用内存大小超过虚拟机提供内存上限
+						补充：JVM Stacks会出现内存溢出，栈大小取决于操作系统和计算机体系结构(默认大小)
+								
+
+					本地方法栈(Native Method Stacks)：存储本地方法(C/C++语言编写)调用和执行信息
+						栈：先进后出
+
+						特点：
+							每个线程方法调用时创建本地方法栈生成栈帧,栈帧包含(Native方法局部变量/操作数栈/方法出口等信息)
+							本地方法栈存储C/C++语言编写的Native Method
+
+		JVM执行引擎：		作用：将字节码指令解释/编译为对应平台上本地机器指令
+			解释器(Interceptor)：读取字节码执行指令					
+
+			JIT即时编译器(JIT Compiler)：		主要介绍HotSpot中JIT
+				JIT Compiler：动态编译器，在程序运行时将字节码编译为本地机器码同时进行优化保存在内存中			热点代码：程序运行过程中频繁执行的代码
+
+				特点：
+					即时编译：JIT编译器在程序运行时动态编译字节码
+					优化：JIT编译器将字节码转化为机器码，还进行多种优化(方法内联/逃逸分析/锁优化)
+					热点代码识别：JIT编译器选择频繁执行代码进行编译
+					
+				JIT编译器类型：
+					HotSpot：
+						C1编译器：客户端编译器，轻量级JIT编译器，适合优化执行时间较短代码
+						C2编译器：服务器编译器，高效JIT编译器，适合优化长期执行代码
+						
+					GraalJIT：高效JIT编译器，支持多种编程语言，提供更高性能
+
+				代码优化技术：
+					方法内联：方法体中字节码指令直接复制到调用方字节码指令中						作用：减少方法调用开销，提高程序执行效率
+					逃逸分析：分析对象作用域，若对象作用域仅限于当前方法，对象称为"未逃逸"对象，JIT将对象分配在栈上	作用：减少内存分配和垃圾回收开销
+					...
+				
+			
+			垃圾回收机制(GC)-类加载机制(卸载阶段)：
+				垃圾回收机制目的：
+					程序员不需要显示分配和释放内存，GC负责回收不再使用的对象
+					通过回收不再使用的对象，GC防止内存泄漏，确保程序稳定运行
+
+				相关概念：
+					垃圾：程序中没有任何指针指向的对象
+					垃圾回收：垃圾回收器回收不再使用的对象所占用内存空间，目的是避免内存泄漏，主要对堆上内存进行回收
+					内存泄漏：某些对象被分配内存，但在不需要这些对象时，仍然被不必要的引用所占用，无法被垃圾回收器回收导致内存空间无法释放。
+					内存溢出：随着程序运行，应用程序内存使用不断增加，导致内存耗尽或程序奔溃，无法继续分配内存
+					垃圾回收器：自动管理内存机制，定期回收不再使用对象释放内存
+					引用：对象在内存中地址/指向该对象的指针
+								    
+			*****	判断对象是否垃圾/可回收方法：
+					判断对象是否可回收：判断对象是否被引用	，对象被引用 -> 对象在使用，不允许被回收			
+				
+					方法：
+						引用计数算法：
+							为每个对象创建一引用计数器，当对象被引用时加1，取消引用时减1，对象引用计数为0时，该对象被回收
+						
+							优点：	实现简单，垃圾对象便于辨别
+								判定效率高，回收没有延迟性
+
+							缺点：	需要单独字段存储计数器，增加存储空间开销
+								每次引用和取消引用需要更新维护计数器，增加时间开销
+								存在循环引用问题(致命缺陷，Java虚拟机不使用引用计数器根本原因)，对象无法回收		循环引用：A引用B，B引用A							
+						
+						可达性分析算法(Java虚拟机使用方案)：	
+							通过从一组"根"对象(GCRoot)开始，沿着对象引用链递归搜索所有可达对象。无法从根对象访问到的对象是不可达的，可以被垃圾回收
+
+							"根"对象：
+								虚拟机栈(栈帧中局部变量)
+								方法区静态引用：静态字段指向对象
+								运行时常量池中常量(String或Class类型)
+								本地方法栈引用：本地方法(JNI)持有引用
+								活动线程Thread对象
+					
+			*****	Java对象引用类型：
+					强引用(StrongReference)：对象被强引用引用时，垃圾回收器不会回收该对象	
+					软引用(SoftReference)：系统内存充足时，垃圾回收器不会回收软引用指向对象；系统内存不足，垃圾回收器回收软引用指向对象		实现：java.lang.ref.SoftReference
+					弱引用(WeakReference)：无论系统内存是否足够，都会在下次垃圾回收时被回收，主要在ThreadLocal中使用				实现：java.lang.ref.WeakReference
+					虚引用(PhantomReference)：不能通过虚引用对象访问对象，对象被垃圾回收器回收时可以接收到系统通知				实现：java.lang.ref.PhantomReference
+					终结器引用(Finalizer Reference)：
+						对象需要被回收时，终结器引用关联对象放在Finalizer类引用队列中，由FinalizerThread线程从队列中获取对象，执行finalize()方法回收
+			
+			*****	垃圾回收算法：
+					标记-清除算法(堆内存老年代垃圾回收):
+						核心思想(双阶段)： 
+							1.标记阶段：对所有存活对象进行标记(可达性标记算法判断对象是否可回收)
+							2.清除阶段：删除内存中没有被标记(非存活对象)
+
+						优缺点：
+							优点：	实现简单，不需要额外内存空间
+
+							缺点：
+								内存碎片问题(清除阶段可以回收不可达对象，内存没有整理剩余内存会变零散，导致堆中出现大量小空闲区域)
+								由于内存碎片问题，垃圾回收器在垃圾回收后会执行内存压缩
+				
+					标记-复制算法(堆内存年轻代垃圾回收)：
+						核心思想(双阶段)：
+							1.准备两块空间From Survivor和To Survivor，每次对象分配只能使用其中一块空间
+							2.垃圾回收GC阶段，将From Survivor区存活对象复制到To Survivor空间
+						
+							From Survivor区：对象在Eden区垃圾回收后存活使用标记-复制算法复制到From Survivor
+							To Survivor区：对象在From Survivor区垃圾回收后存活使用标记-复制算法复制到To Survivor
+
+						优缺点：
+							优点：	避免内存碎片(将所有存活对象复制到新区域，原区域会被完全清空)
+								标记-复制算法效率相对较高(只需要遍历存活对象并复制到目标区域)
+
+							缺点：	内存使用率低(From Survivor区和To Survivor区只能使用其中一块空间)
+							
+					标记-整理算法(堆内存老年代垃圾回收)：
+						核心思想(双阶段)：
+							1.标记阶段：将所有存活对象进行标记(可达性标记算法判断对象是否回收)
+							2.整理阶段：将存活对象移动到堆一段，清理存活对象内存空间
+
+						优缺点：
+							优点：	内存使用率高(整个内存都可使用)
+								避免内存碎片(整理阶段对象往内存一侧移动，剩余空间都是有效空间)
+				
+							缺点：	整理阶段效率不高
+						
+					分代GC算法：
+						分代垃圾回收划分内存区域：年轻代 + 老年代
+							年轻代：存储新创建对象和生命周期较短的对象
+								Eden区：创建一个新对象，首先被分配到Eden区，Eden区内存不够触发MinorGC,
+								From Survivor区：对象在Eden区垃圾回收后存活使用标记-复制算法复制到From Survivor
+								To Survivor区：对象在From Survivor区垃圾回收后存活使用标记-复制算法复制到To Survivor
+
+							老年代：存储程序中生命周期长的对象(新生代中经过多次GC仍然存活的对象/新生代中大对象)
+
+						核心思想：
+							1.新创建对象分配到Eden区，Eden区满新创建对象无法放入触发年轻代GC(Minor GC)，存活对象复制到From Survivor区
+							2.Minor GC将Eden和From Survivor中需要回收的对象回收，将没有回收的对象存入To Survivor中(交替使用)
+							3.对象在年轻代经理多次Minor GC仍然存活，对象晋升至老年代
+							4.老年代空间不足以存放新晋升对象，触发Full GC回收年轻代和老年代所有垃圾对象
+							5.若Full GC无法回收老年代对象，年轻代对象继续存入老年代，抛出OutOfMemory异常	
+					
+				垃圾回收算法评价标准(补充)：
+					吞吐量：CPU执行用户代码时间与CPU总执行时间比值。吞吐量数值越高，垃圾回收效率越高			吞吐量 = 执行用户代码时间/(执行用户代码时间 + GC时间)	
+					最大暂停时间STW：所有垃圾回收过程中STW时间最大值。最大暂停时间越短，用户使用系统时受到影响越小
+					堆使用效率：不同垃圾回收算法，对堆内存使用方式不同
+	
+				常见垃圾回收器：
+					Serial GC(串行垃圾回收器)：使用单线程串行垃圾回收，进行垃圾回收时暂停所有应用程序
+						Serial(年轻代)：			算法：标记-复制算法
+							优点：单CPU处理器下吞吐量出色
+							缺点：多CPU下吞吐量不如其他垃圾回收处理器，堆偏大让用户线程长时间处于等待
+							
+						Serial Old(老年代)：		算法：标记-整理算法
+							优点：单CPU处理器下吞吐量出色
+							缺点：多CPU下吞吐量不如其他垃圾回收处理器，堆偏大让用户线程长时间处于等待
+
+							参数：-XX:+UseSerialGC			启动设置串行垃圾回收器
+
+					Parallel GC(并行垃圾回收器)：使用多线程并行垃圾回收
+						Parallel Scavenge(年轻代)：	算法：标记-复制算法
+							优点：吞吐量高，具有自适应调节策略(虚拟机动态调整堆参数)
+							缺点：不能保证单次停顿时间
+
+							参数：-XX:+UseParallelGC			启动设置Parallel Scavenge垃圾回收器
+							参数：-XX:ParallelGCThreads=16		启动设置并行回收器线程数
+							参数：-XX:UseAdaptiveSizePolicy		启动开启Parallel Scavenge自适应调节策略
+						
+						Parallel Old(老年代)：		算法：标记-整理算法
+							优点：并发收集，多核CPU效率较高
+							缺点：暂停时间比较长
+							
+							参数：-XX:+UseParallelOldGC		启动设置Parallel Old垃圾回收器
+							参数：-XX:ParallelGCThreads=16		启动设置并行回收器线程数
+					
+					CMS GC(并发标记清除垃圾回收器)：多线程并发垃圾垃圾回收
+						ParNew(年轻代):			算法：标记-复制算法
+							优点：多CPU处理器下停顿时间较短
+							缺点：吞吐量和停顿时间不如G1，JDK9之后不建议使用
+
+							参数：-XX:+UseParNewGC			启动设置ParNew垃圾回收器
+	
+						CMS(老年代)：			算法：标记-清除算法
+							优点：大幅度缩短垃圾收集时用户线程停顿时间，垃圾回收线程用户线程并发执行
+							缺点：内存碎片问题/浮动垃圾问题
+						
+							参数：-XX:+UseConcMarkSweepGC		启动设置CMS垃圾回收器
+								
+							CMS垃圾回收步骤：
+								初始标记：暂停所有用户线程(仅标记除GC Roots直接关联对象，STW暂停时间短)
+								并发标记：从 GC Roots"根"对象遍历整个对象链，耗时长，GC线程与用户线程并发执行(无STW)
+								重新标记：并发标记阶段用户线程也在执行，修正因用户线程继续运行导致标记发生变动的对象标记记录(多个GC线程STW进行)
+								并发清除：多GC线程并发清理标记阶段被标记的对象，释放内存
+								并发重置：多个GC线程并发将存活对象对象标记移除
+
+					
+					G1 GC(G1垃圾回收器)：将内存划分为多个区(Region)，根据每个区域包含垃圾大小评估回收优先顺序
+						划分区域：Eden/Survivor/Old
+
+						G1回收器原理：
+							1.新创建对象存储在Eden区，G1判断年轻代不足(max：60%)，无法分配对象时执行Young GC
+							2.标记除Eden和Survivor区中存活对象
+							3.根据配置STW选择某些区域将存活对象复制到新Survivor区中(年龄+1)，清空区域
+							4.后续Young GC重复操作，将Survivor区中存活对象搬运到另一个Survivor区中(年龄+1)
+							5.当存活对象年龄到达阈值(15),存入老年代
+							6.部分对象大小超过Region一半，直接放入老年代(Humongous区)
+							7.多次回收，出现很多Old老年代，总堆占有率达到阈值(45%)时，触发混合回收Mixed GC，回收所有年轻代和部分老年代对象及大对象区							
+
+						G1垃圾回收方式：						
+							年轻代回收(回收年轻代)：Minor GC		
+							老年代回收(回收老年代)：Old Generation GC
+							混合回收(回收所有年轻代和部分老年代及大对象区):Mixed GC
+
+						G1垃圾回收步骤：
+							初始标记：仅标记GC Roots直接关联对象，STW暂停时间较短
+							并发标记：从GC Roots"根"对象遍历整个对象链，耗时长，GC线程与用户线程并发执行(无STW)
+							最终标记：修正在并发标记阶段因用户线程继续运行导致标记发生变动的对象标记记录(多个GC线程STW执行)
+							筛选回收：将各region按回收成本进行排序，按用户期望停顿时间指定回收计划(停止用户线程，STW)
+
+						优缺点：
+							优点：	用户线程与GC线程并发执行
+								分代收集，采用不同算法处理不同region
+								标记-整理算法不产生内存碎片
+							
+							缺点：	实现复杂，需要较多配置参数
+
+						参数：
+							-XX:+UseG1GC				启动设置G1垃圾回收器
+							-XX:G1HeapRegionSize=			设置region区大小，值为2的幂
+							-XX:MaxGCPauseMillis=			设置期望达到最大GC停顿时间指标
+							-XX:ParallelGCThread=			设置STW时GC线程数
+							-XX:ConcGCThreads=			设置并发标记线程数						
+					
+					Shenandoah GC：低延迟垃圾回收器，在大堆(大内存)或多核处理器情况，与应用线程并发执行实现
+						参数：-XX:+UseShenandoahGC			启动设置Shenandoah垃圾回收器
+
+						Shenandoah GC回收步骤：
+							1.初始阶段：仅标记GC Roots直接关联对象，STW暂停时间较短
+							2.并发阶段：从GC Roots"根"对象遍历整个对象链，耗时长，GC线程与用户线程并发执行(无STW)
+							3.最终阶段，修正并发标记阶段因用户线程继续运行导致标记发生变动对象标记记录(多个GC线程STW执行)
+							4.转移阶段：将对象转移到新区域
+							5.并发重映射：将指向老对象引用更改为新对象
+					
+					ZGC：低延迟垃圾回收器，在大堆内存上工作
+						参数：-XX:+UseZGC -XX:+ZGenerational		启动设置ZGC垃圾回收器
+
+						ZGC回收步骤：
+							1.初始阶段：仅标记GC Roots直接关联对象，STW暂停时间较短
+							2.并发阶段：从GC Roots"根"对象遍历整个对象链，耗时长，GC线程与用户线程并发执行(无STW)
+							3.最终阶段，修正并发标记阶段因用户线程继续运行导致标记发生变动对象标记记录(多个GC线程STW执行)
+							4.清理阶段：多GC线程并发清理标记阶段被标记的对象，释放内存
+							5.转移：将存活对象复制到别的区域
+
+
+*****	JVM常用启动调优参数：
+	1	内存调优：
+			堆内存设置：
+				-Xms：设置JVM初始堆大小			
+				-Xmx：设置JVM最大堆大小
+				-Xmn：设置新生代大小								默认：新生代:老年代 = 1:2
+				-Xss：设置每个线程栈大小(不建议手动设置)							默认：1M
+				-XX:MaxMetaspaceSize：设置原空间最大大小							默认：堆外最大可用空间
+				-XX:MetaspaceSize：元空间大小到达阈值触发FULLGC
+				-XX:MaxDirectMemorySzie：设置直接内存空间大小
+
+			内存调优相关命令：
+				jmap -heap <PID>：查看堆内存信息
+	
+	2	GC调优：
+			GC调优核心指标：
+				吞吐量：CPU执行用户代码时间与CPU总执行时间比值。吞吐量数值越高，垃圾回收效率越高
+				延迟：用户发起请求到响应其中经历时间								延迟 = GC延迟(STW) + 业务执行时间
+				内存使用量：Java应用占用系统内存最大值。满足吞吐量和延迟指标前提，内存使用量越小越好
+				
+			设置垃圾回收器：
+				-XX:+UseSerialGC：使用串行垃圾回收器							使用：-XX:+UseSerialGC:+UseSerialOldGC		
+				-XX:+UserParallelGC：使用并行垃圾回收器							使用：-XX:+UserParallelGC:+UseParallelOldGC
+				-XX:+UseParNewGC：年轻代使用ParNew垃圾回收器						使用：-XX:+UseParNewGC:+UserConcMarkSweepGC
+				-XX:+UseParallelOldGC：老年代使用Parallel Old垃圾回收器
+				-XX:+UseSerialOldGC：老年代使用Serial Old垃圾回收器
+				-XX:+UserConcMarkSweepGC：使用CMS垃圾回收器						
+				-XX:+UserG1GC：使用G1垃圾回收器									
+
+			垃圾回收相关参数：
+				-XX:+PrintGCDetails -Xloggc:文件名：将GC日志保存到指定文件名文件中				JDK8及之前打印GC日志
+				-Xlog:gc*:file=文件路径									JDK9及之后打印GC日志
+				-XX:ParallelGCThreads=16：设置并行执行GC线程数
+				-XX:NewRatio：设置新生代和老年代比例
+				-XX:SurvivorRatio：设置Eden区与Survivor区比例(不建议手动调整)				默认：8				
+				-XX:PretenureSizeThrershold：设置对象进入老年代阈值,大于该值对象直接在老年代分配
+				-XX:MaxTenuringThreshold：设置对象进入老年代年龄阈值(年轻代最大年龄)
+				-XX:+DisableExplcitGC：禁止使用System.gc()方法调用
+
+				-XX:CMSInitiatingOccupancyFraction=值：老年代大小到达阈值，自动进行CMS垃圾回收			JDK默认：-1
+				-XX:+UseCMSInitiatingOccupancyOnly：开启-XX:CMSInitiatingOccupancyFraction=值
+
+				-XX:G1HeapRegionSize=值：设置region区大小，值为2的幂
+				-XX:MaxGCPauseMillis=值：设置期望达到最大GC停顿时间指标
+				-XX:ParallelGCThread=值：设置STW时GC线程数
+				-XX:ConcGCThreads=值：设置并发标记线程数
+
+			GC调优相关命令：
+				jstat -gc <PID> 5000：每5秒打印一次gc日志
+				
+	3	性能监控：
+			性能调优解决问题：
+				1.解决CPU占用率(CPU：99%)高
+				2.请求单个服务处理时间过长
+				3.程序启动之后运行正常，但在运行一段时间后无法正常处理任何请求
+			
+			性能调优相关参数：
+				-XX:+HeapDumpOnOutOfMemoryError：OOM(OutofMemoryError)时自动生成hprof内存快照文件
+				-XX:+HeapDumpPath：指定hprof文件输出路径
+				-XX:+PrintGCDetails：输出GC详细日志
+				-XX:+PrintGCTimeStamps：输出GC发生时间戳
+
+			导出内存快照命令：
+				heapdump --live 文件路径：导出内存快照
+				jump -dump:live,format=b,file=<文件路径> <进程ID>：导出内存快照
+
+	面试题：
+		产生内存泄漏原因：
+			1.Java代码内存泄漏(次要)
+				错误重写equals()和hashCode()导致内存泄漏						解决方法：争取重写equals()和hashCode()方法
+				内部类引用外部类(非静态内部类和匿名内部类错误使用导致内存泄漏)				解决方法：使用static修饰内部类
+				ThreadLocal线程池使用(线程池中线程不被回收导致ThreadLocal内存泄露)			解决方法：调用ThreadLocal中remove()方法清理对象
+				通过静态字段保存对象								解决方法：使用单例模式，尽量使用懒加载/缓存设置过期时间定期失效
+				连接和流资源占用内存使用完没有调用close()方法正常关闭导致内存溢出				解决方法：在finally块关闭不再使用的资源
+
+			2.并发请求问题(主要)：
+				并发请求问题：用户通过并发请求向Java应用获取数据，Java应用将数据返回并将数据在内存释放。由于用户并发请求量较大
+						导致大量数据存储在内存，超过内存上限，导致内存溢出
+
+				解决方法：
+					1.Jemter并发线程检测接口是否发生内存泄漏
+					2.使用JVM调优性能调优参数-XX:+HeapDumpOnOutOfMemoryError生成内存快照hprof文件
+					3.使用MAT打开hprof文件，选择内存泄漏检测功能，根据内存快照保存数据分析内存泄漏接口
+					4.在开发环境中重现问题，分析代码问题产生原因
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
