@@ -1,0 +1,1267 @@
+JUC编程/Java并发：			JUC：java.util.concurrent包简称
+	基本概念：
+		进程：正在运行的程序，系统资源分配的单位							例：正在运行的IDEA
+		线程：CPU调度单位，进程中的一条执行路径，一进程可分为一到多个线程						
+			单线程：一个进程中只有一条执行路径			例：车太多，一条道路容易造成阻塞
+				a.select()		
+				b.select()		单线程：a查询完成之后开始b查询
+
+			多进程：一个进程有多条执行路径			例：车太多，拓宽多条道路不容易造成阻塞
+				a.select()		
+				b.select()		多线程:	a查询 -> 开始查询	a/b查询异步执行
+						     		b查询 -> 开始查询
+		IPC：同一台计算机的进程通信
+		并行(parallel)：系统在同一时间点同时执行多个任务						多核(多CPU) -> 多线程(多核CPU每个CPU可以调度运行线程，线程并行)
+		并发(concurrent)：同一时间段内管理多个任务能力，多个任务可能在同一时间内启动，不一定同时执行
+		异步：进程(客户端)执行某请求时，请求不需要等待结果返回，继续执行操作
+		同步：进程(客户端)执行某请求时，请求需要等待结果返回，直到收到(服务端)返回信息才继续执行
+		多线程：多个线程在同一进程内异步调用并发执行，共享进程资源					单核CPU(单线程)串行执行/多核CPU(多线程)并行执行
+		互斥锁：JUC编程中的同步机制，同一时刻只有一个线程可以访问共享资源
+
+	线程：CPU调度单位，进程中的一条执行路径，一进程可分为一到多个线程
+		创建运行线程：
+			1.构造方法(Thread构造方法 + 匿名内部类)：			
+			1.1	Thread thread = new Thread("线程名"){				构造方法创建Thread实例并指定线程名
+					@Override
+					public void run(){			
+						...						线程具体执行任务
+					}
+				}
+				thread.start();							启动线程
+
+			1.2	Thread thread = new Thread(new Runable(){			构造方法创建Thread实例并指定线程名
+					@Override
+					public void run(){
+						...						线程具体执行任务
+					}
+				}，"线程名")					
+				thread.start();							启动线程
+	
+			2.使用Runable配合Thread(实际开发常用)：
+			2.1	public class PatentInfo implements Runable{			PatentInfo类实现Runable接口
+					@Override
+					public void run(){					重写run()方法
+						...						线程具体执行任务
+					}
+
+					public static void main(String[] args){
+						Runable task = new Runable();			创建Runable对象，表示线程任务
+						Thead thread = new Thread(task，"线程名");	构造方法创建Thread实例并指定线程名
+						thread.start(thread);				启动线程
+						
+					}
+				}
+			
+			2.2	public class PatentInfo{
+					Runable task = new Runable(){				匿名内部类创建Runable对象，表示线程任务
+						@Override				
+						public void run(){
+							...					线程具体执行任务
+						}
+					}
+					Thread thred = new Thread(task，"线程名");		构造方法创建Thread实例并指定线程名
+					thread.start();						启动线程
+				}
+
+			3.Lambda表达式创建线程：		
+				原因：Runable接口只有抽象方法run()是函数是接口@FunctionalInterface
+			
+				public static void main(String[] args){
+					Runable r = () -> {					()：表示无参，直接输出代码块，创建Runable对象表示线程任务
+						log.debug("running");							
+					}
+					Thread thread = new Thread(r,"线程名")；			构造方法创建线程
+					thread.start();						启动线程
+						
+				}
+				
+
+			简写：	public static void main(String[] args){
+					Thread thread = new Thread(() -> log.debug("running"),"线程名")；
+					thread.start();
+				}
+				
+			4.FutureTask配合Thread				
+				FutureTask可以接收Callable类型线程任务执行结果					原因：FutureTask实现RunableFuture接口继承Runable接口
+				
+			4.1	public class PatentInfo implements Callable<返回值类型>{				PatentInfo实现Callable接口
+					@Override
+					public 返回值类型 call() throws Exception{
+						...								线程具体执行任务
+					}
+
+					public static void main(String[] args){
+						Callable<返回值类型> callable = new PatentInfo();			
+						FutureTask<> futureTask = new FutureTask<>(callable);		创建FutureTask对象表示线程任务传入Callable类型参数
+						try{
+							futureTask.get();					获取线程任务执行结果
+						}catch(Exception e){
+							e.printStackTrace();
+						}
+						Thread thread = new Thread(futureTask);				传入FutureTask创建线程
+						thread.start();							启动线程
+					}
+				}
+
+			4.2	public static void main(String[] args){
+					FutureTask<返回值类型> futureTask = new FutureTask(new Callable<返回值类型>(){
+						@Override
+						public 返回值类型 call(){
+							...							线程具体执行任务
+						}
+					})；
+					Thread thread = new Thread(futureTask);					创建线程
+					thread.start();								启动线程
+				}
+
+			5.使用线程池创建线程
+				public class PatentInfo implements Runable{		
+
+					@Override
+					public void run(){			
+						支线程逻辑
+					}
+				}
+
+				public static void main(String[] args){
+					ExecutorService service = Executors.newFixedThreadPool(10);		创建可以同时执行10个任务的线程池
+					service.execute(new PatentInfo());					Runable接口实现类对象作参数，提交任务执行指定线程操作
+					service.shutdown();							关闭线程池
+				}
+				
+			
+		线程/进程相关命令：		
+			Windows系统查看线程/进程：
+				底部菜单栏右键 -> 任务管理器 -> 进程 -> 查看线程数
+				win + R -> cmd打开控制台 -> tasklist | findstr 关键字：查看线程数
+				win + R -> cmd打开控制台 -> taskkill /F /PID 进程编号		
+				jps：查看所有Java进程
+				jstack <PID>：查看某进程(PID)所有线程状态(一刻)
+				jconsole：查看某个Java进程中线程运行情况
+			
+			Linux系统查看线程/进程：
+				ps -ef：查看所有线程信息
+				ps -fe：查看所有进程信息
+				
+				kill 进程：杀死进程
+				top -H -p 进程号：实时展示进程中所有线程
+
+		线程常见方法：
+			start()				启动线程，调用当前线程run()方法				线程状态：NEW -> RUNABLE，只能调用一次
+			run()				启动线程，执行内部逻辑					线程状态：RUNABLE
+			join()				当前线程暂停，等待被调用线程执行结束				线程状态：RUNABLE -> WAITING
+			join(long n)			当前线程暂停，等待被调用线程执行结束(等待n毫秒)			线程状态：RUNABLE -> TIMED_WAITING
+			getId()				获取线程ID(id唯一)
+			getName()			获取线程名
+			setName(String s)		设置线程名
+			getPriority()			获取线程优先级						线程优先级：1-10	1:MIN_PRIORITY 	10:MAX_PRIORITY  5：NORM_PROORITY
+			setPriority(int n)		修改线程优先级						线程优先级高优先调度该线程
+			getState()			获取线程状态						
+			isAlive()			线程是否存活
+			interrupted()			打断睡眠中线程						线程状态：WAITING -> RUNABLE
+			isInterrupted()			线程是否被打断						
+			currentThread()			获取当前线程
+			ThreadUtil.sleep(long n)	使当前线程暂停执行指定n毫秒					线程状态：RUNABLE -> TIMED_WAITING			
+			activeCount()			统计当前有效线程数量
+			wait()				挂起，当前线程置于等待状态，释放锁，直到被其他线程唤醒		线程状态：RUNABLE -> WAITING
+			wait(long timeout)		等待时间达到timeoput指定值线程自动唤醒			线程状态：RUNABLE -> TIMED_WAITING
+			notify()			唤醒被挂起的单个线程					线程状态：WAITING/TIMED_WAITING -> RUNABLE(竞争锁成功)/WAITING -> BLOCKED(竞争锁失败)
+			notifyAll()			唤醒所有被挂起的线程 
+			thread.setDaemon(true)		将thread线程设置为守护线程
+			LockSupport.park()		暂停当前线程						线程状态：RUNABLE -> WAITING				
+			LockSupport.unpark(线程对象)	恢复某线程运行						线程状态：WAITING/TIMED_WAITING -> RUNABLE
+				
+			start()与run()区别：
+				start()：启动新线程并调度run()方法执行	
+				run()：不会再新线程中执行，作为普通方法在当前线程执行
+
+			sleep()/wait()区别：
+				sleep()：睡眠，线程不会释放锁，sleep时间到达线程进入就绪状态					RUNNABLE(运行) -> TIMED_WAITING(超时等待)
+					  其他线程可使用interrupt()打断sleep中的线程，报错：InterruptedException
+					  sleep不需要与synchronized配合使用
+					  Thread类静态方法
+
+				wait()： 挂起，释放线程得到的所有资源和锁使用权，notify()唤醒重新执行				RUNNING(运行) -> RUNNABLE(就绪)
+					 其他线程可使用interrupt()打断sleep中的线程，报错：InterruptedException
+					 wait需要与synchronized配合使用
+					 Object类方法
+
+			守护线程(辅助用户线程运行)：	
+				概念：在后台运行的线程，为其他线程提供服务或进行某些后台任务
+
+				特点：	所有非守护线程(用户线程)执行结束时，守护线程强制结束
+					守护线程优先级较低，守护线程执行不会影响程序主要流程，通常用于辅助工作
+					守护线程用于执行一些后台任务，如：垃圾回收(gc线程)、日志记录、定时任务等
+
+				设置守护线程:
+					Thread thread = new Thread("t1"){
+						@Override
+						public void run(){
+							...					线程任务具体执行逻辑
+						}
+					}
+					thread.setDaemon(true)；					将线程设置为守护线程
+					thread.start();						运行线程
+
+		过时方法：
+			stop()				停止线程运行
+			suspend()			挂起(暂停)线程运行
+			resume()			恢复线程运行
+					
+		线程生命周期：
+			线程状态：
+				NEW			创建：线程被创建
+				RUNNING			就绪：线程等待操作系统调度(等待获得CPU资源)
+				RUNNABLE		运行：线程正在执行，正在使用CPU时间片
+				BLOCKED			阻塞：线程因某些原因(sleep()/wait()/join())不能继续执行，直到资源可用
+				WAITING			等待：线程等待另一线程执行完成 
+				TIMED_WAITING		超时等待：线程等待一段时间不能继续执行，直到资源可用
+				TERMINATED		终止：线程执行完成或异常终止
+
+			生命周期：
+			     			阻塞(sleep,wait,join，park)
+					
+			       			↓		   	↑
+		   		新建 ------> 	就绪 ------>	运行 ------> 	死亡结束	
+		       		new	→	start	 →	run  	→	terminated
+
+		线程调度策略：
+			分时调度模型：	所有线程轮流使用CPU的使用权，平均分配每个线程占用CPU的时间片
+			抢占式调度模型：	优先让优先级高的线程使用CPU，线程优先级相同，随机选择一个，优先级高的线程获取的CPU时间片相对多一点，机率高
+
+		线程通信(wait/notify原理)：
+			wait()				挂起，线程等待，释放锁，直到被其他线程唤醒
+			wait(long timeout)		挂起，线程等待时间达到timeout指定值线程自动唤醒
+			notify()			唤醒正在等待对象锁其中之一的线程
+			notifyAll()			唤醒所有正在等待对象锁的线程
+			
+			补充：wait()/notify()/notifyAll()是Object类方法
+	
+		多线程模式：
+			异步模式(生产者/消费者)：不需要产生结果和消费结果线程一一对应	
+				生产者/消费者角色：
+					生产者：生产线程 	-->  A线程  -->  生产数据
+					消费者：消费线程	-->  B线程  -->  消费数据
+					消息队列：平衡生产者和消费者线程资源，存在容量限制，满时不再加入数据，空时不再消耗数据
+
+				生产者/消费者模式：
+					A生产者将产品交给前台店员，B消费者从前台店员处取走商品
+					生产者：没有生产产品之前，通知消费者等待[wait()]；生产产品后，通知消费者消费[notify()]
+					消费者：消费之后，通知生产者已经结束消费[notify()]，需要生产新产品以供消费[wait()]			
+			
+		线程上下文切换原因：
+			1.线程CPU时间片用完
+			2.垃圾回收
+			3.运行优先级更高线程
+			4.线程调用sleep、yield、wait、join、park、synchronized、lock等方法
+
+		-----------------------------------------------------------------------------------------------------------------------------------------
+		线程安全：
+			相关概念：
+				线程安全：同一时间内只有一个线程能访问的资源
+				临界区：一个代码块内存在对共享资源的多线程读写操作
+				竞态条件：多线程在临界区内执行，由于代码执行序列不同导致结果无法预测
+
+			线程安全问题标准：
+				1.是否有多线程
+				2.是否有共享线程
+				3.是否有多条语句操作共享数据			三者皆满足即线程不安全
+				
+			线程安全类：
+				String 					面试题(补充)：
+				Integer						问：	String类不可变性是如何实现的？
+				StringBuffer					答：	String类被声明为final，防止子类覆盖其行为
+				Random						  	String内部使用private final char[]存储字符，外部无法直接修改	
+				Vector							String类没有提供任何修改其内容方法
+				Hashtable
+				java.util.concurrent包下的类			注意：被final修饰不全是线程安全
+
+					补充：	String、Integer类都是不可变类，对象在创建之后值无法改变
+						不可变的对象一定是线程安全的，不需要采取任何线程安全保障措施
+
+		线程安全问题解决方案：
+			阻塞式解决方案：synchronized、Lock
+				synchronized：同一时刻线只有一个线程持有对象锁，独占资源
+					synchronized语法：
+						synchronized(对象){
+							多条语句操作共享数据代码(临界区)
+						}
+
+					synchronized修饰成员方法(对象锁)：
+						定义：	修饰符 static synchronized 返回值类型 方法名(方法参数){}
+						示例1：	public sychronized void test(){
+								方法体
+							}
+
+						示例2：	public void test(){					注意：示例1 <==> 示例2
+								synchronized (this){
+									方法体
+								}
+							}	
+
+					synchronized修饰静态方法(类锁)：
+						定义：	修饰符 static synchronized 返回值类型 方法名(方法参数){} 
+						示例1：	public synchronized static void test(){
+								方法体	
+							}
+
+						示例2：	public static void test(){
+								synchronized (类名.class){
+									方法体					注意：示例1 <==> 示例2	
+								}
+							}
+					
+				*****	synchronized底层原理(Monitor锁)：
+						Java对象头(Mark Word + Class Word)：
+							Mark Word：存储对象状态信息(哈希码、GC标记信息：分代年龄、锁相关信息)
+							Class Pointer：指向对象所属类元数据，帮助JVM确定对象类型
+
+						Monitor锁：		Monitor翻译：监视器，管程
+							每个Java对象都只关联一个Monitor锁，若使用synchronized给对象上锁，Java对象头中Mark Word就被设置指向Monitor指针
+								
+							synchronized Java对象 <==> Java对象头(Mark Word(设置指向Monitor对象指针) + Class Pointer)
+
+						原理：	每个对象都有一Monitor锁，当一线程访问同步代码块时，首先获得该对象Monitor锁
+							获得锁后，其他线程不能进入同步代码块中，其他线程被挂起，直到锁被释放
+
+					synchronized锁优化机制(jdk1.6)：
+						SynchronizedJDK1.6同步锁状态：无锁、偏向锁、轻量级锁、重量级锁
+						CAS操作：比较内存最终某值与预期值是否相等。相等，更新为新的值；不相等，不更新
+
+						偏向锁(自旋锁和偏量级锁前提)：
+							1.当一线程第一次获取锁时，JVM将线程ID设置到对象Mark Word头，JVM将对象锁标记为偏向该线程
+							2.同一个线程再次请求该对象锁，JVM认为该对象已经持有锁，不需要进行任何加锁操作
+							
+						轻量级锁：
+							1.每个对象在JVM内部有一Monitor锁(所标志)，初始状态下，锁标志为"无锁"状态
+							2.线程请求锁时，JVM首先检查该对象是否已被其他线程锁住，若是没有其他线程持有锁，线程占有锁
+							3.有其他线程自旋操作获取该锁对象，锁持有者(线程)将锁标志设置为"轻量级锁"状态
+							4.线程尝试通过CAS获得锁修改锁对象标志位		
+							5.若多线程长时间无法通过CAS获得锁(发生严重锁竞争)，"轻量级锁"升级为"重量级锁"
+							6.线程执行完临界区代码，释放锁，锁持有者(线程)将锁标志设置为"无锁"状态
+									
+							自旋：线程在小时间窗口内持续检查锁是否可用，尝试获取锁
+
+						锁膨胀：	无锁 -> 偏向锁 -> 轻量级锁 -> 重量级锁		随着线程竞争锁情况逐渐升级		
+
+						锁粗化：将多个连续的小范围的锁操作合并成一个较大的锁操作，减少加锁和解锁次数
+
+						锁消除：JIT(即时编译器)分析程序判断某对象是否线程共享。若某对象在多线程环境下私有，不需要对它加锁
+						
+						自旋锁：线程不会立即进入阻塞状态，循环检查锁是否可用。锁不可用，线程会持续"自旋"
+							自旋：线程在小时间窗口内持续检查锁是否可用，尝试获取锁
+						
+						适应性自旋锁：
+							1.线程在尝试获取锁时，不会一开始就进入固定循环，根据运行时条件调整自旋次数
+							2.若线程多次尝试自旋但未能成功获得锁，逐步减少自旋次数，最终转为阻塞等待
+							3.线程进入阻塞状态时，线程会被挂起，直到锁被释放且操作系统调度该线程继续执行
+				
+				
+				Lock：同一时刻只有一个线程对Lock对象加锁，独占资源
+					接口：java.util.concurrent.locks.Lock
+						实现类：ReentrantLock类
+						实现类：ReentrantReadWriteLock.ReadLock
+						实现类：ReentrantReadWritelock.WriteLock
+
+					ReentrantLock：
+						ReentrantLock语法：
+							private final ReentrantLock reentrantLock = new ReentrantLock();
+							reentrantLock.lock();							获得锁：reentrantLock.lock()
+							try{
+								多条语句操作共享数据代码(临界区)
+							}finally{
+								reentrantLock.unlock();						释放锁：reentrantLock.unlock()
+							}
+							
+						ReentrantLock特性：
+							可重入：同一个线程可以多次获取相同的锁不会造成死锁
+							可打断：等待锁时允许线程响应中断，抛出InterruptedException			打断锁：reentrantLock.lockInterruptibly()
+							定时锁：在指定时间内尝试获取锁，若在规定时间内没有获取到锁，返回false		定时锁：reentrantLock.tryLock(1000,TimeUnit.MILLISECONDS)
+							公平锁：线程按照请求锁顺序获取锁，避免"饥饿"现象				开启公平锁：ReentrantLock lock = new ReentrantLock(true)
+							非公平锁：线程不按照请求锁顺序获取锁，某些线程可能长时间获取不到锁			开启非公平锁：ReentrantLock lock = new ReentrantLock(false)
+
+						ReentrantLock常用方法：
+							reentrantLock.lock()						获得锁
+							reentrantLock.unlock()						释放锁
+							reentrantLock.lockInterruptibly()				打断锁
+							reentrantLock.tryLock(Long time,TimeUnit timeunit)		设置定时锁
+							private ReentrantLock lock = new ReentrantLock(true)		开启公平锁,默认非公平锁
+								
+						
+						ReentrantLock原理：AQS			JUC工具类处讲解
+							
+				读写锁：
+					ReentrantReadWriteLock：
+						基本概念：Java提供的读写锁，允许多个线程同时读取共享资源，写线程访问共享资源时，读线程和其他写线程被阻塞、、
+
+						构造方法：ReentrantReadWriteLock lock = new ReentrantReadWriteLock()；
+					
+						特性：
+							读写分离：读锁和写锁是分离的，读锁允许多个线程并发读取资源，写锁阻塞所有读锁和其他写锁
+							可重入：线程在持有读锁或写锁情况下，可再次获取相同锁
+							写锁优先：某些实现中写锁会被较高优先级，若有写贤臣给扽得改，读线程可能会被			
+
+						ReadLock：
+							构造方法：
+								ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+								Lock readLock = lock.readLock();
+
+							示例：
+								ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+								Lock readLock = lock.readLock();
+								readLock.lock();						获取读锁
+								try{
+									临界区代码
+								}finally{
+									readLock.unlock();					释放读锁	
+								}
+							
+						
+						WriteLock：
+							构造方法：
+								ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+								Lock writeLock = lock.writeLock();
+
+							示例：
+								ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+								Lock writeLock = lock.writeLock();
+								writeLock.lock();						获取写锁
+								try{
+									临界区代码					
+								}finally{
+									writeLock.unlock();					释放写锁
+								}
+
+						常用方法：
+							readLock()			获取读锁，多线程可以同时持有读锁，前提是任何线程不持有写锁
+							writeLock()			获取写锁，只有一个线程可持有写锁，写锁被持有时，其他任何线程不能获取读锁或写锁
+							isWriteLocked()			判断当前线程是否持有写锁
+							isReadLocked()			判断当前线程是否持有读锁
+							getReadLockCount()		获取当前持有读锁线程数量
+
+						应用(使用ReentrantReadWriteLock实现缓存)：
+							public class Cache<K,V>{
+								private final Map<K,V> cache = new HashMap<>();
+
+								private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+						
+								//获取缓存数据		
+								public V get(K key){
+									lock.readLock().lock();						获取读锁
+									try{
+										return cache.get(key);					缓存cache中获取数据
+									}finally{
+										lock.readLock().unlock();				释放读锁		
+									}
+								}
+								
+								//缓存更新数据
+								public void put(K key,V value){
+									lock.writeLock().lock();					获取写锁
+									try{
+										cache.put(key,value);					缓存cache中添加数据
+									}finally{
+										lock.writeLock().unlock();
+									}	
+								}
+
+								//删除缓存数据
+								public void remove(K key){
+									lock.writeLock().lock();					获取写锁
+									try{
+										chache.remove(key);					缓存cache中删除数据
+									}finally{
+										lock.writeLock().unlock();				释放写锁
+									}
+								}
+							}
+							
+							public static void main(String[] args){
+								Cache<String,String> cache = new Cache<>();
+								
+								Thread writeThread = new Thread(() -> {					writeThread执行缓存写操作
+									cache.put("key1"，"value1")；
+									cache.put("key2"，"value2")；								
+								});
+
+								Thread readThread = new Thread(() -> {					readThread执行缓存读操作
+									sout(cache.get("key1"))；
+								});
+
+								writeThread.start();
+								readThread.start();				
+							}
+						
+					StampedLock:		Java8引入高级并发工具，位于java.util.concurrent.locks包	
+						写锁：独占锁，获取写锁时，其他线程无法获取读锁和写锁
+						读锁：
+							悲观读锁：共享锁，多线程可同时获取读锁，获取读锁线程无法获取写锁
+							乐观读锁：不阻塞其他线程读写操作，不需要阻塞线程，验证时需要检查是否存在写操作冲突
+
+						构造方法：
+							private final StampedLock stampedLock = new StampedLock();
+
+						StampedLock主要方法：
+							writeLock()			获取写锁
+							readLock()			获取读锁
+							tryWriteLock()			尝试获取写锁，不阻塞当前线程
+							tryReadLock()			尝试获取读锁，不阻塞当前线程
+							unlockWrite()			释放写锁
+							unlockRead()			释放读锁
+							tryOptimisticRead()		尝试获取乐观读锁
+							validate(stamp)			戳校验，验证乐观读锁是否有效
+						
+						StampedLock使用：
+							Writelock：
+								long lockStamp = lock.writeLock();			
+								lockStamp.unlockWrite(lockStamp);
+								
+							ReadLock：
+								long lockStamp = lock.readLock();
+								lockStamp.unlockRead(lockStamp);
+
+							OptimisticRead：
+								long lockStamp = lock.tryOptimisticRead();
+								if(!lock.validat(lockStamp)){			不阻塞其他线程读写操作，验证加锁期间是否有写操作
+									加锁逻辑
+								}
+
+						StampedLock应用：
+							1.多线程读取缓存数据
+												
+			非阻塞式解决方案：原子变量(CAS + 原子操作处讲解)
+					
+						
+		线程活跃性：
+			多线程死锁：
+				基本概念：A使用B的资源才能运行，B锁住A的资源才能运行，A/B都对自己的资源上锁，A/B双方陷入等待/"死锁"
+
+				检测死锁：
+					方法1：使用jconsole工具					jconsole：查看进程中线程运行情况
+					方法2：使用jsp定位进程id，再使用jstack定位死锁		jsp：查看所有java进程
+
+				死锁现象-哲学家就餐问题：
+					5位哲学家，围坐在圆桌旁：
+						哲学家只做两件事(思考和吃饭)，思考一会吃饭，吃完饭接着思考
+						桌上共有5根筷子，每位哲学家左右手边各有1根筷子，筷子被身边人拿着，自己就得等待(自己等待他人释放资源)
+		
+			多线程活锁：A/B线程互相改变对方结束条件，导致A/B线程双方谁也无法结束
+
+			线程饥饿：一个线程由于优先级太低，始终得不到CPU调度执行，也不能结束
+
+				补充：ReentrantLock可解决线程死锁 + 线程饥饿
+
+
+并发模型：
+	共享模型：
+		JMM：					
+		*****	常见面试题：Java是如何解决并发问题的？		回答：JMM内存模型
+
+			JMM(Java内存模型)：
+				JMM三大概念：
+					可见性：一个线程修改了共享变量后，其他线程能够看到这个修改		作用：保证指令不会受到cpu缓存影响
+					原子性：一个操作不可分割，要么全部执行，要么全部不执行			作用：保证线程不会受到线程切换影响					
+					有序性：程序执行顺序按照代码先后顺序执行				作用：保证指令不会收到cpu指令并行优化影响
+
+					补充(指令重排序)：	
+						int i = 0；
+						boolean flag = false；
+						i = 1；				指令1			
+						flag = true；			指令2			指令重排序：指令1不一定在指令2前面执行
+
+						编译器重排序：编译器在不改变单线程程序语义前提下，重新安排语句执行顺序
+						处理器重排序：
+							指令级并行重排序。现代CPU采用指令级并行技术将多条指令重叠执行
+							内存系统重排序。处理器使用缓存和读/写缓冲区
+
+						解决指令重排序：volatile关键字、final关键字、sychronized关键字			在JMM关键字处进行介绍
+						
+				JMM内存：
+					主内存：存储所有共享变量地方。所有线程都可访问主内存中共享变量
+					工作内存：每个线程都有自己工作线程(缓存)，存储该线程私有共享变量副本
+				
+				JMM关键字：
+					volatile关键字(保证可见性 + 有序性)：
+						volatile声明变量(共享资源)易变，访问该变量时，必须从主内存中读取，而不是从工作内存读取，确保对该变量写操作其他线程可见
+			
+						示例：	volatile static boolean run = true；
+
+						volatile原理：内存屏障(保证可见性和有序性)			见内存屏障
+							内存屏障机制：用于控制内存操作顺序，强制执行特定指令顺序，避免指令重排序
+
+							内存屏障分类：
+								写屏障：
+									有序性：保证写操作顺序，先前写操作完成后，才允许后续写操作执行
+									可见性：保证在屏障之前，对共享变量的改动，同步到主存中
+
+								读屏障：
+									有序性：保证读操作顺序，先前读操作完成后，才允许后续读操作执行
+									可见性：保证在屏障之后，对共享变量的读取，加载的是贮存中最新数据
+
+								全屏障：屏障前的所有内存操作完成后，才执行屏障后的操作，过程强制执行
+							
+					final关键字(保证不可变)：
+						final使用：
+							final修饰类：
+								public final class ClassName{}					类被声明为final时，该类不能被继承，该类不能有子类	
+
+							final修饰方法：
+								public final void MethodName{}					方法被声明为final时，该类不能被子类重写，final方法可以被重载
+						
+							final修饰变量：
+								public final int x = 10；					变量被声明为final时，该变量只能被赋值一次，赋值之后不能再更改								
+							final修饰常量：
+								public static final String lockKey = "ossFileClientLock"	常量值在程序运行时不可改变
+						
+							final修饰参数：(了解，实际开发不推荐使用)					
+								public final void MethodName(final int nnumber){}		参数被声明为final时，参数在方法内部是一常量，不能被重新赋值
+
+						final相关概念：
+							宏变量 -> 变量满足以下三个条件：
+								1.被final修饰符修饰
+								2.在定义final变量时指定初始值
+								3.初始值在编译时能够唯一指定
+
+							宏替换：若一变量是宏变量，编译器会把程序所有用到该变量的地方直接替换成该变量的值
+							
+						final原理：
+							基本数据类型：final确保值在初始化后不能被改变。编译器和处理器遵守内存屏障规则，确保final变量在多线程环境下保持一致
+							引用类型：final确保引用本身不能被改变，对象内容可被改变
+							方法锁定：final方法不能被子类重写，在编译似进行静态绑定实现，避免运行时动态绑定开销
+							类继承限制：final类不能被继承，JVM加载类时检查该类是否为final修饰类，若是禁止任何继承
+							内存模型与重排序规则：编译器和处理器遵守两个重排序规则，确保对象应用为任意线程可见之前对象final域已经被正确初始化
+							内联优化：JVM的JIT编译器会对final方法进行内联优化，将方法体直接执行插入到调用点，减少方法调用开销
+
+					synchronized关键字(保证可见性 + 原子性 + 有序性)：			
+						synchronized示例：见阻塞式方案synchronized、Lock
+
+						synchronized原理：Happen-Before原则(保证可见性 + 原子性 + 有序性)：
+							Happen-Before先行发生原则：
+								单一线程原则(Signal Thread rule):在一个线程内，在程序前面的操作线先行发生于后面的操作
+								管程锁定原则(Monitor Lock rule):一个unlock操作先行发生于后面对同一个锁的lock操作
+								volatile变量原则(Volitile Variable rule):对一个volatile写操作线性发生于后面对该变量的读操作
+								线程启动原则(Thread Start Rule):Thread对象start()方法调用线性发生于此线程每一个动作
+								线程加入原则(Thread join Rule):Thread对象结束先行发生于join()方法返回
+								线程中断原则(Thread Interruption Rule):线程interrupt()方法调用先行发生于被中断线程代码检测到中断事件发生
+								对象终结规则(Finalizer Rule):对象初始化完成(构造函数执行结束)先行发生于它finalize()方法开始
+								传递性:若A操作做先行发生于操作B，操作B先行发生于操作C，那么操作A先行发生于操作C
+
+
+		CAS + 原子操作(无锁并发/无阻塞并发)：
+			CAS：原子指令，比较内存当前位置值是否与预期值是否相等。相等，更新为新值；不相等，不更新
+
+				CAS方式：乐观锁		synchronized：悲观锁
+				乐观锁：预期最好的情况，多个线程在访问同一个资源的时候，只是查看内容不会对资源造成修改
+				悲观锁：预期最坏的情况，多个线程总是要修改被锁住的内容
+			
+				CAS优缺点：
+					优点：	多线程操作数据线程安全
+						避免使用传统锁机制，提高程序并发性
+
+					缺点：	并发量较高，尝试更新某变量，CPU压力较大
+				
+				CAS底层原理(Unsafe类)：		了解，实际开发不推荐使用
+					Unsafe类：提供操作内存(直接访问系统内存资源/自主管理内存资源)、线程等不安全操作方法，使用不当引发严重问题
+
+					Unsafe构造方法：	Field field = Unsafe.class.getDeclaredField("字段名");		获取Unsafe类Field对象，尝试获取字段
+							field.setAccessiable(true);					允许访问私有字段			
+							Unsafe unsafe = (Unsafe) field.get(null);			field.get(null)获取字段值
+					Unsafe类：
+						内存操作：
+							allocateMemory(long size)				分配指定大小堆外内存
+							freeMemory(long address)				释放先前分配的堆外内存
+							getObject(Object o,long offset)				获取指定对象在内存中某字段值
+							putObject(Object o,long offset,Object x)		设置指定对象某字段值
+							getInt(Object o,long offset)				获取指定对象某整形字段值
+							putInt(Object o,long offset,int x)			设置指定对象某整形字段值
+							getLong(Object o,long offset)				获取指定对象长整型字段值
+							putLong(Object o,long offset,long x)			设置指定对象长整型字段值
+		
+						原子操作：
+							compareAndSwapObject(Object o,long offset,int expected,Object update)		原子比较和更新对象
+							compareAndSwapInt(Object o,long offset,int expected,int update)			原子比较和更新整数值
+							compareAndSwapLong(Object o,long offset,long expected,long update)		原子比较和更新长整型值
+
+						对象操作：
+							objectFieldOffset(Field f)				返回给定字段内存偏移量
+							getObject(Object o,long offset)				获取指定对象在内存中的字段值
+							putObject(Object o,long offset,	Object x)		设置指定对象字段值
+					
+			原子操作(CAS在JUC中的应用类)：
+				原子整数类：
+					作用：在多线程环境中提供线程安全的整数操作
+
+					AtomicBoolean：原子更新布尔类型		
+					AtomicInteger：原子更新整型
+					AtomicLong：原子更新长整型
+
+					常用方法：
+						int get()						获取值
+						int set()						设置新值
+						int getAndSet(int newValue)				获取当前值并设置新值
+						int accumulateAndGet()				
+						int incrementAndGet()					自增并获取值
+						int getAndIncrement()					获取值并自增
+						int decrementAndGet()					自减并获取值
+						int getAndDecrement()					获取值并自减
+						int getAndAdd(int delta)				获取值并增加预期值
+						int addAndGet(int delta)				增加预期值并获取值
+						int getAndSet(int newValue)				获取值并设置新值
+						int updateAndGet(IntUnaryOperator updateFunction)	更新AtomicInteger值并获取更新后新值
+						int getAndUpdate(IntUnaryOperator updateFunction)	返回AtomicInteger值并更新值
+						void lazySet(int newValue)				其他线程在一小时之内读到旧值，最终会设置成newValue
+						int getAndAccumulate(int x,IntBinaryOperator accumulatorFunction)	对AtomicInteger对象值进行累积操作并返回操作之前值
+						int AccumulateAndGet(int x,IntBinaryoperator accumulatorFunction)	对AtomicInteger对象值进行累积操作并返回操作之后值
+						
+						补充：IntUnaryOperator updateFunction -> Lambda表达式
+
+				原子引用类：
+					作用：在多线程环境中提供线程安全的引用操作		
+
+					AtomicReference：原子更新引用类型
+					AtomicStampedReference：原子更新引用类型，内部使用Pair存储元素值及版本号
+					AtomicMarkableReference：原子更新带有标记位引用类型
+
+					创建对象：Account account = new Account("John",1000,0);
+					构造方法：
+						AtomicReference<Account> atomicReference = new AtomicReference<>(account); 
+						AtomicReference<List<DefectInfraredPicture>> pictureZList = new AtomicReference<>();
+							
+						AtomicStampedReference<Account> atomicReference = new AtomicStampedReference<>(account,int initialStamp);
+							account：引用类型对象		int initialStamp：整数版本戳						
+
+						AtomicMarkableReference<Account> atomicMarkableReference = new AtomicMarkableReference<acount,boolean initialMark>;
+							account：引用类型对象		boolean initialMark：初始标志位，表示对象某种状态
+
+					常用方法：
+						AtomicReference：
+							Object get()						返回当前引用值
+							void set(Object newValue)				设置新引用值
+							Object getAndSet(Object newValue)			返回旧值并设置当前引用新值
+							Object getAndUpdate(UnaryOperator updateFunction)	返回旧值并根据给定函数更新值
+							Object updateAndGet(UnaryOperator updateFunction)	根据给定函数更新值并返回更新后结果
+							Boolean compareAndSet(Object expect,Object update)	当前引用值等于expectedValue，设置为newValue
+							void lazySet(Object newValue)				其他线程在一小时内读到旧值，最终会设置成newValue
+
+						AtomicStampedReference：
+							void set(Object newReference,int newStamp)		更新引用对象和版本戳
+							int[] get()						获取当前引用对象和版本戳
+							Object getReference()					获取当前引用对象
+							int getStamp()						获取当前版本戳
+							boolean	compareAndSet(Object expectedReference,Object newReference,int expectedStamp,int newStamp)	
+							作用：	检查当前引用对象是否与expectedReference相等，检查当前版本戳是否与expectedStamp相等
+								两个条件满足，更新引用对象为newReference，更新版本戳为newStamp
+
+						AtomicMarkableReference：
+							Object[] get()						获取当前引用对象和标志位
+							void set(Object newReference,boolean newMark)		更新引用对象和标志位
+							getMark()						获取当前标志位
+							Object getReference()					获取当前引用对象
+							boolean	compareAndSet(Object expectedReference,Object newReference,int expectedStamp,boolean newMark)
+							作用：	检查当前引用对象是否与expectedReference相等，检查当前标志位是否与expectedMark相等
+								两个条件满足，更新引用对象为newReference，更新标志位为newMark
+									
+					ABA问题：
+						角色：共享变量A、线程A、线程B
+						问题：线程A和线程B都对共享变量A进行操作，线程A执行操作时，线程B也更新A，最后线程A看到共享变量A值与最初A值一样，线程A误以为共享变量A没有发生变化					
+
+					ABA问题解决方法：
+						AtomicStampedReference引入版本戳，对变量进行更新时携带版本号，即使变量值相同，版本戳不同，线程意识到变量状态已经发生变化
+						AtomicMarkableReference引入标志位，记录对象状态变化，避免ABA问题
+
+				原子数组类：
+					作用：在多线程环境中提供线程安全的对数组元素操作
+					
+					AtomicIntegerArray：原子更新整形数组中元素
+					AtomicLongArray：原子更新长整型数组中元素
+					AtomicReferenceArray：原子更新引用类型数组中元素
+
+					常用方法：
+						int length()						获取数组长度
+						int get(int index)					获取指定索引位置值
+						int set(int index，long value)				设置指定索引位置值
+						int getAndSet(int index，long value)			获取当前值并设置新值
+						int incrementAndGet(int index)				自增并获取值
+						int getAndIncrement(int index)				获取值并自增
+						int decrementAndGet(int index)				自减并获取值
+						int getAndDecrement(int index)				获取值并自减
+						int getAndAdd(int i，int delta)				获取值并增加预期值
+						int addAndGet(int i，int delta)				增加预期值并获取值
+						int getAndSet(int i，int newValue)			获取值并设置新值
+
+				原子更新字段类：
+					作用：在多线程环境中提供线程安全的更新对象引用字段
+				
+					AtomicIntegerFieldUpdater：原子更新整型字段更新器
+					AtomicLongFieldUpdater：原子更新长整型字段更新器
+					AtomicreferenceFieldUpdater：原子更新引用类型字段更新器
+					
+					创建对象：Student student = new Student();
+					构造方法：
+						AtomicIntegerFieldUpdater<> updater = AtomicIntegerFieldUpdater.newUpdater(Student.class,"name");
+							Student.class：更新字段对象		"name"：更新字段名
+						
+						AtomicLongFieldUpdater<> updater = AtomicLongFieldUpdater.newUpdater(Student.class,"name");
+							Student.class：更新字段对象		"name"：更新字段名					
+
+						AtomicReferenceFieldUpdater updater = AtomicReferenceFieldUpdater.newUpdater(Student.class,Stirng.class,"name");
+							Student.class：更新字段对象		String.class：更新字段类型			"name"：更新字段名	
+
+					常用方法：
+						Object get(Object obj);									获取字段当前值
+						void set(Object obj,Object newValue)							设置字段值
+						void lazySet(Object obj,Object newValue)						设置字段值，允许延迟更新
+						Object getAndUpdate(Object obj,UnaryOperator updateFunction)				获取对象当前值并应用更新函数
+						Object updateAndGet(Object obj,UnaryOperator updateFunction)				应用更新函数更新值并获取更新后值
+						Object getAndSet(Object obj,Object newValue)						获取当前字段值并设置为新值
+						boolean compareAndSet(Object obj,Object expect,Object update)				若当前字段值等于expect，更新为新值
+						Object getAndAccumulate(Object obj,Object x,BinaryOperator accumulatorFunction)		将当前值与给定累积器值进行指定数学操作并返回更新之前值
+						Object accumulateAndGet(Object obj,Object x,BinaryOperator accumulatorFunction)		将当前值与给定累积器值进行指定数学操作并返回更新之后值
+						
+
+		并发工具：
+			线程池：	
+				基本概念：线程池是管理一组线程的容器，为每个任务分配一空闲线程执行。线程池通过复用线程减少线程创建和销毁成本
+
+				线程池原理：
+					线程池有一任务队列，存放待执行任务
+					线程池会创建固定数量线程，线程在任务队列中有任务时被唤醒并执行任务，执行完毕，线程返回线程池
+					线程池根据任务数量和当前空闲线程数量动态分配线程
+					若线程池中线程都在工作且任务队列未满，线程池根据配置创建新线程
+
+				线程池实现：
+					JUC提供线程池实现：
+						Executor框架线程池使用：
+							ExecutorService threadPool = Executors.newFixedThreadPool(5);		创建固定大小线程池
+							threadPool.execute(() -> {						执行任务
+								//执行任务代码					
+							});
+							threadPool.shutdown();							关闭线程池
+
+						注意：实际开发尽量避免使用Executor框架创建线程池，容易造成OOM(Out Of MemoryError)
+							
+					JDK提供线程池实现：
+						JDK类图：
+										ExecutorService(接口)
+										→	↑	←
+									↑				↑
+							ScheduledExecutorService(接口)		ThreadPoolExecutor(类)
+									↑				↑
+										←		→
+									ScheduledThreadPoolExecutor(类)
+				
+						ThreadPoolExecutor：
+							构造方法：
+								public ThreadPoolExecutor(int corePoolSize,
+											  int maximumPoolSize,
+											  long keepAliveTime,
+											  TimeUnit unit,
+											  BlockingQueue<Runable> workQueue,
+											  ThreadFactory threadFactory,
+											  RejectedExecutionHandler handler)
+
+							核心参数：
+								corePoolSize：线程池核心线程数(线程池中最小线程数量)。若线程池中线程数 < 线程池最小线程数，创建新线程处理任务直到线程数 = corePoolSize
+								threadFactory：新线程创建工厂，默认工厂创建普通线程，自定义工厂创建具有特定属性线程
+
+								maximumPoolSize：线程池允许最大线程数。线程池中线程数 = 线程池最大线程数，新提交任务进入workQueue或根据任务拒绝策略处理
+								workQueue：用于保存等待被执行任务阻塞队列
+								keepAliveTime：线程池中线程数 > corePoolSize(线程池最小线程数)时，空闲线程保持的最大时间。
+											线程池中线程空闲时间 > keepAliveTime时，线程销毁。直到线程池中线程数 = corePoolSize
+								rejectedExecutionHandler：任务拒绝策略，线程池中线程数已达到最大线程数时，如何处理新提交任务
+									常见拒绝策略：
+										AbortPolicy：直接抛出异常，拒绝执行任务
+										CallerRunsPolicy：由提交任务线程执行任务
+										DiscardPolicy：丢弃任务，不做任何处理
+										DiscardOldestPolicy：丢弃丢列中最旧任务，尝试提交新任务
+
+								补充：
+									阻塞队列：	
+										阻塞队列已满，生产者线程阻塞，直到队列中有空间可插入新元素
+										阻塞队列为空，消费者线程阻塞，直到队列中有新元素可消费
+
+									同步队列(生产操作(入队)与消费操作(出队)配对)：
+										生产者线程放入一元素时，生产者线程阻塞，直到消费者线程取出元素
+										消费者线程取出一元素时，消费者线程阻塞，直到生产者线程放入元素
+				
+				Executors线程池类型：
+					FixedThreadPool：固定大小线程池						
+						使用：ExecutorService fixedThreadPool = Executors.newFixedThreadPool(10);
+
+					SingleThreadExecutor：单线程化的线程池，只有一个线程处理任务			
+						使用：ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+				
+					CachedThreadPool：可缓存线程池，线程池中线程数无限制，线程池中线程空闲超过60s会被回收				
+						使用：ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
+
+					ScheduledThreadPoolExecutor：创建固定大小线程池，任务在固定延迟时间后执行或定时重复执行	
+						使用：ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(10);
+					
+
+					线程池避免适用Executors创建原因(补充)：
+						FixedThreadPool + SingleThreadExecutor：堆积请求处理队列可能会消耗非常大内存，甚至OOM(Out Of MemoryError)
+						CachedThreadPool + ScheduledThreadPool：线程数最大是Integer.MAX_VALUE，可能会创建数量非常多的线程，甚至OOM(Out Of MemoryError)
+									
+				ThreadPoolExecutor方法：
+					void execute(Runable command);									执行任务	
+					Future<T> submit(Callable<T> task);								提交任务task，用Future接收任务执行结果
+					List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)				提交所有任务tasks，用List<Future<T>>接收任务执行结果
+					List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,long timeout,TimeUnit unit)	提交所有任务tasks，用List<Future<T>>接收任务执行结果，带超时时间
+					T invokeAny(Collection<? extends Callable<T>> tasks)						提交所有任务tasks，哪个任务先成功执行，返回该任务执行结果，其他任务取消
+					T invokeAny(Collection<？ extends Callable<T>> tasks,long timeout,TimeUnit unit)			提交所有任务tasks，哪个任务先成功执行，返回该任务执行结果，其他任务取消
+				
+					关闭线程池：
+						void shutdown()										停止接收新任务，继续执行已提交任务
+						void shutdownNow()									强制停止正在执行的任务
+
+					补充：Callable接口是函数式接口，用@FunctinalInterface修饰，可用Lambda表达式简化
+
+				ScheduledThreadPoolExecutor方法：
+					ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(1);
+						
+					scheduler.schedule(Runable command,long delay,TimeUnit unit);					延迟执行任务
+					scheduler.scheduleAtFixedRate(Runable command,long initialDelay,long period,TimeUnit unit)	任务执行间隔固定，不管上一任务执行时长
+					scheduler.scheduleWithFixedDelay(Runable command,long initialDelay,long period,TimeUnit unit)	上一任务完成，等待指定延迟时间执行下一任务
+
+					参数：
+						Runable command			执行Runable类型任务
+						long initialDelay		任务首次执行后等待时间
+						long period			任务间固定间隔时间
+						TimeUnit unit			时间单位，指定initialDelay和period时间单位
+					
+					注意：Runable接口是函数式接口，用@FunctionalInterface修饰，可用Lambda表达式简化
+					
+				自定义线程池：
+					ExecutorService executorService = new ThreadPoolExecutor(
+										2，						线程池核心线程数
+										4，						线程池允许最大线程数
+										60L，						空闲线程最大空闲时间
+										TimeUnit.SECONDS，				存活时间单位
+										new LinkedBlockingQueue<>()，			阻塞队列
+										Executors.defaultThreadFactory()，		线程工厂
+										new ThreadPoolExecutor.AbortPolicy()		任务拒绝策略
+							)；
+					
+					for(int i = 0； i < 10；i++){								线程池中线程循环10次执行任务
+						executorService.submit(() -> {
+							sout(Thread.cureentThread().getName() + "is executing the task");
+						})
+						try{
+							Thread.sleep(1000);							1s之后下一个线程调用
+						}catch(InterruptedException e){
+							e.printStackTrace();
+						}
+					}
+					
+					executorService.shutdown();								关闭线程池
+
+				线程池设置最大线程：
+					CPU密集型：最大线程数 = CPU核数，可保持CPU效率最高			System.out.println(Runtime.getRuntime().availableProcessors())		获得CPU核心数
+					IO密集型：判断程序中耗费IO资源较大的线程数，最大线程数 = 2 * IO线程数
+
+		
+			Fork/Join(并行计算框架)：
+				核心思想：将大任务分割成若干小任务，最终将每个小任务结果汇总得到大任务结果
+
+				Fork：将一个大任务拆分成多个小任务进行并行处理的过程
+				Join：等待所有子任务完成后合并子任务结果的过程
+
+				工作原理：
+					1.任务拆分：通过递归方式将大任务拆分成多个较小子任务("fork"),子任务可以并行执行
+					2.任务执行：Fork/Join默认创建与cpu核心数大小相同的线程池ForkJoinPool，任务通过使用线程池中线程并行执行
+					3.任务合并：子任务完成后，结果通过"join"合并大任务结果
+
+					Fork/Join核心组成部分：
+						ForkJoinPool：Fork/Join框架核心类，管理一组工作线程，执行Fork/Join任务
+						RecursiveTask<T>：用于返回结果任务类，子任务完成后返回结果类型T			Recursive翻译：递归	Task：任务
+						RecursiveAction：用于没有返回结果任务类，执行操作不会返回结果			Recursive翻译：递归	Action：行动
+
+				Fork/Join示例：
+					计算一大数组和，Fork/Join将数组拆分成若干小部分，分别计算每部分和，最后合并所有小和得到最终结果
+
+			JUC工具类：
+				AQS(AbstractOwnableSynchronizer类)：
+					AQS：JUC包中Lock锁和相关同步工具(CountDownLatch/CyclicBarrier/Semaphore)底层实现	
+					AQS原理：维护一队列(等待队列)和状态值(资源状态)协调线程之间同步
+						等待队列：FIFO队列管理等待获取同步资源的线程。线程无法获取资源时，加入队列等待被唤醒
+						资源状态：通过int类型状态值表示同步器状态，状态值表示锁拥有者
+
+						资源共享方式：
+							独占模式：允许一个线程访问资源
+							共享模式：允许多个线程访问资源
+
+						核心方法：
+							acquire()：获取同步资源，资源不可用时，线程加入等待队列
+							release()：释放同步资源，线程释放资源时，唤醒等待队列线程
+							
+							trAcquire()：尝试获取资源，获取锁失败选择阻塞当前线程，若资源不可用，不会阻塞线程
+							tryRelease()：尝试释放资源
+
+							getState()：获取AQS状态值
+							setState()：设置AQS状态值						
+
+				同步工具类：
+					CountDownLatch：
+						作用：AQS实现计数器，允许一个或多个线程等待其他线程操作完成继续执行	
+						
+						工作原理：
+							CountDownLatch计数器初始化为一指定整数值，每调用一次countDown(),计数器值减1。计数器值为0时，调用await()方法线程唤醒
+
+						构造方法：
+							CountDownLatch countDonwLatch = new CountDownLatch(int count);		count：初始化计数器值
+							例：CountDownLatch countDownLatch = new CountDownLatch(3);			
+							
+						常用方法：
+							countDownLatch.countDown()	调用该方法计数器值减1
+							countDownLatch.await()		当前线程阻塞，直到计数器值为0，其他线程操作执行完成，所有等待线程继续执行
+							countDownLatch.getCount()	获取当前计数器值
+					
+						应用：	1.多并发任务完成后再执行某任务
+							2.多并发任务全部执行完成后执行汇总操作
+					
+					CyclicBarrier：
+						作用：可重复使用屏障(允许在多周期中重复使用)，让一组线程在某个点上相互等待，直到所有线程都到达该"栅栏"点后，再继续执行
+
+						构造方法：
+							CyclicBarrier cyclicBarrier = new CyclicBarrier(int parties);
+							例：CyclicBarrier cyclicBarrier = new CyclicBarrier(5);			parties：必须等待的线程数
+								
+
+							CyclicBarrier cyclicBarrier = new CyclicBarrier(int parties,Runable barrierAction);
+							例：CyclicBarrier cyclicBarrier = new CyclicBarrier(5,Runable任务)	parties：必须等待的线程数		Runable任务：所有线程到达之后执行该任务
+
+						常用方法：
+							cyclicBarrier.await()				表示当前线程已经到达屏障	
+							cyclicBarrier.getNumberWaiting()		获取当前到达屏障的等待线程数
+							cyclicBarrier.isBroken()			判断当前屏障是否被破坏(屏障破坏：线程在等待时抛出异常或被中断)
+							
+						应用：	多线程处理并行任务，等待所有线程完成前一阶段工作后开始下一阶段
+													
+					Semaphore：
+						作用：AQS实现信号量，限制同时访问共享资源线程上限
+
+						构造方法：		
+							Semaphore semaphore = new Semaphore(int permits);			permits：初始化允许资源数量
+							例：Semaphore semaphore = new Semaphore(5);
+
+							Semaphore semaphore = new Semaphore(int permits,boolean fair)		permits：初始化允许资源数量		fair：是否启用公平策略
+							例：Semaphore semaphore = new Semaphore(5,true);
+
+								fair = true	公平模式，线程按照请求资源顺序获取资源，先到先得
+								fair = false	非公平模式，线程不按照请求资源顺序获取，某些线程可能长时间获取不到资源
+
+						常用方法：
+							semaphore.acquire()			获取同步资源，获取锁失败，当前线程阻塞
+							semaphore.acquire(int permits)		获取同步资源，若无足够资源，当前线程阻塞，直到资源可用
+							semaphore.release()			释放资源，若有其他线程正在等待资源，唤醒一个等待线程
+							semaphore.release(int permits)		释放多个资源，唤醒等待线程
+							semaphore.availablePermits()		返回当前可用资源数量
+							semaphore.drainPermits()		获取并移除所有资源，返回获取资源数量
+							semaphore.getQueueLength()		返回当前等待资源的线程数量
+							semaphore.hasQueuedThreads()		判断是否有线程在等待资源
+
+						应用：	1.多线程访问有限资源，可用信号量控制访问线程数量
+							3.并发执行限制同时执行线程数量
+				
+				集合不安全类：	
+					ArrayList/LinkedList		多线程下不安全，可能报错：java.util.ConcurrentModificationException(并发修改异常)
+						解决方案:	List strings = Collections.synchronizedList(new ArrayList<>());
+							List strings = new CopyOnWriteArrayList<>();	
+						
+					HashSet/LinkedHashSet		多线程下不安全，可能报错：java.util.ConcurrentModificationException(并发修改异常)
+						解决办法:	Set strings = Collections.synchronizedList(new HashSet<>());
+							Set strings = new CopyOnWriteArrayList<>();
+
+					
+					HashMap/LinkedHashMap/TreeMap	多线程下不安全，可能报错：java.util.ConcurrentModificationException(并发修改异常)
+						解决方法:	Map<String,String> concurrentHashMap = new ConcurrentHashMap<>();
+							Map<String,String> synchronizedMap = Collections.synchronizedMap(new HashMap<String,String>());
+
+				并发线程安全集合类：
+				1	HashTable/Vector：	略
+
+				2	Collections修饰线程安全集合类：
+						Collections.synchronizedCollection
+						Collections.synchronizedList
+						Collections.synchronizedSet
+						Collections.synchronizedMap
+						Collections.synchronizedSortedMap
+						Collections.synchronizedSortedSet
+
+						线程安全原因：Collections类通过synchronized方法i将普通集合类包装成线程安全的集合
+
+				3	JUC线程安全集合类:	
+						CopyOnWrite类：
+							CopyOnWriteArrayList：	List接口线程安全实现
+								CopyOnWriteArrayList<String> safelist = new CopyOnWriteArrayList<>();
+								safeList.add("数据1");
+								safeList.add("数据2")
+
+								适用场景：读多写少
+
+							CopyOnWriteArraySet：	Set接口线程安全实现，底层实现：CopyOnWriteArrayList
+								CopyOnWriteArraySet<String> safeSet = new CopyOnWriteArraySet<>();
+								safeSet.add("数据1");
+								safeSet.add("数据2");
+
+								适用场景：读多写少
+
+							线程安全原因：
+								"写时复刻"：
+									写操作，CopyOnWrite不会直接修改原有集合，而是创建集合副本，在副本上进行修改，最后用新副本替换原集合
+									读操作，读操作时不需要加锁
+							
+						Concurrent类：
+							ConcurrentHashMap：
+								Map<Integer,String> safeMap = new ConcurrentHashMap<>();
+								safeMap.put(1,"zhousir");
+								safeMap.put(2,"zhoucheng");
+
+								适用场景：高并发读写操作Map，缓存、存储、检索数据等
+
+
+		异步编程：
+			Future/FutureTask：
+				Future：		Java并发编程中接口，表示同步获取任务结果
+					主要方法：
+						get()						阻塞等待任务完成，返回任务执行结果
+						get(long timeout，Timeout unit)			阻塞并等待任务完成，直到任务完成或超时
+						cancal(boolean mayInterruptIfRunning)		尝试取消任务执行，若任务已经完成或已经取消，返回false；否则，返回true
+						isCancelled()					如果任务已经取消，返回true
+						isDone()					如果任务已经完成，返回true
+
+					Future使用：
+						ExecutorService executor = Executors.newCachedThreadPool();
+
+						Callable<Integer> task = () -> {
+							Thread.sleep(1000);
+							return 42;
+						}
+						Future<Integer> future = executor.submit(task);			执行任务，用Future
+
+						System.out.println(future.getTask());
+						executor.shutdown();						关闭线程池
+		
+				FutureTask：	Future接口实现类，实现Runable接口，可直接作为线程执行任务
+					构造方法：
+						FutureTask(Callable<V> callable)				使用CallableTask创建FutureTask，返回任务结果
+						FutureTask(Runable runable,V result)				使用Runable创建FutureTask，并提供预期结果result
+				
+					主要方法：
+						run()						执行任务，调用run()执行任务
+						get()						获取任务执行结果
+						get(long timeout,TimeUnit unit)			获取任务执行结果
+						cancle(boolean mayInterruptIfRunning)		尝试取消任务执行，若任务已经完成或已经取消，返回false；否则，返回true
+						isCancelled()					如果任务已经取消，返回true
+						isDone()					如果任务已经完成，返回true
+						
+					FutureTask使用：
+						ExecutorService executor = Executors.newFixedThreadPool(2);
+					
+						FutureTask<Integer> futureTask = new FutureTask<Integer>(() -> {
+							Thread.sleep(5000);
+							return 25;
+						});
+						executor.submit(futureTask);					执行任务，用FutureTask
+					
+						System.out.println(futureTask.get());
+						executor.shutdown();						关闭线程池
+
+			CompletableFuture：	Future接口实现类，接收异步任务执行结果
+				CompletableFuture构造方法：
+					 CompletableFuture<任务返回值类型> futureTask= CompletableFuture.supplyAsync();		接收一返回值异步任务类型
+					 CompletableFuture<Void> futureTask = CompletableFuture.runAsync();
+
+				ComplatableFuture常用方法：
+				1	thenApply()		对结果进行转换
+				2	thenAccept()		消费结果
+				3	thenRun()		执行任务没有返回值
+				4	thenCombine()		组合两独立异步任务
+					
+				5	exceptionally()		在任务出现时调用
+				6	handle()		处理任务正常结果或异常
+				7	whenComplete()		任务完成时，无论成功还是失败都执行
+				
+				8	allOf()			等待多个任务全部完成
+				9	anyOf()			等待多个任务中任意一个完成
+
+
+				CompletableFuture使用：
+				1	CompletableFuture<Integer> futureTask = CompletableFuture.supplyAsync(() -> 2).thenApply(result -> result * 3);
+				2	CompletableFuture<Void> futureTask = COmpletableFuture.supplyAsync(() -> "Hello").thenAccept(result -> sout(result));
+
+				8	try{
+						CompletableFuture<Void> future1 = CompletableFuture.runAsync(() -> getDeviceName(recordVOS));
+						CompletableFuture<Void> future2 = CompletableFuture.runAsync(() -> translate(recordVOS));
+						CompletableFuture<Void> all = CompletableFuture.allOf(future1,future2);
+					}catch(Exception e){			
+						e.printStackTrace();
+					}
+
+				9	try{
+						CompletableFuture<Void> future1 = CompletableFuture.runAsync(() -> getDeviceName(recordVOS));
+						CompletableFuture<Void> future2 = CompletableFuture.runAsync(() -> translate(recordVOS));
+						CompletableFuture<Void> all = CompletableFuture.anyOf(future1,future2);
+					}catch(Exception e){
+						e.printStackTrace();
+					}
+		
+		ThreadLocal：	
+			基本概念：线程局部变量，Java中用来为每个线程提供独立变量副本的机制，每个线程都有自己独立的数据副本不会与其他线程共享		
+			
+			特点/特性：
+				1.线程通过ThreadLocal获取变量时，得到值与其他线程独立，其他线程的值不会收到影响
+				2.一个线程对Threadlocal变量的修改不会影响其他线程，每个线程都有自己的副本
+				3.子线程不能访问父线程的ThreadLocal变量，除非子线程中有显示设置
+
+			常用方法：
+				get(String key)					返回当前线程对应变量的值
+				set(T value)					设置当前线程对应变量的值
+				remove()					删除当前线程对应变量
+				initialValue()					设置变量初始值
+				put(Stirng key,T value)				将键值对存储在当前线程ThreadLocal变量中
+				getAll()					获取ThreadLocal中所有键值对
+				getAndRemove(String key)	 		获取线程本地存储值并将该值从ThreadLocal中删除
+				getIfAbsent(String key,Supplier<T> supplier)	从ThreadLocal中获取值，若线程中没有该值，需要提供默认值存储到ThreadLocal中
+			
+			ThreadLocal内部实现：
+				ThreadLocal使用线程ThreadLocalMap存储每个线程局部变量，每个线程都有独立的ThreadLocalMap，该映射将ThreadLocal对象映射到线程局部变量值
+
+			注意事项：
+				内存泄漏：ThreadLocal引用对象在其生命周期内无法被垃圾回收器回收。若没有清理，可能导致内存溢出
+				线程池使用：线程池中线程会被复用，确保每个线程在处理请求后清除与该线程相关的ThreadLocal变量		
+			
+			应用：
+				1.存储用户Session
+				2.ThreadLocal保存全局变量信息(用户权限信息/用户系统获取用户名/用户ID等)
+				3.Spring使用ThreadLocal解决线程安全问题
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+			
