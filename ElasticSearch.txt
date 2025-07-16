@@ -1,0 +1,1179 @@
+ELK：开源软件工具组成技术栈
+	核心组件：
+		Beats：轻量化数据采集器，从各种数据源(文件/系统/网络)收集数据，并将数据发送到Logstash或Elasticsearch
+		Logstash：数据处理管道，负责从不同数据源收集、转化并发送数据到Elasticsearch
+	***	Elasticsearch：分布式Restful全文搜索分析引擎，对大数据快速存储、搜索和分析					
+		Kibana：数据可视化工具，专用于展示Elasticsearch中数据
+
+使用ES原因：
+	网页内容是非结构化文本数据，对于大量文本数据不存储到数据库，原因：
+		非结构化文本数据，MySQL不能支持全文索引扫描整张表
+		查询效率低，即使对SQL进行大量优化，效果甚微
+		对insert和update操作会重新构建索引，维护麻烦			------>		需要专业强大的全文搜索引擎(Elasticsearch)
+
+Elasticsearch特点(优势)：
+	实时搜索：ES支持实时搜索，数据文档在被索引后可被立即搜索和查询
+	全文搜索能力：提供强大全文搜索功能，支持模糊匹配、多字段搜索等搜索方式
+	多语言支持；提供丰富查询语言(DSL),支持多种查询类型
+	分布式架构：能在多台机器上水平扩展，处理大规模数据集和高并发查询请求
+	高性能：ES底层使用倒排索引机制，在大量数据中快速定位匹配记录
+	易用性：提供简单易用Restful API，方便进行索引管理、查询和数据分析
+
+
+Elasticsearch(全文搜索服务器)：			
+	ES接收和返回数据格式：JSON				补充：客户端与服务器进行通信，数据通过HTTP请求/相应进行传递，JSON数据会被序列化为字符串传输		
+
+	Elasticsearch：面向文档型数据库
+		ES/MySQL数据库对比：
+		ES		Index(索引)		Type(类型)	Document(文档)		Field(字段)
+		MySQL		Database(数据库)		Table(表)	Row(行)			Column(列)
+
+		MySQL/ES区别：
+			MySQL：擅长事务类型操作，可确保数据安全与一致性		适用场景：写操作(增删改)
+			ES：擅长海量数据搜索、分析、计算				适用场景：读操作			
+
+		ES相关概念：
+			文档(Document)：数据单元，每个文档都是JSON格式的数据,包含键值对字段			
+			字段(Field)：文档(Document)中的键值对
+			索引(Index)：包含多个相同类型文档的集合		
+			类型(Type)：每个索引中的文档分类，6.0.0版本起，一个索引中只有一种类型数据					
+			DSL：基于JSON的查询语言，定义和执行各种操作(创建索引、索引文档、查询数据等)
+
+			补充：	7.x版本后所有文档直接属于索引，不再有类型区分
+				ES所有索引和文档数据存储在本地磁盘
+
+		Elasticsearch存储结构：
+			索引 (Index): products
+				├── 类型 (Type): electronics
+				     ├── 文档 : {name: "蓝牙耳机", price: 199.99, stock: 50}
+				     └── 文档 : {name: "智能手表", price: 599.99, stock: 30
+				     ├── 文档 : {name: "T恤", price: 39.99, stock: 150}
+				     └── 文档 : {name: "牛仔裤", price: 89.99, stock: 75}
+			索引 (Index): orders
+				├── 类型 (Type): China
+				     ├── 文档 : {name: "众芯汉创订单", price: 199.99}
+				     └── 文档 : {name: "长亮科技订单", price: 599.99}
+				     ├── 文档 : {name: "森马集团订单", price: 39.99}
+				     └── 文档 : {name: "格力集团订单", price: 89.99}
+
+		ES全文搜索底层工作原理：
+			全文检索：逐词分析文档内容，扫描文档中每个单词，对每个单词进行索引
+				分词：将文档文本内容分解成词项
+				倒排索引：词项对应列表，记录每个词项在文档中出现频率和位置，包含该词项的所有文档ID
+					
+				倒排索引结构：
+					包含该词项的所有文档ID(查找文档ID)
+					词项在文档中出现位置
+					词项在文档中出现频率
+	
+				倒排索引查询流程：
+					关键字分词 	->	根据词项倒排索引查找包含该词项所有文档ID	->	根据文档ID查询实际文档内容
+			
+			正向索引(补充)：
+				正向索引：根据id索引方式
+				查询流程：文档ID	->	字段	->	字段值直接存储结果
+
+	前提：安装Elasticsearch/Kibana/Postman/IK分词器
+		Elasticsearch：对大数据快速存储、搜索和分析
+		Kibana：以命令方式操作Elasticsearch返回结果
+		Postman：以请求方式操作Elasticsearch返回结果	
+		IK分词器：将文本段落分解成词项
+
+	ES索引库/文档操作：
+		文档索引mapping属性约束：
+			"mappings":{
+			    "properties":{					定义文档字段属性
+				"字段名":{
+				    "type":字段类型				设置字段类型
+				    "format":"yyyy-MM-dd HH:mm:ss"		设置日期格式
+				    "index":false				字段不参与索引(适用于存储但不需要查询字段)
+				    "analyzer":分词器				字段分词器，
+				    "dynamic":true/false/strict			ES自动为文档中出现新字段创建映射
+				    "store":true				字段内容单独存储在磁盘，允许直接检索字段值
+				}
+			     }
+			}
+
+			type：字段数据类型		
+				字符串：text(可分词文本)、keyword(精确值)
+				数值：long、Integer、byte、double、float
+				布尔：boolean
+				日期：date
+				对象：object
+				
+			dynamic：动态映射
+				true：ES自动为文档中新字段创建映射
+				false：ES忽略文档中所有未在映射中定义字段
+				strict：严格要求文档中字段必须出现在映射中
+
+	索引库模板操作-------------------------------------------------------------------------------------------------------------------------------
+		创建索引指定映射：
+		1	请求：	PUT	http://localhost:9200/索引名
+			请求体:	JSON	DSL内容
+
+		2	命令：	PUT /索引库名
+			DSL：	
+			    	{
+				    "settings":{
+					"number_of_shards":3				指定分片数量
+					"number_of_replicas":1				指定分片副本数量
+				    }
+				    "mappings":{					mappings：定义文档映射
+				    	"properties":{					    properties：定义文档字段属性	
+					    "字段名":{						字段名：文档字段
+						"type":"text",					    type：文档字段类型
+						"analyzer":"ik_samrt"				    analyzer：字段分词器
+					    }
+					    "字段名2":{						字段名：文档字段
+					    	"type":"keyword",				    type：文档字段类型	
+						"index":"fasle"				    	    index：字段不参与索引(适用于存储但不需要查询字段)
+					    }
+					    "字段名3":{						字段名：父文档字段
+					    	"properties":{					    properties：定义文档字段属性
+						    "子字段":{						子字段：子文档字段
+						    	"type":"keyword"				    type：文档字段类型
+						    }
+						}
+					    }							{}中是JSON风格的DSL
+					}
+				    }
+				}
+
+		创建/更新索引模板：
+		1	请求：	PUT	http://localhost:9200/_template/索引模板名
+			请求体	JSON	DSL内容
+			
+		2	命令：	PUT	/_template/索引模板名		
+			DSL：	
+				{
+				    "settings":{
+					"number_of_shards":3				指定分片数量
+					"number_of_replicas":1				指定分片副本数量
+				    }
+				    "mappings":{					mappings：定义文档映射
+				    	"properties":{					    properties：定义文档字段属性	
+					    "字段名":{						字段名：文档字段
+						"type":"text",					    type：文档字段类型
+						"analyzer":"ik_samrt"				    analyzer：字段分词器
+					    }
+					    "字段名2":{						字段名：文档字段
+					    	"type":"keyword",				    type：文档字段类型	
+						"index":"fasle"				    	    index：字段不参与索引(适用于存储但不需要查询字段)
+					    }
+					    "字段名3":{						字段名：父文档字段
+					    	"properties":{					    properties：定义文档字段属性
+						    "子字段":{						子字段：子文档字段
+						    	"type":"keyword"				    type：文档字段类型
+						    }
+						}
+					    }							{}中是JSON风格的DSL
+					}
+				    }
+				}
+
+		查看索引模板：
+		1	请求：	GET	http://localhost:9200/_template/索引模板名
+
+		2	请求：	GET	/_template/索引模板名
+
+		删除索引模板：
+		1	请求：	DELETE	http://localhost:9200/_template/索引模板名
+			
+		2	命令：	DELETE	/_template/索引模板名
+
+		
+	索引库操作----------------------------------------------------------------------------------------------------------------------------------
+		创建索引库：
+		1	请求：	PUT	http://localhost:9200/索引名
+			请求体:	JSON	DSL内容
+
+		2	命令：	PUT /索引库名
+			DSL：	{
+				    "mappings":{					mappings：定义文档映射
+				    	"properties":{					    properties：定义文档字段属性	
+					    "字段名":{						字段名：文档字段
+						"type":"text",					    type：文档字段类型
+						"analyzer":"ik_samrt"				    analyzer：字段分词器
+					    }
+					    "字段名2":{						字段名：文档字段
+					    	"type":"keyword",				    type：文档字段类型	
+						"index":"fasle"				    	    index：字段不参与索引(适用于存储但不需要查询字段)
+					    }
+					    "字段名3":{						字段名：父文档字段
+					    	"properties":{					    properties：定义文档字段属性
+						    "子字段":{						子字段：子文档字段
+						    	"type":"keyword"				    type：文档字段类型
+						    }
+						}
+					    }							{}中是JSON风格的DSL
+					}
+				    }
+				    "settings":{
+					"index":{
+					    "number_of_shards":"2"				设置索引分片数量
+					}
+				    }
+				}
+			
+			查看索引映射(补充)：
+				请求：POST	http:localhost:9200/_mapping
+				命令：POST /索引库名/_mapping
+			
+		查看索引库：
+		1	请求：	GET	http://localhost:9200/索引名
+
+		2	命令：	GET /索引库名
+		
+		删除索引库：	
+		1	请求：	DELETE	http://localhost:9200/索引名
+
+		2	命令：	DELETE /索引库名
+
+		修改索引库：		注意：索引库一旦创建无法修改，可以添加新字段
+		1	请求：	PUT 	http://localhost:9200/索引库名/_mapping
+			请求体：	JSON	DSL内容
+
+		2	命令：	PUT /索引库名/_mapping	
+			DSL：	{
+				    "properties":{
+					"添加字段名":{
+					    "type":字段类型
+					}	
+				    }
+				}
+
+		查看所有索引库：
+		1	请求：	GET	http://localhost:9200/_cat/indices?v
+
+		2	命令：	GET _cat/indices?v
+
+
+	文档操作：--------------------------------------------------------------------------------------------------------------------------------
+		创建文档：
+		1	请求：	PUT	http://localhost:9200/索引名/_doc/文档id
+			请求体：	JSON	DSL内容
+			
+		2	命令：	PUT /索引库名/_doc/文档id			
+			DSL：	{
+				    "字段1":"值1",
+				    "字段2":"值2",
+				    "字段3":{
+					"子属性1":"值3",
+					"子属性2":"值4"
+				    }
+				}
+
+		查看文档:
+		1	请求：	GET	http://localhost:9200/索引名/_doc/文档id
+			
+		2	命令：	GET /索引库名/_doc/文档id
+		
+		删除文档：
+		1	请求：	DELETE	http://localhost:9200/索引名/_doc/文档id
+			
+		2	命令：	DELETE /索引库名/_doc/文档id
+			
+		修改文档：
+			全量修改：根据文档id删除旧文档，添加新文档
+			
+			1	请求：	PUT	http://localhost:9200/索引库名/_doc/文档id
+				请求体：	JSON	DSL内容
+
+			2	命令：	PUT /索引库名/_doc/文档id
+				DSL：	{
+					    "字段1":"值1",
+					    "字段2":"值2",
+					    ......
+					}
+					
+			局部修改：增量修改，修改指定字段值
+			1	请求：	POST	http://localhost:9200/索引库名_update/文档id
+			2	请求体：	JSON	DSL内容
+			
+			1	命令：	POST /索引库名/_update/文档id
+			2	DSL：	{
+					    "doc":{
+					    	"字段名":更新字段值
+					    }
+					}
+
+常见查询类型：
+	查询所有：查询所有数据，一般测试用
+	全文检索：逐词分析文档内容，扫描文档中每个单词，对每个单词进行索引
+		分词：将文档文本内容分解成词项
+		倒排索引：词项对应列表，记录每个词项在文档中出现频率和位置，包含该词项的所有文档ID
+	精确查询：根据精确词条值查找数据
+	地理查询：根据经纬度查询
+	复合查询：合并查询条件
+
+	--------查询索引库中文档：--------------------------------------------------------------------------------------------------------------------------			
+	查询类型		查询库中所有文档：	
+	查询所有			请求：	GET http://localhost:9200/索引库名/_search
+				命令:	GET 索引库名/_search
+					{
+					    "query":{
+					        "match_all":{
+						}
+					    }
+					}
+
+	match匹配查询	查询索引库中符合特定条件文档(倒排索引)：
+				请求：	GET http://localhost:9200/索引库名/_search?q=字段名:字段值
+				命令：	GET /索引库名/_search
+					{
+					    "query":{
+						"match":{
+						    "字段名":"字段值"
+						}	
+					     }
+					}
+
+			查询多个文档字段中包含查询内容文档：
+				请求：	GET http://localhost:9200/索引库名/_search
+				命令:	GET /索引库名/_search
+					{
+					    "query":{
+					    	"multi_match":{
+						    "query":"查询内容",
+						    "fields":[],
+						}
+					    }
+					}
+
+	精确查询		查询索引库完全匹配字段文档：
+				请求：	GET http://localhost:9200/索引库名/_search
+				请求体：	DSL内容
+					
+				命令：	GET /索引库名/_search
+				DSL：	{
+					    "query":{
+						"match_phrase"/"term":{			match-pharse/term:完全匹配字段,不对搜索条件分词
+						     "字段名":"字段值"
+						}	
+					    }
+					}
+
+					{
+					    "query":{
+					    	"term":{
+						    "name":{
+							"value":"查询内容"	
+						    }
+						}
+					    }
+					}
+
+			查询索引库中文档特定字段：
+				请求：	GET http://localhost:9200/索引库名/_search?_source=字段名,字段名&from=0&size=10
+				命令：	GET /索引库名/_search			
+					{
+					    "_source":["字段名","字段名"]
+					}
+				
+	分页查询		查询索引库中文档分页展示：
+				请求：	GET http://localhost:9200/索引库名/_search?from=0&size=10
+				命令：	GET /索引库名/_search				查询索引库中文档从第0条开始，展示10条数据
+					{
+					    "from":0
+					    "size":10
+					}
+
+	范围查询		查询索引库中文档字段范围查询：
+				请求：	GET http://localhost:9200/索引库名/_search
+				请求体：	DSL内容
+
+				命令：	GET /索引库名/_search
+					{
+					    "query":{
+						"range":{
+						    "字段名":{
+							"gte":最小值,
+							"lte":最大值	
+						    }	
+						}
+					    }
+					}
+
+	地理查询		查询geo_point值在某矩形范围内所有文档：
+				请求：	GET http://localhost:9200/索引库名/_search
+				请求体：	DSL内容
+				
+				命令：	GET  /索引库名/_search
+					{
+					    "query":{
+					    	"geo_bounding_box":{
+						    "查询地理字段":{
+						    	"top_left":{			查询矩形范围内文档
+							    "lat":40.73,
+							    "lon":-74.1
+							},
+							"bottom_right":{
+							    "lat":40.01,
+							    "lon":-71.12
+							}
+						    }
+						}
+					    }
+					}
+
+			查询离指定位置一定距离文档：
+				请求：	GET http://localhost:9200/索引库名/_search
+				请求体：	DSL内容
+	
+				命令：	GET  /索引库名/_search
+				DSL：	{
+					    "query":{				
+						"geo_distance":{
+						    "distance":查询范围,
+						    "location":查询中心点坐标
+						}
+					    }	
+					}
+
+	组合查询		组合查询：
+				请求：	GET http://localhost:9200/索引库名/_search
+				
+				命令：	GET /索引库名/_search
+					{
+					    "query":{
+						"bool":{
+						    "must":[					必须匹配条件
+						    	{
+							    "match":{
+								"age":40	
+							    }
+							}
+						    ],
+						    "must_not":[
+						    	{
+							    "match":{				排除条件
+								"state":"ID"	
+							    }
+							}
+						    ]
+						}
+					    }
+					}
+
+	聚合操作		聚合文档分组查询：
+	桶聚合(文档分组)		请求：	GET http://localhost:9200/索引库名/_search
+				
+				命令：	GET /索引库名/_search
+					{
+					    "aggs":{						aggs：定义聚合操作
+						"分组名":{
+						    "terms":{
+						    	"field":"字段名",			field：分组字段名(精确值，不做分词)
+							"size":10				size：获取聚合结果数量
+							"order":{
+							    "排序字段"："排序方式"			排序方式：asc/desc	
+							}
+						    }
+						}
+					    }
+					    "size":0						结果不包含文档，只包含聚合结果
+					}
+
+	度量聚合(计算值)		请求：	GET http://localhost:9200/索引库名/_search
+				
+				命令：	GET /索引库名/_search
+					{
+					    "aggs":{
+						"聚合类型":{					聚合类型：max/min/avg/sum/stats(计算max/min/avg/stats)
+						    "field":"字段名"
+						}
+					    }
+					    "size":0						结果不包含文档，只包含聚合结果
+					}
+
+	--------查询结果处理：--------------------------------------------------------------------------------------------------------------------------
+		排序：
+			查询文档多字段排序：
+				请求：	GET http://localhost:9200/索引库名/_search
+				
+				命令：	GET /索引库名/_search
+					{
+					    "query":{
+					    	"match_all":{
+						}
+					    },
+					    "sort":[
+						{	
+						    "date":{					排序字段								
+						    	"order":"desc"				排序方式
+						    }	
+						},
+						{
+						    "price":{					排序字段
+						    	"order":"desc"				排序方式
+						    }
+						}						注意：根据第一个字段排序，相同，根据第二个字段排序
+					    ]
+					}
+
+			查询文档自定义评分排序：
+				请求：	GET http://localhost:9200/索引库名/_search
+					
+				命令：	GET /索引库名/_search
+					{
+					    "query":{
+						"match_all":{}
+					    },
+					    "sort":[
+						{
+						    "_score":{					基于相关性计算评分排序
+							"order":"desc"
+						    }
+						}	
+					    ]
+					}
+			
+			按文档顺序排序(不对文档进行排序，返回原始文档顺序)：
+				请求：	GET http://localhost:9200/索引库名/_search
+				
+				命令：	GET /索引库名/_search
+					{
+					    "query":{
+					    	"match_all":{}
+					    },
+					    "sort":[
+						"_doc"						对原始文档顺序排序
+					    ]
+					}
+		
+		分页：
+			查询文档分页处理：
+				请求：	GET http://localhost:9200/索引库名/_search
+					
+				命令：	GET /索引库名/_search					
+					{
+					    "query":{
+						"match_all":{}
+					    },
+					    "from":0						对查询文档结果从第0条开始，展示10条数据
+					    "size":10
+					}
+
+			深度分页查询(解决集群分片查询问题)：
+				条件：	按照price排序后，获取from = 990，size = 10的数据
+				思想：	首先在数据分片上排序并查询前1000条文档
+					将所有节点结果聚合，在内存中重新排序选出前1000条数据
+					从1000条数据中，选取from = 990,size = 10数据
+
+		查询结果高亮展示：
+			高亮展示搜索结果关键字：
+				请求：	GET http://localhost:9200/索引库名/_search
+				
+				命令：	GET /索引库名/_search
+					{
+					    "query":{
+					   	"match":{
+						    "content":"Java"				查询包含Java关键字文档	
+						}
+					    }
+					    "highlight":{
+					    	"fields":{					字段列表，对哪些字段进行高亮展示
+						    "高亮展示字段名":{
+							"require_field_match":true		高亮字段在搜索字段匹配
+						    	"pre_tags":["<em>"]			开始标签
+							"post_tags":["</em>"]			结束标签
+						    }
+						}
+					    }
+					}				
+
+
+Spring Data Elasticsearch介绍和使用：
+Spring Data Ealsticsearch：
+	Spring Data API简化Elasticsearch操作，封装Elasticsearch客户端原始操作API
+				
+Spring Data Elasticsearch实际开发：
+	ES配置：	
+		引入依赖：
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-data-elasticsearch</artifactId>			ES启动依赖
+			</dependency>
+			<dependency>
+				<groupId>org.elasticsearch.client</groupId>
+				<artifactId>elasticsearch-rest-level-client</artifactId>			RestClient依赖
+				<version>7.12.1</version>
+			</dependency>
+			<dependency>
+				<groupId>org.elasticsearch</groupId>
+				<artifactId>elasticsearch</artifatcId>
+				<version>7.12.0</version>
+			</dependency>
+
+		application.yml配置文件：
+			spring：
+			    elasticsearch：
+				rest：
+				    uris：http://localhost:9200
+				    connection-timeout：1s
+				    read-timeout：30s
+				    username：用户名
+				    password：密码
+
+		Elasticsearch实体类：
+			作用：实体类映射到Elasticsearch索引中文档	
+			
+			@Data
+			@AllArgsConstructor
+			@NoArgsConstructor
+			@Document(indexName = "索引名"，createIndex = true，shards = 3，replicas = 1)
+			public class 索引名{
+				@Id
+				@Field(store = true,index = false,type = Field.Integer)
+				private Integer id;
+					
+				@Field(index = true,analyzer = "ik_smart",store = true,searchAnalyzer = "ik_smart",type = Field.Text)
+				private String title;
+			
+				@Field(index = true,analyzer = "ik_smart",store = true,searchAnalyzer = "ik_smart",type = Field.Text)
+				private String content;
+
+				@Field(index = true,store = true,type = Field.Double)
+				private Double price;
+		
+				@Field(index = true,store = true,type = Field.GeoPoint)			GeoPoint：表示地理坐标(经纬度)
+				private GeoPoint location;					
+			}
+			
+	ElasticsearchRestTemplate：
+		ElasticsearchRestTemplate：构建查询DSL语句并通过http请求发送给ES执行查询
+
+	--------索引库操作：--------------------------------------------------------------------------------------------------------------------------
+			@RequiredArgsConstructor
+			private final ElasticsearchRestTemplate elasticsearchRestTemplate;
+
+			创建索引库：
+				elasticsearchRestTemplate.indexOps(索引名.class).create();		创建索引
+				elasticsearchRestTemplate.indexOps(索引实体类.class).putMapping();	创建映射
+
+			删除索引库：
+				elasticsearchRestTemplate.indexOps(索引实体类.class).delete();		
+				
+			判断索引库是否存在： 
+				elasticsearchRestTemplate.indexOps(索引实体类.class).exists();
+
+	--------文档增删改：--------------------------------------------------------------------------------------------------------------------------
+			@RequiredArgsConstructor
+			private final ElasticsearchRestTemplate elasticsearchRestTemplate;
+
+			创建文档：
+				IndexQuery indexQuery = new IndexQueryBuilder()
+								.withId(user.getId)					设置文档Id
+								.withObject(user)					设置文档内容
+								.build();
+				elasticsearchRestTemplate.index(indexQuery);
+			
+			查询文档：
+				Query searchQuery = new NativeSearchQueryBuilder()
+								.withQuery(QueryBuilders.matchQuery("name",name))	查询name字段
+								.build();
+
+				elasticsearchRestTemplate.queryForObject(searchQuery,索引名.class);
+
+			修改文档：
+				局部修改(更具id更新文档)：
+					IndexQuery indexQuery = new IndexQueryBuilder()
+								.withId(user.getId())					设置文档id
+								.withObject(user)					设置更新文档内容
+								.build()
+				
+					elasticsearchRestTemplate.index(indexQuery);
+
+				全量修改(创建文档)：
+					IndexQuery indexQuery = new IndexQueryBuilder()
+									.with(user.getId())				设置文档Id		
+									.withObject(user)				设置文档内容
+									.build()				
+					elasticsearchRestTemplate.index(indexQuery);
+
+			删除文档：									
+				elasticsearchRestTemplate.delete(索引名.class,documentId);
+	--------文档查询：--------------------------------------------------------------------------------------------------------------------------
+		查询：	
+			精确查询文档：
+				Query searchQuery = new NativeSearchQueryBuilder()
+								.withQuery(QueryBuilders.termQuery("city","杭州"))
+								.build();
+				elasticsearchRestTemplate.queryForObject(searchQuery,索引名.class);
+ 
+			范围查询文档：
+				Query searchQuery = new NativeSearchQueryBuilder()
+								.withQuery(QueryBuilders.rangeQuery("范围查询字段"))
+								.gte("2023-01-01")
+								.lte("2023-12-31")
+								.build()
+				elasticsearchRestTemplate.queryForObject(searchQuery,索引名.class);
+
+			模糊查询文档：
+				Query searchQuery = new NativeSearchQueryBuilder()
+								.withQuery(QueryBuilders.fuzzyQuery("name", name)
+        							.fuzziness(Fuzziness.AUTO)					根据词长自动调整模糊度
+								.build()
+				elasticsearchRestTemplate.queryForObject(searchQuery,索引名.class);
+
+			组合查询文档：
+				Query searchQuery = new NativeSearchQueryBuilder()
+							.withBody(QueryBuilders.boolQuery()
+								.must(QueryBuilders.matchQuery("name","John"))			必须匹配条件
+								.filter(QueryBuilder.rangeQuery("age").gte(18))			过滤条件
+								.should(QueryBuilders.matchQuery("city","New York"))		可选条件
+								.mustNot(QueryBuilders.termQuery("status","inactive"))		排除条件
+							)
+				elasticsearchRestTemplate.queryForObject(searchQuery,索引名.class);
+
+			分页查询：
+				Query searchQuery = new NativeSearchQueryBuilder()
+								.withQuery(QueryBuilders.matchAllQuery())			查询所有文档
+        							.withPageable(PageRequest.of(1,10))				分页展示
+								.build()
+				elasticsearchRestTemplate.queryForPage(searchQuery,索引名.class);
+
+			分组聚合查询：
+				Query searchQuery = new NativeSearchQueryBuilder()
+    							.withQuery(QueryBuilders.matchAllQuery()) 				查询所有结果
+    							.addAggregation(							分组聚合查询
+								AggregationBuilders						
+									.terms("category_group")				聚合分组名
+									.field("fenuz字段"))  					分组字段
+									.size(10)						查询聚合结果数量	
+    							.build();
+
+				SearchHits<IndexClass> searchHits = elasticsearchRestTemplate.search(searchQuery, IndexClass.class);
+				Map<String,Aggregation> aggregations = searchHits.getAggregations();
+
+		排序：
+			查询结果排序：
+				Query searchQuery = new NativeSearchQueryBuilder()
+							.withQuery(QueryBuilders.matchAllQuery())
+							.withPageable(PageRequest.of(1,10))
+							.withSort(SortBuilders.fieldSort("price"))				排序字段
+							.order(SortOrder.ASC);							排序方式
+							.build();
+				elasticsearchRestTemplate.queryForPage(searchQuery,索引名.class);
+				
+			补充：	IndexQueryBuilder()		构建器类，构建IndexQuery对象
+				IndexQuery			IndexQuery对象，表示创建索引文档
+
+Spring框架ES相关注解：
+	@Document				标记类为ES中文档对象，将类映射到ES中索引
+		indexName = 索引名		设置文档索引名	
+		createIndex = true		开启创建索引
+		shards = 3			索引(index)分片数量
+		replicas = 1			索引(index)副本数量
+
+	@Id					文档主键，唯一标识
+
+	@Field					文档(Document)中字段配置
+		type = FieldType.字段类型		设置文档字段类型
+		index = true/false		字段不参与索引，字段不需要查询
+		analyzer = 分词器		指定长文本分词器
+		store = true/false		是否存储该字段
+		
+	@Query("DSL语句")			自定义查询
+	@Aggregation("DSL语句")			聚合查询，对结果进行分组和统计
+	@Version				ES提供版本控制机制，提示修改信息版本
+	@TextScore				标记查询展示特定字段，效果等同于_score					
+
+	@Mapping				指定ES索引库映射配置(将Java类字段映射到ES字段)
+				
+		注意：一般使用@Document + @Field进行字段简单映射
+
+
+ES集群：
+	解决问题：海量数据存储、单节点故障
+	海量数据存储：将索引库从逻辑上拆分N个分片(shard)存储到多个节点
+	单节点故障：将分片数据在不同节点备份	
+
+	概念：
+		节点：ES集群中的一计算机实例，每个节点有多个不同索引
+		集群：在多个服务器上部署多个节点共同分担数据存储和查询负载
+		分片：索引被分成多个分片，在每个分片中存储一部分数据，数据被写入Elasticsearch时，根据一定规则将数据分配到不同分片		分片底层：Lucene索引，Lucene以段形式存储数据
+		副本：主分片有一/多个副本分片，是主分片副本，存储在ES集群不同节点上
+
+		节点分类：
+			Master节点(主节点)：负责管理集群元数据(索引创建/删除、节点加入/退出)，节点选举产生
+			数据节点：存储实际索引数据和执行操作(索引、查询、聚合)
+			协调节点：将客户端请求路由到合适节点并将各节点查询结果合并返回客户端
+		
+		单机：					集群：
+			索引库								索引库
+			 ↓						↙	    	↓	        ↘
+			Node(节点)		节点		Node1		      Node2			Node3
+									         ↙	      ↘		 	  ↓
+						索引			     index1	      index2		index3
+								       	    ↙    ↘	     ↙     ↘
+						分片		        shard-0	 shard-1  shard-2  shard-3
+						
+
+		ES查询方式：
+			Routing：默认文档id，也可以是自定义值
+			
+			不带Routing查询：
+				分发：请求到达协调节点，协调节点将查询请求芬达到每个分片
+				聚合：协调节点搜集每个分片查询结果，将查询结果进行排序，返回用户结果
+
+			带Routing查询：
+				根据Routing信息定位到某个分片查询，不需要查询所有分片，经过协调节点排序
+
+	docker-compose搭建ES集群：
+		version:'2.2'									Docker Compose文件版本
+		services：									服务列表
+		    elasticsearch-node1：							服务：elasticsearch-node1	
+			image：docker.elastic.co/elasticsearch/elasticsearch:8.5.0		服务容器采用镜像
+			container_name：node1							服务容器名
+			environment：				
+			    - node.name = node1							节点名
+			    - cluster.name=es-cluster						集群名
+			    - node.master = true						该节点是否有资格被选举为Master(主节点)
+			    - node.data = true							节点是否存储索引数据
+      			    - discovery.seed_hosts=node2,node3					集群中另外节点
+      			    - cluster.initial_master_nodes=node1，node2，node3			指定集群初始主节点，帮助节点初始启动时相互发现
+      			    - network.host=0.0.0.0						Elasticsearch服务器绑定地址
+      			    - "ES_JAVA_OPTS=-Xms2g -Xmx2g"					设置JVM初始堆内存/JVM最大堆内存
+
+			ports：
+			    - "9201:9200"							映射容器内Elasticsearch端口到主机上端口
+
+			volumes：
+			    - es_data1:/user/share/elasticsearch/data				
+			    
+			networks：
+			    - es-net
+			
+		    elasticsearch-node2：
+			image：docker.elastic.co/elasticsearch/elasticsearch:8.5.0
+			container_name：node2
+			environment：				
+			    - node.name = node2							节点名
+			    - cluster.name=es-cluster						集群名
+			    - node.master = true						该节点是否有资格被选举为Master(主节点)
+			    - node.data = true							节点是否存储索引数据
+			    - discovery.seed_hosts=node1,node3					集群中另外节点
+			    - cluster.initial_master_nodes=node1，node2，node3			指定集群初始主节点，帮助节点初始启动时相互发现
+			    - network.host=0.0.0.0						Elasticsearch服务器绑定地址
+			    - "ES_JAVA_OPTS=-Xms2g -Xmx2g"					设置JVM初始堆内存/JVM最大堆内存
+			
+			ports：
+			    - "9202:9200"							映射容器内Elasticsearch端口到主机上端口
+
+			volumes：
+			    - es_data2:/user/share/elasticsearch/data
+			    
+			networks：
+			    - es-net
+			
+		    elasticsearch-node3：
+			image：docker.elastic.co/elasticsearch/elasticsearch:8.5.0
+			container_name：node3
+			environment：				
+			    - node.name = node3							节点名
+			    - cluster.name=es-cluster						集群名
+			    - node.master = true						节点是否有资格被选举为Master(主节点)
+			    - node.data = true							节点是否存储索引数据
+			    - discovery.seed_hosts=node1,node2					集群中另外节点
+			    - cluster.initial_master_nodes=node1，node2，node3			指定集群初始主节点，帮助节点初始启动时相互发现
+			    - network.host=0.0.0.0						Elasticsearch服务器绑定地址
+			    - "ES_JAVA_OPTS=-Xms2g -Xmx2g"					设置JVM初始堆内存/JVM最大堆内存
+
+			ports：
+			    - "9203:9200"							映射容器内Elasticsearch端口到主机上端口
+
+			volumes：
+			    - es_data3:/user/share/elasticsearch/data				
+			    
+			networks：
+			    - es-net
+
+		    volumes：
+			es_data1：								创建es_data1数据卷
+			    driver：local							使用Docker宿主机保存数据
+			es_data2：								创建es_data2数据卷
+			    driver：local							使用Docker宿主机保存数据
+			es_data3：								创建es_data3数据卷
+			    driver：local							使用Docker宿主机保存数据
+			
+		    networks：
+			es-net：
+			    driver：bridge
+			
+		注意：	- cluster.name = es-cluster			设置ES集群名一致，ES自动将节点组装为集群
+			0.0.0.0						特殊IP地址，Elasticsearch绑定到所有可用网络端口
+
+		补充：	- es_data1:/user/share/elasticsearch/data	
+			
+			数据卷映射原因：
+				Docker容器文件系统临时存储数据，容器停止/删除等情况，容器内部所有数据丢失
+				容器/user/share/elasticsearch/data目录映射宿主机数据卷，Docker容器删除/重启，数据会保存在宿主机硬盘上
+	
+		启动集群命令：docker-compose up -d
+	
+	ES集群故障转移：
+		概念：
+			数据节点宕机：master节点(主节点)监控集群中节点状态，发现有节点宕机，将宕机节点分片数据迁移到其他节点保证数据安全
+			主节点宕机：master(主节点)宕机，EligibleMaster选举为新主节点
+
+面试题：
+	DSL实现自动补全：
+		1.设置自动补全字段类型"completion"					
+			PUT /autocomlete_index
+			{
+		    	    "mappings":{
+				"properties":{
+				    "字段名":{
+					"type":"completion"
+			  	    }
+				}	
+		    	    }
+			}
+		
+			注意：	自动补全字段必须是completion类型
+				字段内容一般是多词条形成数组
+
+		2.自动补全字段设置值
+			POST /autocompletion_index/_doc/1
+			{
+		    	    "字段名":{
+				"input":["apple","apple pie","applause"]	
+		    	    }	
+			}
+		
+			注意：	字段值是多词条数组
+
+		3.自动补全查询
+			GET /autocompletion_index/_search
+			{
+		    	    "suggest":{						suggest字段快速获取与给定文本匹配建议项
+				"title-suggest":{				自动补全查询命名
+			    	    "prefix":"app",				查询返回与spp前缀匹配所有建议项
+			    	    "completion":{				自动补全查询
+			    		"field":"自动补全字段名"			自动补全查询使用字段
+					"skip-duplicates":true			跳过重复
+					"size":10				最多返回自动补全结果数量
+			    	    }
+				}	
+		    	    }
+			}
+
+		4.使用Spring Data Elasticsearch实现自动补全查询：
+			@Autowired
+			private ElasticsearchRestTemplate elasticsearchTemplate；
+
+			public List<CompletionSuggestion> suggestCities(String prefix){
+				CompletionSuggestionBuilder suggestionBuilder
+					 = new CompletionSuggestionBuilder("sityName")			
+							.prefix(prefix)			前缀匹配
+							.size(10)			最多返回10个结果
+			
+				Query searchQuery = new NativeSearchQueryBuilder()
+							.withQuery(suggestionBuilder)
+							.build();
+
+				SearchQuery query = new SearchQuery(searchQuery);
+				List<CompletionSuggestion> suggestions = elasticsearchRestTemplate.queryForList(query,CompletionSuggestion.class);
+
+				return suggestions;
+			}
+
+2	ES与MySQL数据同步：MySQL数据发生改变时，ES中数据随着改变
+
+	问题：微服务，业务(MySQL)与业务(ES)在不同微服务上，如何实现ES与M有SQL数据同步
+	解决方案：
+		1.同步调用(在MySQL中远程调用Elasticsearch更新索引库接口)				
+		2.异步通知(操作MySQL结束发布消息到RabbitMQ消息队列中，ES监听MySQL业务发布消息更新ES)	
+		3.监听binlog(写入MySQL数据库监听MySQL的binlog，通知ES数据变更更新数据)
+
+	异步通知实现：
+		1.Publisher/Consumer服务引入amqp依赖
+			<dependency>							
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-amqp</artifactId>	
+			</dependency>
+		
+		2.Publisher/Consumer服务application.yml配置RabbitMQ：
+			spring:
+			    application:
+				name:rabbitmq-provider/rabbitmq-consumer
+			
+			    rabbitmq:					
+			    	host:RabbitMQ服务器IP地址
+				port:RabbitMQ服务器端口号
+				virtual-host:RabbitMQ虚拟主机名
+				username:RabbitMQ登录用户名
+				password:RabbitMQ登录用户密码
+
+		3.设置交换机/队列常量类
+			public class MqConstants{
+				public final static String HOTEL_EXCHANGE = "hotel.topic";			交换机
+				public final static String HOTEL_INSERT_QUEUE = "hotel.insert.queue"		更新队列
+				public final static String HOTEL_DELETE_QUEUE = "hotel.delete.queue"		删除队列
+				public final static String HOTEL_INSERT_KEY = "hotel.insert"			新增/修改RoutingKey
+				public final static String HOTEL_DELETE_KEY = "hotel.delete"			删除RoutingKey
+			}
+			
+		4.Java声明Exchange/Queue/Routing Key(Bean方式注入)：
+			@Configuration		
+			public class FanoutConfig{
+				@Bean
+				public TopicExchange topicExchange(){
+					return new TopicExchange(MqConstants.HOTEL_EXCHANGE,true,delete);		指定交换机名称，true设置交换机持久化
+				}
+
+				@Bean
+				public Queue insertQueue(){
+					return new Queue(MqConstants.HOTEL_INSERT_QUEUE,true);				指定新增/修改队列名称，true设置队列持久化
+				}
+
+				@Bean
+				public Queue deleteQueue(){
+					return new Queue(MqConstants.HOTEL_DELETE_QUEUE,true);				指定删除队列名称，true设置队列持久化
+				}
+
+				@Bean
+				public Binding insertQueueBinding(){
+					return BindingBuilder.bind(insertQueue()).to(topicExchange()).with(MqConstants.HOTEL_INSERT.KEY);	指定交换机/队列RoutingKey
+				}
+				
+				@Bean
+				public Binding deleteQueueBinding(){
+					return BindingBuilder.bind(deleteQueue()).to(topicExchange()).with(MqConstants.HOTEL_DELETE.KEY);	指定交换机/队列RoutingKey
+				}
+			}
+
+		5.操作MySQL结束，Publisher发送消息到RabbitMQ队列
+			@RequiredArgsConstructor
+			private final RabbitTemplate rabbitTemplate;
+			priavte final HotelService hotrlService;
+			
+			@PostMapping
+			public void saveHotel(@RequestBody Hotel hotel){
+				hotelService.save(hotel);
+				rabbitTemplate.convertAndSend(MqConstants.HOTEL_EXCHANGE,MqConstants.HOTEL_INSERT_KEY,hotel.getId());
+			}
+			
+			@PutMapping
+			public void updateByIda(@RequestBody Hotel hotel){
+				hotelService.updateById(hotel);
+				rabbitTemplate.convertAndSend(MqConstants.HOTEL_EXCHANGE,MqConstants.HOTEL_INSERT_KEY,hotel.getId());
+			}
+	
+			@DeleteMapping
+			public void deleteById(@PathVariable("id") Long id){
+				hotelService,removeById(id);
+				rabbitTemplate.convertAndSend(MqConstants.HOTEL_EXCHANGE,MqConstants.HOTEL_DELETE_KEY,id);
+			}
+			
+		6.Consumer监听RabbitMQ消息队列中消息，对消息进行更新
+			@Slf4j
+			@Component
+			public class RabbitConsumer{
+				@RabbitListener(queues = MqConstants.HOTEL_INSERT_QUEUE)
+				public void listenHotelInsertOrUpdate(Long id){
+					hotelService.insertById(id);						实现ES数据同步，ES中插入/更新数据
+				}
+
+				@RabbitListener(queues = MqConstants.HOTEL_DELETE_QUEUE)
+				public void listenHotelDelete(Long id){
+					hotelService.deleteById(id);						实现ES数据同步，ES中删除数据
+				}
+			}
+			
+			业务层：
+				@RequiredArgsConstructor
+				private final ElasticsearchRestTemplate elasticsearchRestTemplate；
+				
+				//更新文档
+				public void insertById(Long id){
+					IndexQuery indexQuery = new IndexQueryBuilder()
+								.withId(id)					
+								.withObject(getById(id))			
+								.build()
+				
+					elasticsearchRestTemplate.index(indexQuery);
+				}
+
+				//删除文档
+				public void deleteById(Long id){
+					elasticsearchRestTemplate.delete(Hotel.class,id)
+				}
+
+3	Elasticsearch性能优化：
+	缓存优化：
+		页缓存：基于操作系统的文件系统缓存，缓存磁盘上的数据页(数据文件一部分)
+
+			读取流程：
+				Elasticsearch对数据进行读写时，首先检查操作系统页缓存是否已经有该数据。如果有，直接从缓存中读取数据，避免磁盘IO操作
+
+			特点：
+				页缓存由操作系统管理，通常基于内存
+				加速从硬盘读取数据速度
+
+			工作原理：
+				Elasticsearch读取Lucene索引中文档或段时，操作系统读取数据页缓存到内存
+				若同一数据再次被访问，操作系统直接从内存中返回，不是从磁盘读取
+		
+		分片级请求缓存：Elasticsearch在每个分片上单独维护缓存，存储某特定查询结果
+				
+			读取流程：Elasticsearch在每个分片上单独维护缓存，存储某个特定查询结果，避免相同查询多次重复执行
+			
+			特点：
+				该缓存只对读取操作有效，不缓存写操作
+				缓存的是特定请求查询结果(分片返回文档)
+
+			工作原理：
+				执行查询，Elasticsearch检查请求是否已经在缓存中。
+				如果有，直接从缓存中获取结果；若缓存没有对应结果，执行查询并将查询结果存储到缓存中供后续请求使用
+
+		查询缓存：Elasticsearch对查询结果缓存，缓存完整查询结果(集群中所有分片查询结果汇总)
+
+			特点：
+				查询缓存缓存整个查询结果(不仅仅是单个分片结果)			
+				查询缓存存储查询结果集，不仅仅是查询语句本身
+
+			工作原理：
+				Elasticsearch接收到查询请求时，检查查询结果是否已经缓存
+				若缓存命中，直接返回缓存结果；若缓存未命中，执行查询并将结果存储到缓存中供后续使用
+
+	内存优化：Elasticsearch官方推荐节点内存大小不超过30GB(尽量减小)
+
+4	Elasticsearch数据写流程/数据读流程：
+		数据写流程：
+			客户端发送数据写入请求根据索引名/文档ID计算值路由到正确主分片节点
+			数据写入主分片，主分片确认接收到数据，Elasticsearch将数据同步到副本分片(副本分片向主分片请求数据并保存)
+			主分片周期性将translog中数据刷新到磁盘并映射到内存Lucene索引
+			ES数据成功写入并存储在主分片和副本分片后，向客户端返回成功响应
+					
+		数据读流程：
+			客户端发送查询请求根据查询索引名/文档ID计算值路由到相应主分片和副本分片
+			主分片和副本分片执行查询后收集查询结果，根据查询参数堆结果进行合并和排序
+			将汇总和排序后的结果返回给客户端
+
+5	更新流程/批量操作流程：
+		更新流程：
+			客户端发送更新请求根据文档ID/索引名计算值路由到正确主分片节点
+			Elasticsearch从主分片中读取当前文档，若文档存在，进行更新；若文档不存在，根据策略决定插入新文档/报错
+			更新操作：
+				删除旧文档：删除当前文档
+				插入新文档：插入包含更新内容新文档
+			更新操作同步至副本分片，ES将新文档刷新到内存索引Lucene和磁盘上
+
+6	Elasticsearch集群脑裂：
+		概念：ES集群中节点间因为网络或其他原因无法正常通信，导致集群形成多个分裂部分，每个部分认为自己是集群主节点，可能导致数据不一致
+		
+		脑裂产生原因：
+			网络分区：集群中部分节点失去连接，导致他们无法与其他节点通信
+			节点故障：集群中某些节点宕机
+
+		脑裂影响：			
+			数据不一致：每个分裂部分都认为自己是主节点，会独立处理写请求，导致数据不一致
+			主节点丢失：导致分裂部分某些节点认为自己是主节点，导致原本主节点丢失
+			写操作失效：网络问题等，导致写请求无法即使同步到所有副本节点
+
+		防止脑裂策略：
+			选票数超过(候选节点数 + 1)/2才能选举为主节点(master)
+			最小主节点数设置：(节点数/2) + 1
+
