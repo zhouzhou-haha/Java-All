@@ -1,0 +1,210 @@
+Sentinel：		阿里巴巴开源微服务流量控制组件(Java库)
+	Sentinel功能:流量控制/熔断降级/系统负载保护/实时监控统计/热点参数限流	
+
+	Sentinel组成：
+		Sentinel核心库(Jar包)	不依赖任何框架/库，对Dubbo，Spring Cloud等框架提供很好的支持
+			
+		Sentinel控制台(Dashboard)Dashboard负责管理推送规则，监控接口调用情况，管理接口信息等
+
+	Sentinel相关基本概念：
+		响应时间(RT)：响应时间是系统服务器对请求做出响应的时间
+		吞吐量(Throughput)：系统在单位时间内处理请求的数量
+		并发用户数：系统可以同时承载的正常使用系统功能的用户数量
+		QPS(每秒查询率)：每秒的响应请求数量		
+
+		资源:Java应用程序应用程序提供的服务/服务里的方法/一段代码
+		规则：围绕资源设定的规则。Sentinel支持流量控制，熔断降级等多种规则，规则可以动态实时调整
+
+		专业术语：
+			扇出：A调用B和C，B和C调用其他微服务
+			服务雪崩：一个服务不可用，可能导致所有调用它的服务都不可用，造成整个系统不可用
+
+			服务雪崩产生原因：
+				硬件故障：服务器故障，机房断电
+				流量激增：流量激增
+				缓存穿透：应用重启，大量缓存失效，请求(大量)直接访问后端服务，服务超负荷运行，导致服务不可用
+				程序bug：程序逻辑死循环内存泄漏
+
+			防止服务雪崩方法：
+				超时机制：上游服务调用下游服务，设置超时时间(手动配置)，但是实际开发中例feign会有默认的超时时间
+				限流机制：限制系统的输入量和输出量。超过限制阈值，限制流量
+				熔断机制：下游服务因访问压力过大响应变慢，上游服务暂时切断对下游服务的调用
+				降级机制：根据当前业务情况对一些服务和页面有策略的降级
+				    降级：提供一个兜底方法，一旦服务无法正常调用，使用兜底方案
+
+
+	Sentinel-dashboard控制台安装：
+		Sentinel官网下载sentinel-dashboard-1.7.0.jar --> 打开jar包所在目录右键终端打开 --> 输入命令:java -jar sentinel-dashboard-1.7.0.jar
+			
+		jar包下载报错：APPLICATION FAILED TO STARTED.Port 8080 was already in use.	端口8080被占用
+		解决方案：输入命令：netstat -ano					查看8080占用进程PID
+			输入命令：taskkill /pid 48052 /f				根据8080PID停止进程
+			重新下载：java -jar sentinel-dashboard-1.7.0.jar		下载成功
+			访问首页：http://localhost:8080				访问首页成功
+
+		Sentinel-dashboard账号密码:	账号：sentinel		密码：sentinel
+
+	Sentinel-dashboard控制台：
+		实时监控		同服务下有多台机器(多个实例)，Sentinel汇总机器运行信息(QPS/RT/吞吐量)
+
+		簇点链路		页面展示拉取指定客户端资源运行情况
+			单机调用链路：程序(请求)在一台机器上从起始点到终止点的完整调用路径，具体指服务之间的调用关系，数据传递的顺序
+
+			调用链路展示：
+				树状结构展示		/patentinfo/page
+				不区分调用链路展示资源
+
+			链路配置规则：
+				流控规则：	监控应用流量的QPS或并发线程数等指标，达到指定阈值时对流量进行控制
+					资源名		默认请求路径
+					针对来源		流控针对的调用来源，default不区分调用来源
+					阈值类型		QPS		单机阈值 100		调用该接口的QPS达到阈值时进行限流					
+							并发线程数	单机阈值 50		调用该接口的线程数达到阈值时进行限流		线程数 = QPS * 并发线程数
+					是否集群		是否开启集群模式，不选择默认单机模式	
+					流控模式：
+					***	直接(默认链路)	接口达到限流条件时，开启限流
+						关联		关联的资源达到限流条件时，开启限流
+						链路		从接口来的资源达到限流时，开启限流
+					流控效果：
+					***	直接拒绝			默认流量控制方式，QPS超过任意规则阈值，请求不再被接受
+						Warm up(冷启动)		"冷启动"让请求流量缓慢增加，不至于暴增导致系统被压垮
+						排队等待(漏桶算法)		控制请求通过的间隔时间，让请求匀速通过
+
+					线程隔离：B服务出现阻塞或故障时，调用B服务的A服务因此被拖慢。限制A服务中调用B服务的可用线程数
+						server:	
+						    tomcat:			SpringBoot内置服务器		
+							threads：			
+							       max:50		设置线程最大数量
+							accept-count：50		线程占满之后，排队线程最大数量
+							max-connection：100	最大请求连接数
+					
+				熔断规则：
+					熔断：断路器统计请求异常比例，超出阈值熔断业务，拦截接口请求，走fallback逻辑；服务熔断非永久，一段时间后再次检测微服务是否正常，正常则恢复调用
+				
+					资源名		默认请求路径
+					熔断策略			
+						慢调用比例		判断服务调用是否变慢的指标，在统计时长内，响应时间超过设定阈值的请求占总请求数的比例
+						异常比例(异常率)		请求的异常比例异常超过设定阈值触发熔断
+						异常数			资源近1分钟的异常数目超过阈值进行熔断
+					熔断时长		熔断后一段时间(熔断时间)进入半开状态，允许部分流量通过检测服务是否恢复正常
+					冷却时间		熔断状态结束，经过一定时间才重新进行流量探测
+					最小请求数	统计异常比例/异常数的最小请求数	
+					统计时长		统计请求RT，异常比例的时间窗口长度
+
+				热点规则：			
+					统计某个热点数据访问频次最高的Top数据，并对其进行限制
+						热点：经常访问的数据
+						限制：商品ID为参数，统计一段时间内最常购买的商品ID进行限制
+
+					热点参数限流：
+						@RequestMapping("/patentinfo/getTePatent")
+						@SentinelResource("TePatent")
+						public String getTePatent(String name,Integer age){		参数：name / age
+							return "TePatent `name" + name + ",age=" +age;
+						}
+
+					配置热点规则：
+						资源名		默认请求路径
+						限流模式		QPS模式
+						参数索引		标识被限流资源方法中热点参数在方法参数列表中的位置索引	
+							第一个参数：name		索引：0
+							第二个参数：age		索引：1	
+						统计窗口时长	Sentinel统计信息的窗口时长，单位ms
+						单机阈值		指定统计窗口期间内，热点参数允许的最大QPS
+						
+						参数例外项：
+							参数类型		索引值对应的方法参数类型
+							参数值		方法参数值，只对该热点参数进行限流，其余放过		
+										id = 2限流，id !=  2不限流 
+							限流阈值		在统计时长内超过设定阈值被限流		
+							
+				授权规则：	根据调用方限制资源是否通过
+					资源名		默认请求路径
+					流控应用		需要流量控制的资源名称
+					授权类型		黑名单		来源在白名单内的调用者允许访问	
+							白名单		来源在黑名单内的调用者不允许访问
+			
+		机器列表		机器列表中看到自己的电脑设备，代表成功接入控制台
+			机器名		电脑设备名
+			IP地址		电脑IP地址
+			端口号		Sentinel端口号
+			健康状态
+			心跳时间
+			
+	Spring Cloud微服务整合Sentinel：
+		1.引入依赖					
+		<dependency>									SpringCloudAlibabaSentinel依赖，具备限流，熔断等功能
+            		<groupId>com.alibaba.cloud</groupId>
+            		<artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>			
+        	</dependency> 
+
+		2.配置控制台地址，微服务连接控制台
+		spring：
+		    application：
+			name：gain-service
+		    cloud:
+			sentinel:
+			    transport:
+				dashboard:localhost:8080		Sentinel-dashboard控制台地址
+			    http-method-specify：true			开启请求方式前缀
+
+	Sentine实现熔断保护：
+		定义资源(Java应用程序的任何内容)		@SentinelResource注解定义资源，提供可选异常处理和fallback选项
+			@SentinelResource("HelloWorld")
+			public void helloWorld() {
+    				System.out.println("hello world");			资源中的逻辑
+			}
+				补充：注解@SentinelResource不支持private方法
+
+			@SentinelResource
+				value			资源名称
+				resourceName		资源名，优先级高于value
+				entryType		流控模式，默认未EntryType.OUT()
+				blockHandler		流控触发时调用的方法
+				blockHandlerClass	流控触发时调用的类，与blockHandler配合实用
+				fallback		降级处理方法，资源调用失败或被流控时调用方法			fallback函数默认与原方法在同一个类
+				fallbackClass		指定对应的降级处理类
+				defaultFallback		默认降级处理方法						
+				maxQueueSize		最大线程数
+				statisticMaxRT		统计最大响应时间
+
+
+	基于远程调用实现线程隔离：
+		1.开启Feign中Sentinel簇点链路功能，将feign作为资源
+		feign:
+		    sentinel:
+			enabled:true	
+	
+
+		2.FeignClient编写Fallback逻辑	
+		2.1编写路由指定fallback逻辑类
+		@FeignClient(
+			value = LauncherConstant.APPLICATION_BASIC_NAME,		路由指向服务
+			fallback = ICommonFileClientFallBack.class，			fallbackClass兜底逻辑/hystrix配置类
+			fallbackFactory = CommonFileClientFallbackFactory.class)	fallbackFactory兜底逻辑		
+		public interface ICommonFileClient {}
+
+		2.2编写fallback兜底逻辑	
+		fallback处理方式：fallbackClass		实现路由接口	无法对远程调用的异常做处理
+		@Component
+		public class CommonFileClientFallBack implements ICommonFileClient{}	
+
+		fallback处理方式：fallbackFactory		实现fallback工厂	对远程调用的异常做处理
+		@Component
+		public class CommonFileClientFallbackFactory implements FallbackFactory<ICommonFileClient>{
+			@Override
+			public ICommonFileClient create(Throwable throwable){		
+				return new ICommonFileClient(){			new ICommonFileClient() <==> CommonFileClientFallback
+					@Override
+					重写路由接口熔断逻辑	
+				}
+			}	
+		}
+
+		config配置包中声明Factory为对象
+		public class DefaultFeignConfig{
+			@Bean
+			public CommonFileClientFallbackFactory commonFileClientFallbackFactory(){
+				return new CommonFileClientFallbackFactory();
+			}
+		}

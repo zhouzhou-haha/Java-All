@@ -1,0 +1,689 @@
+学习前提：安装RabbitMQ服务器
+Docker安装RabbitMQ：
+	docker pull rabbitmq:management								从Docker Hub拉取RabbitMQ镜像
+	docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:management 		创建并运行rabbitmq容器
+	docker ps										查看rabbitmq容器是否已创建
+	http://localhost:15672									访问Web提供的RabbitMQ管理界面
+	docker stop rabbitmq									停止RabbitMQ容器
+	docker rm rabbitmq									移除RabbitMQ容器
+
+	补充：	-p 5672:5672	将容器5672端口映射到宿主机5672端口		RabbitMQ默认AMQP协议端口
+		-p 15672:15672	将容器15672端口映射到宿主机15672端口		RabbitMQ管理界面端口
+		http://localhost:15672					RabbitMQ的Web端管理界面，可创建队列/交互机/绑定
+
+MQ(Message Queue)：		消息队列，存储Message，具有接收数据、存储数据、发送数据等功能
+	基本概念：			
+		异步通信：发送方发送消息后，无需等待接收方响应，可以继续执行其他操作					方式：消息队列；RabbitMQ；电子邮件；短信
+		同步通信：发送方发送消息，等待接收方处理并返回结果							方式：Http请求/响应模式；电话通话
+
+	MQ消息代理作用：
+		异步通信:发送方发送消息后，无需等待接收方响应，可以继续执行其他操作					消息队列MQ <==> 异步调用Broker
+		消息持久化：将数据存入磁盘，系统故障时消息不会丢失
+		负载均衡(流量削峰填谷)：缓存消息，将消息分发给多个消费者，平衡系统负载
+		消息确认重试：提供消息处理确认机制
+		解耦组件：不同服务或应用之间解耦，下游服务故障不影响上游服务
+		
+	
+	异步调用角色：
+		消息生产者(Publisher)：创建和发送消息(应用程序)到RabbitMQ应用程序					人
+		消息代理(Broker)：消息代理Broker，负责接收、存储、转发消息						邮箱
+		消息消费者(Consumer)：监听接收和处理RabbitMQ队列中消息						邮递员
+		消息队列(Message Queue)：RabbitMQ队列 <=> 异步调用Broker(负责接收、存储、转发消息)		
+		交换机(Exchange)：控制消息路由(交换机Exchange和队列Queue规则)将消息发送到目标队列
+		协议：消息生产者，消息消费者，消息队列之间进行通信的规则和消息格式
+		虚拟主机(Virtual Host):数据隔离的容器，组织管理消息队列和交换机
+		绑定(Binding):交换机与队列的连接关系，指定消息路由规则，每个绑定都有一个路由键(Routing Key)			绑定路由，指定一路由键Routing Key
+		路由规则(Routing key):交换机使用路由规则确定将消息发送到哪些队列						Routing Key <==> Queue Name
+								
+
+	RabbitMQ架构图：	
+				————————————————————————————————————————————------
+				|		    Broker			|
+				|	Exchange	 	Queue		|
+				|		 路由绑定		消息队列		|  协议
+			   协议	|	交换机	    →				|  →	消息消费者
+		消息生产者     →	|		 路由绑定		消息队列		|  协议
+			   协议	|	交换机	    →				|  →	消息消费者
+				|		 路由绑定		消息队列		|  协议
+				|———————————————————————————————————————————------					|
+						 Virtual Host
+
+	MQ消息队列技术选型：			
+			RabbitMQ		ActiveMQ(已淘汰)		RocketMQ		Kafka
+	开源公司		Rabbit			Apache			Alibaba			Apache
+	开发语言		Erlang(面向并发)		Java			Java			Scala&Java
+	可用性		  高			 一般			  高			  高
+	消息延迟		微秒级			毫秒级			毫秒级			毫秒以内
+	消息可靠性	  高			 一般			  高			 一般
+	吞吐能力		一般(10w/s)		 差			  高(10w/s)		非常高(100w/s)		双十一峰值并发:20w/s
+	使用协议		见补充			见补充			自定义协议		自定义协议	
+
+		补充：	
+			RabbitMQ协议		AMQP/MQTT/STOMP/HTTP[S]/WebSockets/XMPP		AMQP：开放标准的消业务息传递协议	
+			ActiveMQ协议		AMQP/MQTT/STOMP/OpenWire/REST/XMPP
+			
+
+RabbitMQ:
+	RabbitMQ主要消息模式：
+	1	简单队列(Point to Point)	基本生产者消费者模型
+	2	工作队列(Work Queues)	生产者将任务放入队列，多消费者从队列中获取并处理这些任务
+		交换机模式(实际开发使用)：
+	3		发布/订阅(Pub/Sub)	生产者将消息发布到Fanout交换机(广播)，将收到的消息路由到每个与其绑定的Queue，消费者接收相同的消息
+	4		路由(Routing)		生产者将消息发送到Direct交换机(定向)，将接收的消息根据规则路由到指定Queue
+	5		主题(Topic)		生产者将消息发送到Topic交换机(使用通配符匹配路由键)，消费者根据路由键接收消息
+	6	远程调用(RPC)		生产者发送请求消息，消费者处理后返回响应(特定队列匹配请求和响应)
+
+	RabbitMQ队列整合Java客户端：		根据消息模式使用Java代码实现RabbitMQ消息收发
+		1.引入spring-amqp依赖：			
+			<dependency>							
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-amqp</artifactId>	Spring AMQP是基于AMQP协议定义的API规范，提供模板发送和接收消息
+			</dependency>
+
+		2.配置Rublisher/Consumer的applicatin.yml：
+			spring:
+			    application:
+				name:rabbitmq-provider/rabbitmq-consumer
+			
+			    rabbitmq:					
+			    	host:RabbitMQ服务器IP地址
+				port:RabbitMQ服务器端口号
+				virtual-host:RabbitMQ虚拟主机名
+				username:RabbitMQ登录用户名
+				password:RabbitMQ登录用户密码
+				
+		3.根据消息模式实现RabbitMQ消息收发
+		实现消息模式前提：在RabbitMQ控制台创建消息队列Queue
+
+	1	简单队列(Point to Point)：	一对一
+			模型：	消息生产者Provider  →	消息队列	  →	消息消费者Consumer
+
+			RabbitMQ管理界面创建消息队列：
+				Queues：
+					Add a new queue：
+						Type：Classic			默认
+						Name：SimpleQueue		创建消息队列名
+						Durability：Durable		默认
+						Auto delete：No			默认			Add queue创建消息队列
+
+			消息生产者Provider：
+				@Service
+				public class RabbitProvider{
+					private final RabbitTemplate rabbitTemplate；
+
+					public void sendMessage(String queueName,String message){		queueName：消息队列名	message：发送消息
+						rabbitTemplate.convertAndSend(queueName,message);
+					}	
+				}
+				
+			消息消费者Consumer:
+				@Slf4j
+				@Component
+				public class RabbitConsumer{
+					@RabbitListener(queues = 监听消息队列名称)					@RabbitListener接收指定消息队列消息
+					public void listenMessage(消息类型 msg) throws InterruptedException{	消息类型是Publisher发送消息类型
+						log.info("spring 消费者接收到消息:[" + msg + "]");
+					}
+				}
+				
+				注解：@RabbitListener	监听并接收来自指定RabbitMQ队列的消息
+		
+		------------------------------------------------------------------------------------------------------------------------------------			
+
+	2	工作队列(Work Queues):		一对多，加快消息处理速度
+			模型：	
+								  →	消息消费者Comsumer
+				消息生产者Provider  →	消息队列	  →	消息消费者Consumer
+								  →	消息消费者Comsumer
+
+			RabbitMQ管理界面创建消息队列：
+				Queues：
+					Add a new queue：
+						Type：Classic			默认
+						Name：workQueue			创建消息队列名
+						Durability：Durable		默认
+						Auto delete：No			默认			Add queue创建消息队列
+
+			消息生产者Provider：
+				@Service
+				public class RabbitProvider{									
+					private final RabbitTemplate rabbitTemplate；					
+			
+					public void sendMessage(String queueName,String message){		queueName：消息队列名	message：发送消息
+						for(int i= 1;i <= 50;i++){
+							rabbitTemplate.convertAndSend(queueName,message);	循环发送50条消息
+						}
+					}
+				}
+				
+			消息消费者Consumer：
+				@Slf4j
+				@Component
+				public class RabbitConsumer{							多个消费者轮询监听同一个队列(平均分配)
+
+					@RabbitListener(queues = 监听消息队列名称)					@RabbitListener接收指定消息队列消息
+					public void listenMessage1(消息类型 msg){						
+						log.info("spring 消费者接收到消息:[" + msg + "]");			消费者1：1，3，5...49(奇数)	
+						Thread.sleep(1000);							
+					}
+
+					@RabbitListener(queues = 同一消息队列名称)					@RabbitListener接收指定消息队列消息
+					public void listenMessage(消息类型 msg) throws InterruptedException{		
+						log.info("spring 消费者接收到消息:[" + msg + "]");			消费者2：2，4，6...50(偶数)
+						Thread.sleep(3000);
+					}
+				}
+				
+					注意：多个消费者监听同一个消息队列，RabbitMQ将消息轮询投递(平均分配)给队列上每一个消费者
+
+			补充：	
+				问题：RabbtiMQ将消息轮询投递给队列上每一个消费者，若消费者处理消息能力弱，消费者产生消息堆积
+				解决办法：
+					spring:
+					    rabbitmq:
+						listener:
+						    simple:
+							prefetch:1			每次只能获取一条消息，处理完成才能获取下一条消息
+				
+		------------------------------------------------------------------------------------------------------------------------------------	
+		
+	3	RabbitMQ核心思想：Exchange交换机接收Publisher发送消息通过路由规则Routing Key转发到绑定的消息队列
+
+		交互机类型及对应交换机模式：
+			Fanout：广播		发布/订阅(Pub/Sub)
+			Direct：定向		路由(Routing)
+			Topic：主题		主题(Topic)		
+
+	*****	交换机模型(异步通信):	一个生产者，多个消息队列，多个消费者			
+
+			模型：
+											  →	消息消费者Comsumer
+
+									→	消息队列	  →	消息消费者Consumer
+								   Routing Key
+				消息生产者Provider  → 	指定交换机	→	消息队列	  →	消息消费者Consumer
+								   Routing Key
+									→	消息队列	  →	消息消费者Comsumer
+										
+											  →	消息消费者Consumer
+
+			Java声明Exchange/Queue/Routing Key：		在Consumer消费者声明Exchange/Queue/Routing Key
+				方式一：Bean方式注入
+					@Configuration
+					public class FanoutConifg{
+						@Bean
+						public FanoutExchange fanoutExchange{
+							return new FanoutExchange(交换机名称)；						声明交换机
+							return ExchangeBuilder.fanoutExchange(交换机名称).build()				声明交换机(二选一)
+						}
+
+						@Bean
+						public Queue fanoutQueue1(){
+							return new Queue(消息队列名称)；							声明消息队列
+							return QueueBuilder.durable(消息队列名称)						声明消息队列(二选一)
+						}
+
+						@Bean
+						public Binding bindingQueue(Queue fanoutQueue1,FanoutExchange fanoutExchange){
+							return BindingBuilder.bind(fanoutQueue1).to(fanoutExchange).with(RoutingKey);	将消息队列绑定到交换机指定RoutingKey
+						}
+					}
+
+					补充：http://localhost:15672 RabbitMQ管理界面查看创建Exchange/Queue/Routing Key
+
+				方式二：@RabbitListener注解声明队列和交换机
+					@RabbitListener(bindings = @QueueBinding(
+						value = @Queue(name = 消息队列名称，durable = "true")，
+						exchange = @Exchange(name = 交换机名称，type = ExchangeTypes.交换机类型)，
+						key = {绑定key}
+					))
+
+					@QueueBinding注解所有属性：
+						value		指定绑定队列，使用@Queue注解
+						exchange	指定绑定的交换机名称，使用@Exchange注解
+						key		指定路由键，用于消息路由
+						exchangeType	指定交换机类型，DIRECT/FANOUT/TOPIC
+					
+					补充：http://localhost:15672 RabbitMQ管理界面查看创建Exchange/Queue/Routing Key	
+
+	3.1		发布/订阅模式(Pub/Sub)：			交换机类型：Fanout交换机(广播)
+				消息生产者Provider:
+					@Service
+					public class RabbitProvider{									
+						private final RabbitTemplate rabbitTemplate；					
+			
+						public void sendMessage(String exchangeName,String message，String routingKey){
+							rabbitTemplate.convertAndSend(exchange,null,message);			参数：交换机：exchange/路由键：null/消息：message
+						}
+					}
+					
+			
+				消息消费者Consumer:
+					@Slf4j
+					@Component
+					public class RabbitConsumer{								多消费者监听到同一消息
+						@RabbitListener(queues = fanout.queue1)						@RabbitListener接收指定消息队列消息
+						public void listenMessage1(消息类型 msg){						消息类型是Publisher发送消息类型
+							log.info("消费者1 接收到fanout.queue1消息:[" + msg + "]");				
+														
+						}
+
+						@RabbitListener(queues = fanout.queue2)						@RabbitListener接收指定消息队列消息
+						public void listenMessage2(消息类型 msg){						消息类型是Publisher发送消息类型
+							log.info("消费者2 接收到fanout.queue2消息:[" + msg + "]");
+						}
+					}
+
+					注意：RabbitMQ发送消息会被RabbitMQ自动转换为字节信息
+			
+			------------------------------------------------------------------------------------------------------------------------------------
+			
+	3.2		路由(Routing)：				交换机类型：Direct交换机(定向)
+				思想：
+					每个Queue与Exchange交换机指定Binding Key(绑定关系)			
+					Publisher发送消息指定Routing Key到对应Queue
+					Exchange交换机将消息路由到BindingKey与Routing Key一致的Queue			Binding Key == RoutingKey
+		
+				消息生产者Provider:
+					@Service
+					public class RabbitProvider{									
+						private final RabbitTemplate rabbitTemplate；					
+			
+						public void sendMessage(String exchangeName,String message，String routingKey){
+							rabbitTemplate.convertAndSend(exchange,指定RoutingKey,message);		参数：交换机：exchange/队列名：null/消息：message
+						}
+					}
+			
+				消息消费者Consumer：
+					@Slf4j
+					@Component
+					public class RabbitConsumer{									
+						@RabbitListener(queues = direct.queue1)					@RabbitListener接收指定消息队列消息	
+						public void listenMessage1(消息类型 msg){					消息类型是Publisher发送消息类型	
+							log.info("消费者1 接收到fanout.queue1消息:[" + msg + "]");				
+														
+						}
+
+						@RabbitListener(queues = direct.queue2)					@RabbitListener接收指定消息队列消息
+						public void listenMessage2(消息类型 msg){					消息类型是Publisher发送消息类型	
+							log.info("消费者2 接收到fanout.queue2消息:[" + msg + "]");
+						}
+					}
+
+					注意：RabbitMQ发送消息会被RabbitMQ自动转换为字节信息
+
+			------------------------------------------------------------------------------------------------------------------------------------
+
+	3.3		路由键Routing Key绑定规则：
+				Routing Key是多个单词列表，以.分割
+				Routing Key示例;
+					china.news		表示中国新闻
+					china.weather		表示中国天气
+									
+				通配符：
+					*	匹配一个单词，不匹配多个单词	
+							
+					#	匹配0个或多个单词			
+						rabbit.# ->	包含rabbit.的所有路由键
+						#.rabbit ->	以.rabbit结尾的所有路由键				
+
+			主题(Topic)：				交换机类型：Topic交换机
+				消息生产者Provider：
+					@Service
+					public class RabbitProvider{									
+						private final RabbitTemplate rabbitTemplate；					
+			
+						public void sendMessage(String exchangeName,String message,String routingKey){
+							rabbitTemplate.convertAndSend(exchange,交换机RoutingKey,message);	参数：交换机：exchange/路由键：RoutingKey/消息：message
+						}
+					}
+					
+				消息消费者Consumer：
+					@Slf4j
+					@Component
+					public class RabbitConsumer{								发送路由键 == 消息队列路由键 ==> 被监听执行逻辑	
+						@RabbitListener(queues = topic.queue1)
+						public void listenMessage1(消息类型 msg){						
+							log.info("消费者1 接收到topic.queue1消息:[" + msg + "]");				
+														
+						}
+
+						@RabbitListener(queues = topic.queue2)
+						public void listenMessage2(消息类型 msg){						
+							log.info("消费者2 接收到topic.queue2消息:[" + msg + "]");
+						}
+					}
+
+				注意：RabbitMQ发送消息会被RabbitMQ自动转换为字节信息
+
+———————————————————————————————————————————————————————————————————————————————————————————————————————		
+	RabbitMQ高级(面试常考)：	
+		消息可靠性：处理消息时确认消息已被成功处理
+			Publisher连接RabbitMQ失败重试机制：
+				配置失败重试机制：
+				spring:
+				    rabbitmq:
+					connection-timeout:1s			设置RabbitMQ连接超时时间
+					template：
+					    retry：	
+						enabled：true			开启超时重试机制
+						initial-interval：1000ms		开启后的初始等待时间
+						multiplier：1			失败下次开启等待时长倍数
+						max-attempts：3			最大重连次数
+					
+				注意：若是对业务性能有要求，建议禁用重试机制
+
+			Publisher消息发送确认机制：
+				RabbitMQ消息生产者发送消息，RabbitMQ接收消息向Provider发送确认消息(ACK),确认Exchange和Queue已成功接收到消息
+					
+				Publisher Confirm	返回路由异常原因
+				Publisher Return	返回ACK确认信息
+
+				配置发送消息确认机制：
+				spring:	
+				    rabbitmq:
+					publisher-confirm-type:correlated	确认消息已发送到交换机
+					publisher-returns:true			确认消息已发送到队列
+
+				Java代码实现消息确认：
+					@RequiredArgsConustructor
+					public class Publisher{
+						private final RabbitTemplate rabbitTemplate;
+						
+						public void sendMessage(String message){
+							rabbitTemplate.setConfirmCallback((correlationData,ack,cause) -> {
+								if(ack){
+									sout("消息发送成功");
+								}else{
+									sout("消息发送失败：" + cause);
+								}
+							})；
+
+							rabbitTemplate.convertAndSend(exchange,routingKey,message)		exchange：交换机  routingKey：路由键  message：发送消息
+						}
+					}
+				
+			Consumer确认机制：
+				消息消费者成功处理消息，向RabbitMQ发送已成功处理消息信息,收到确认消息，RabbitMQ将消息从队列中删除
+
+				ack	成功处理消息，RabbitMQ从队列中删除该消息
+				nack	消息处理失败，RabbitMQ再次投递消息
+				reject	消息处理失败并拒绝该消息，RabbitMQ从队列中删除该消息
+
+				ACK处理方式：
+					none：不处理，消息发送给消费者后立刻Ack，消息立刻从MQ中删除
+					manual：手动模式，在业务代码中调用api，发送ack或reject
+					auto：自动模式，业务正常执行自动返回ack；业务异常自动返回nack，消息处理或校验异常自动返回rject
+			
+				配置消费者确认机制：
+				spring：
+				    rabbitmq：
+					listener：
+					    simple：
+						prefetch：1			每次只能获取一条消息，处理完成才能获取下一条消息
+						acknowledge-mode：none/manual/auto
+						
+			Consumer失败重试机制：	
+				消费者处理消息失败后，消息会被重新发送到队列发送给消费者,Consumer再次处理消息失败，无限循环，导致RabbitMQ消息处理飙升				
+
+				RabbitMQ处理消息失败重试机制：
+				spring：
+				    rabbitmq：
+					listener：
+					    simple：
+						prefetch：1			每次只能获取一条消息，处理完成才能获取下一条消息	
+						retry：
+						    enabled：true		开启消费者失败重试
+						    initial-interval：1000ms	初始 失败等待时长
+						    mutiplier：1			下次失败等待时长倍数
+						    max-attempts：3		最大重试次数
+						    max-interval：10000		最大重试间隔(毫秒)
+
+			面试题(补充)：
+				消费者如何保证消息一定被消费：
+					1.开启Consumer确认机制为auto(自动模式)，Spring确认消息处理成功后返回ack，异常返回nack
+					2.开启Consumer失败重试机制，设置MessageRecover，多次重试失败后将消息投递到异常交换机(人工处理)
+						  	
+		消息持久化：
+			概念：RabbitMQ支持将消息持久化到磁盘，防止RabbitMQ奔溃时丢失消息
+			
+			持久化方式:
+				交换机：创建时指定Durable属性				Java	→	声明队列将durable参数设置为true
+				消息：发布消息时将deliveryMode属性设置为2-Persistent		Java	→	发送消息添加MessageProperties.PERSISTENT_TEXT_PLAIN
+				队列：
+					1.创建时指定Durable属性
+					2.Lazy Queue(惰性队列)		接收到消息后直接存入磁盘，消费消息才从磁盘加载到内存
+
+					3.12版本后所有创建队列都是Lazy Queue模式
+
+			持久化：
+				交换机持久化：
+				1	创建Exchange指定Durability为Durable：
+						Add a new exchange：
+							Name：交换机名			创建Exchange名
+							Type：direct			交换机类型：direct/fanout/route
+							Durability：Durable		交换机持久化
+							Auto delete：No
+
+				队列持久化：
+				1	创建Queue指定Durability为Durable：
+						Add a new queue：
+							Type：Classic			默认
+							Name：队列名			创建Queue名
+							Durability：Durable		队列持久化
+							Auto delete：No
+
+				2	Java代码设置队列持久化：
+						@Bean		
+						public Queue fanoutQueue(){
+							return QueueBuilder.durable(消息队列名)；
+						}
+
+				3	Lazy Queue实现队列持久化：
+						Lazy Queue特性：
+							1.将队列中消息直接存入磁盘，消费者需要使用消息时直接加载
+							2.支持百万条消息存储
+
+					3.1	创建Queue指定Arguments实现Lazy Queue：
+							Add a new Queue：
+								Type：Classic			默认
+								Name：队列名			创建Queue名
+								Durability：Durable		队列持久化
+								Atuo delete：No			
+								Arguments：x-queue-mode	= lazy	使用Lazy Queue直接将消息存储到磁盘
+
+					3.2	Java代码实现Lazy Queue：
+							1.Bean方式注入
+								@Bean
+								public Queue lazyQueue(){
+									return QueueBuilder
+										.durable("队列名")
+										.lazy()
+										.build()
+								}
+						
+							2.2@RabbitListener注解实现Lazy Queue
+								@RabbitListener(queuesToDeclare = @Queue(			
+									name  = "队列名",
+									durable  = "true",
+									arguments  = @Argument(name = "x-queue-mode",value = "lazy")
+		
+								))	
+							
+								queuesToDeclare：允许声明并配置队列，不需要额外队列配置类
+								name：指定创建队列名
+								arguments：设置队列附加参数
+									name = "x-queue-mdoe"		
+									value = "lazy"			声明队列是Lazy Queue
+					
+				消息持久化：
+				1	发送消息将Delivery Mode设置为2-Persistent：
+						Publish message：
+							Delivery mode：2-Persistent
+							Routing Key：路由键
+							Headers：
+							Properties：delivery_mode = 2				delivery_mode = 2 <=> Delivery mode：2-Persistent
+							Payload：发送消息			发送消息内容
+			
+				2	Java代码设置Delivery Mode持久化：
+						Message msg = MessageBuilder
+								.withBody("发送消息内容".getBytes(StandardCharsets.UTF_8))
+								.setDeliveryMode(MessageDeliveryMode.PERSISTENT).build();
+
+						rabbitTemplate.convertAndSend(交换机，路由键，msg);
+
+		避免消息重复消费：
+			幂等：在程序开发中，同一业务，执行一次或执行多次对业务状态影响一致
+			例：
+				幂等：	查询业务，根据id查询商品		执行1次/执行多次业务状态一致
+					删除业务，根据2id删除商品		执行1次/执行多次业务状态一致
+
+				非幂等：	用户下单业务，需要扣减库存		执行1次/执行多次业务状态不一致
+					用户退款业务，需要恢复余额		执行1次/执行多次业务状态不一致
+
+			保证幂等：
+				1.唯一消息id	
+					思想：
+						1.每条消息都生成唯一id，将消息 + 消息id发送给Consumer
+						2.Consumer接收到消息处理业务并将消息id保存到数据库
+						3.查询数据库id判断消息id是否已处理
+
+					Publisher：
+						MessageProperties properties = new MessageProperties();
+						properties.setMessageId(UUID.randomUUID().toString());
+						Message message = new Message("消息内容".getBytes(),properties);
+						rabbitTemplate.ConvertAndSend(exchange，routingKey，message)；
+					
+					Consumer：
+						@RabbitListener(queues = 队列名)
+						public void handleMessage(Message message){
+							String messageId = message.getMessageProperties().getMessageId();
+							
+							if(redisTemplate.opsForValue().get(messageId) != null){		Redis库中有messageId，直接确认
+								return;
+							}
+
+							processMessage(message.getBody());				Redis库中没有messageId，处理消息
+						}
+				
+				2.幂等性设计
+					思想：设计业务处理逻辑使其多次执行与单次执行效果相同，从根本避免重复消费消息
+
+				3.Redis执行setnx命令
+					Redis原生命令：
+						setnx key value				键key不存在时设置成功；键key已存在时候设置失效
+					
+					RedisAPI操作：
+						@RequiredArgsConstructor
+						private final RedisTemplate redisTemplate；
+						
+						redisTemplate.opsForValue().setIfAbsent(key，value);
+
+		延迟消息：
+			概念：生产者发送消息时指定时间，消费者在指定时间后接收到消息
+
+			使用场景： 订单在十分钟之内未支付自动取消
+				 预定会议，在预定时间点前十分种通知各参会人员参加会议
+
+			DLX + TTL实现延迟消息：
+				死信：无法被消费的消息
+				死信类型：
+					消息处理失败(basic.reject/basic.nack)并且requeue = false
+					队列已满无法添加消息到MQ，最老消息转移到死信队列			
+					消息TTL过期
+					
+				死信交换机：用于接收死信消息并路由到死信队列的交换机
+				死信队列：用于存储死信消息的队列
+
+				创建死信队列：
+					Add a new Queue：
+						Type：Classic					默认
+						Name：dlx.queue				创建死信队列名
+						Durability：Durable				队列持久化
+						Atuo delete：No	
+						Arguments：x-dead-letter-exchange = dix.direct	设置队列绑定死信交换机
+
+				创建死信交换机：
+					Add a new exchange：
+						Name：dlx.direct					创建交换机名
+						Type：direct					交换机类型
+						Durability：Durable				交换机持久化			
+						Auto delete：No	
+						Internal：No
+
+				交换机添加绑定关系：
+					Add binding from this exchange：
+						To queue：dlx.queue				交换机绑定队列
+						Routing Key：绑定路由键				exchange/queue绑定路由键		
+									
+				Publisher：
+					@Resource
+					private RabbitTemplate rabbitTemplate;
+
+				1	public void sendMessage(){
+						Message msg = MessageBuilder
+								.withBody("消息内容".getBytes(StandardCharsets.UTF_8))		设置发送内容
+								.setDeliveryMode(MessageDeliveryMode.PERSISTENT)		消息持久化
+								.setExpiration("10000");					设置过期时间
+								.build();
+						rabbitTemplate.convertAndSend("dlx.direct"，绑定路由键，msg)；			发送消息
+					}
+
+				2	public void sendMessage(){
+						rabbitTemplate.convertAndSend("dlx.direct"，绑定路由键，msg，new MessagePostProcessor(){
+							@Override
+							public Message postProcessMessage() throws AmqpException{
+								message.getMessageProperties().setExpiration("10000");		设置过期时间
+								return message;
+							}
+						})；
+					}	
+				
+				Consumer：
+					@RabbitListener(queues = "dlx.queue")
+					public void handleMessage(消息类型 message){
+						System.out.println("接收到死信消息" + message);
+					}
+
+			延迟消息插件：
+				原理：当消息投递到交换机后可以暂存一定时间，到期转发到队列
+				
+				查看RabbitMQ名称：docker inspect mq
+					结果：
+						{
+							"Mounts":[{
+								"Type":"volume"
+								"Name":"mq-plugins"
+							}]
+						}		
+
+				容器安装插件：docker exec -it mq rabbit-plugins enable rabbitmq_delayed_message_exchange
+
+				插件实现延迟消息：
+					Publisher：
+						@Resource
+						private final RabbitTemplate rabbitTemplate;
+	
+						public void sendMessage(){
+							rabbitTemplate.convertAndSend("dlx.direct"，绑定路由键，msg，new MessagePostProcessor(){
+							@Override
+							public Message postProcessMessage() throws AmqpException{
+								message.getMessageProperties().setDelay("5000");		设置过期时间
+								return message;
+							}
+						})；
+						}
+						
+					Consumer：
+						@RabbitListener(bindings = @QueueBinding(
+							value = @Queue(name = 延迟消息队列,durable = "true"),
+							exchange = @Exchange(name = 延迟交换机,type = ExchangeTypes.交换机类型,delayed = "true" ),
+							key = {绑定路由键}	
+						))
+						public void handleMessage(Message msg){
+							log.info("消费者接收到消息：{}",msg)
+						}
+
+
+
+

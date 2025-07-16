@@ -1,0 +1,245 @@
+分布式框架：Dubbo/SpringCloud Seata
+
+Dubbo与Spring Cloud区别:
+			Dubbo			Spring Cloud
+	通信方式		RPC			RestFul
+	注册中心		Zookeeper		nacos/eureka
+	组件		无消息总线		有消息总线，数据流，批量任务	
+
+RPC通信协议：Remote Procedure Call远程过程调用，通过网络从远程计算机程序上请求服务
+远程过程调用：计算机A上进程调用计算机B上进程方法，A调用进程被挂起，B被调用进程执行对应方法，并将结果返回给A，计算机A接收到返回值，调用进程继续执行
+
+RPC框架：基于RPC协议实现的框架统称RPC框架(Dubbo/gRPC)
+RPC框架组成：
+				    注册中心
+				↙	     ↖
+			服务发现			服务暴露
+
+			负载均衡			
+						处理程序	
+			容错
+						
+	Client		透明			线程池			Server
+
+			序列化			反序列化	|(RPC协议)
+
+			协议编码			协议解码	|(RPC协议)
+
+			网络传输			网络传输	|(RPC协议)
+
+	RPC与HTTP区别：
+		RPC：远程过程调用，调用协议通常包括序列化协议和传输协议。序列化协议(纯文本XML和JSON/二进制编码Protobuf)，传输协议(TCP和HTTP)
+		HTTP:HTTP是RPC传输协议的可选方案，gRPC网络传输协议HTTP
+	
+Dubbo：			Alibaba公司开源的高性能，轻量级的RPC框架，提供高性能RPC远程服务调用，以及SOA服务治理方案			补充：Dubbo是SOA时代的产物
+	
+	Dubbo三大核心功能：
+	***	面向接口的远程方法调用
+	***	容错机制
+	***	负载均衡
+	***	服务注册和发现
+		服务监控Dubbo Admin
+
+	Dubbo架构图：
+					
+					Registry(Zookeeper)	
+
+		      注册						Container
+									
+		Dubbo Provider		←        RPC	    →		Dubbo Consumer
+
+					Monitor(监控中心)
+									
+		
+		Dubbo Provider		服务生产者，服务提供方
+		Dubbo Consumer		服务消费者，服务调用方
+		Container		服务运行的容器
+		Registry		注册中心(服务注册与发现)(Zookeeper)
+
+	RPC远程调用(SpringBoot整合Dubbo实现)：
+		1.引入依赖
+		2.创建服务提供者Provider模块(单独微服务)，编写UserServiceImpl提供服务
+		3.配置服务提供者(将访问地址，ip，端口，路径注册到注册中心)
+
+		4.创建服务消费者Consumer模块(单独微服务)
+		5.配置服务消费者()
+		5.在服务消费者中的UserController使用RPC远程调用UserServiceImpl提供的服务
+
+			
+		1.服务提供者Provider/服务消费者Comsumer依赖
+		<dependency>							引入dubbo相关依赖
+			<groupId>org.apache.dubbo</groupId>
+			<artifactId>dubbo</artifactId>
+			<version>3.3.0</version>
+		</dependency>	
+		<dependency>
+    			<groupId>org.apache.dubbo</groupId>
+    			<artifactId>dubbo-spring-boot-starter</artifactId>
+    			<version>3.3.0</version>
+		</dependency>
+
+		<dependency>							引入Zookeeper相关依赖
+    			<groupId>org.apache.curator</groupId>
+    			<artifactId>curator-framework</artifactId>
+    			<version>5.2.0</version> 
+		</dependency>
+		<dependency>
+    			<groupId>org.apache.curator</groupId>
+    			<artifactId>curator-recipes</artifactId>
+    			<version>5.2.0</version> 
+		</dependency>
+			
+		2.创建服务提供者模块Provider
+		@DubboService
+		public class UserServiceImpl implements UserService{
+			public String sayHello(){
+				return "Hello World";
+			}
+		}
+
+		注意：	org.springframework.stereotype.Service			@Service	将该类对象创建出来，放到Spring容器中
+			org.apache.dubbo.config.annotation.DubboService		@DubboService	将类提供的方法(服务)对外发布。将访问的地址，ip，端口，路径注册到注册中心
+
+			@DubboService相关属性：		
+				interfaceClass		服务提供方实现的interface类
+				interfaceName		服务提供方实现的interface类名
+				group			指定组，将服务划分到不同组别中	
+				timeout			设置调用超时时间
+				retries			调用失败时的重试次数
+				loadbalance		指定负载均衡策略
+				mock			指定当前服务不可用时的降级策略
+				version			服务版本号
+				async			是否支持异步调用
+				
+
+		3.application.yaml配置服务提供者Provider
+		application.yaml:
+			dubbo:
+			    application:					配置服务提供者名称
+				name:provider					
+
+			    registry:						将服务注册到注册中心
+				address:zookeeper://127.0.0.1:2364		地址：协议://服务器号:端口号
+
+			    protocol:						配置服务之间通信方式
+				name:dubbo					指定使用Dubbo协议进行服务调用
+				port:16354					服务提供者端口号(服务消费者通过端口号与服务提供者进行通信)
+				
+			    scan：						配置包扫描
+				base-packages:服务提供者类所在路径(相对路径)
+		
+		-------------------------------------------------------------------------------------------------------------------------------------
+
+		4.创建服务消费者模块Comsumer
+		@Service							注意:这边@Service是创建类对象，放到Spring容器中
+		public class ComsumerService{
+
+			@DubboReference
+			private UserService userService；			
+
+			public void greet(String name){
+				return "Hello World Too";
+			}
+		}
+		
+		注意：	@DubboReference
+				从Zookeeper注册中心获取服务提供者实现，自动注入
+				RPC远程调用，封装结果为代理对象，给变量赋值
+
+			@DubboReference相关属性：
+				interfaceClass			指定服务消费者的interface类
+				version				指定服务版本号
+				group				指定服务分组
+				url				指定服务提供方的URL地址绕过注册中心发起调用
+				timeout				设置调用超时时间
+				retries				设置调用失败时重试次数
+				loadbalance			指定负载均衡策略
+				mock				指定当前服务不可用时的降级策略
+				cluster				指定集群容错策略
+
+		5.application.yaml配置服务消费者Comsumer
+		application.yaml:
+		    	dubbo:
+			    application:					配置服务消费者名称
+				name:comsumer
+			    
+			    registry:						将服务注册到注册中心
+				address:zookeepr://127.0.0.1:2364		地址：协议://服务器号:端口号
+
+			    scan：						配置包扫描
+				base-packages:服务消费者类所在路径(相对路径)		
+
+		6.Provider/Comsumer启动类添加@EnableDubbo
+		@EnableDubbo
+		@SpringBootApplication
+		public class UserServiceProviderApplication {
+ 
+    			public static void main(String[] args) {
+        			SpringApplication.run(生产者消费者字节类, args);
+    			}
+		}
+
+	SOA服务治理(高级特性)：
+		负载均衡：		@DubboService(loadbalance = 具体策略)
+			WeightedRandom		加权随机			按照权重设置随机概率
+
+			RoundRobin		加权轮询			按权重轮询
+			
+			LeastActive		加权最少活跃调用优先	活跃度越低，优先调用，相同活跃数加权随机
+
+			Shortest-Response	加权最短响应优先		最近一个滑动窗口中，响应时间越短，优先调用，相同响应时间加权随机
+		
+			ConsistentHash		一致性哈希		相同参数的请求总是发送同一提供者
+						
+			P2C 			P2C			略
+
+			Adaptive 		自适应负载均衡		总是将请求转发到负载最小的节点
+
+		超时与重试(容错机制)：		
+			超时机制：请求在指定时间内未能获得响应，Dubbo自动断开连接并返回错误信息，设置服务调用的最大等待时间		阻止雪崩
+
+			重试机制：服务调用失败时Dubbo自动重新尝试请求，设置重试次数和间隔时间					阻止线程的大量堆积
+
+			服务提供者：@DubboService(timeout = 超时时间ms,retries = 重试次数)		->	Comsumer也要设置
+			服务消费者：@DubboReference(timeout = 超时时间ms,retries = 重试次数)		-> 	Provider也要设置
+
+		多版本：			
+			在同一时间内运行多个服务版本，进行灰度发布，A/B测试
+			灰度发布：新版本的功能会对部分用户开放，用户反馈没有问题，再将所有用户迁移到新功能			
+			A/B测试：随机将用户分为两组(A组/B组)，分别使用不同的版本比较他们的表现
+
+			服务提供者：@DubboService(version = 版本号)		服务提供者有多个版本，指定版本号	
+			服务消费者：@DubboReference(version = 版本号)		服务消费者根据版本号调用指定版本服务
+
+		序列化：			
+			序列化：服务调用过程中将对象转换为字节流，在网络上传输			被依赖的工程改动要install代码才能生效
+			反序列化：服务调用过程中将字节流转换为对象
+
+			序列化：
+				public class 实体类 implements Serializable
+
+		地址缓存：
+			缓存服务提供者的地址，减少对注册中心的频繁请求
+			服务消费者第一次调用将服务提供者地址缓存到本地，注册中心暂时不可用，可以使用缓存中的地址进行服务调用
+		
+		服务降级(容错机制)：	
+			服务发生故障，超时，异常等原因无法正常响应时，系统采取的容错机制
+
+			服务消费者：@DubboReference(mock = mock属性值)			
+					属性值：
+						true		默认降级逻辑，自动使用Mock实现		mock = true
+						false		不启用Mcok实现，直接抛出异常		mock = false
+						Mock实现类	指定具体的Mock实现类			mock = Mock实现类相对路径
+						force		强制调用Mock实现，不管服务是否可用		mock = force
+						failover	调用失败，转到Mock实现			mock = failover
+
+		集群容错(容错机制)：
+			在分布式系统或集群环境中，系统在部分节点或服务出现故障时，仍然能继续正常运行
+		
+			Dubbo容错策略：	
+				Failover	调用失败，尝试连接其他服务
+				Failfast	调用失败，返回异常信息，不进行重试
+				Failsafe	调用失败不抛出异常；对请求负载均衡
+				Failback	调用失败自动恢复，后台记录失败请求，定时重发
+				Forking		同时调用多个相同的服务提供者，返回最快的结果
+				Broadcast	广播调用所有可用服务，任意服务出错则报错
